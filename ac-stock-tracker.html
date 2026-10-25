@@ -9150,7 +9150,7 @@ const DB = {
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
   availSel: new Set(), // marquee-selected serials awaiting bulk delete
   stagedCart: [],   // client-side staging; POST /api/stock-out on checkout
-  recentlyReverted: [], // latest reverted batch; persisted for 14 days
+  recentlyReverted: [], // in-memory only; cleared when used or when the app closes
   trackList: [],    // GET /api/track       (sold units)
   returns: [],      // GET /api/returns
   brands: [],       // from /api/inventory
@@ -9434,7 +9434,6 @@ async function refreshData() {
       DB.inventory[i.brand].models[i.model].units &&
       DB.inventory[i.brand].models[i.model].units[i.serial]);
   }
-  hydrateRecentlyReverted(uiPrefs && uiPrefs.recentlyReverted);
   applySidebarWidth('so-sidebar', DB.soSidebarW);
   applySidebarWidth('avail-sidebar', DB.availSidebarW);
   applySidebarWidth('tl-sidebar', DB.trackSidebarW);
@@ -12984,26 +12983,6 @@ function persistStagedCart() {
   apiPost('/api/ui-prefs', { prefs: { stagedCart: DB.stagedCart } }).catch(() => {});
 }
 
-const RECENTLY_REVERTED_TTL_MS = 14 * 24 * 60 * 60 * 1000;
-
-function persistRecentlyReverted() {
-  const items = DB.recentlyReverted;
-  if (!items.length) {
-    apiPost('/api/ui-prefs', { prefs: { recentlyReverted: null } }).catch(() => {});
-    return;
-  }
-  const savedAt = new Date().toISOString();
-  apiPost('/api/ui-prefs', {
-    prefs: {
-      recentlyReverted: {
-        items,
-        savedAt,
-        expiresAt: new Date(Date.now() + RECENTLY_REVERTED_TTL_MS).toISOString()
-      }
-    }
-  }).catch(() => {});
-}
-
 function removeFromCart(idx) {
   const item = DB.stagedCart[idx];
   DB.stagedCart.splice(idx, 1);
@@ -14901,7 +14880,6 @@ async function doUndoDispatch() {
       model: String(unit.model || ''),
       brand: String(unit.brand || '')
     })).filter(unit => unit.serial && unit.model);
-    persistRecentlyReverted();
     updateRevertedChip();
     showToast(`Reverted ${res.serials.length} unit(s) back to stock`, '&#8630;');
     await refreshData();
@@ -14925,26 +14903,6 @@ function updateRevertedChip() {
   if (!count) {
     panel.style.display = 'none';
     renderRecentlyRevertedList();
-  }
-
-  function hydrateRecentlyReverted(saved) {
-    const now = Date.now();
-    const items = saved && Array.isArray(saved.items) ? saved.items : [];
-    const expiresAt = saved && Date.parse(saved.expiresAt);
-    DB.recentlyReverted = expiresAt > now
-      ? items.filter(item => item && item.serial && item.model).map(item => ({
-        serial: String(item.serial),
-        model: String(item.model),
-        brand: String(item.brand || '')
-      }))
-      : [];
-    const cleaned = DB.recentlyReverted.length
-      ? DB.recentlyReverted
-      : null;
-    if (!cleaned && saved) {
-      apiPost('/api/ui-prefs', { prefs: { recentlyReverted: null } }).catch(() => {});
-    }
-    updateRevertedChip();
   }
 }
 
@@ -14985,7 +14943,6 @@ function addOneRevertedSerial(index) {
     DB.stagedCart.push({ serial: item.serial, model: item.model, brand });
   }
   DB.recentlyReverted.splice(index, 1);
-  persistRecentlyReverted();
   updateRevertedChip();
   renderRecentlyRevertedList();
   updateGlobalBadges();
@@ -15008,7 +14965,6 @@ function addRevertedSerialsToCart() {
     added++;
   }
   DB.recentlyReverted = [];
-  persistRecentlyReverted();
   updateRevertedChip();
   if (added) {
     updateGlobalBadges();

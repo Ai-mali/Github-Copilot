@@ -4088,6 +4088,15 @@ body.theme-light .so-sel-pill {
   white-space: nowrap;
 }
 
+.recently-reverted-item-brand {
+  overflow: hidden;
+  color: var(--text-sub);
+  font-size: 9px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cart-item-brand-badge {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px;
@@ -14933,6 +14942,7 @@ function renderRecentlyRevertedList() {
       <div class="recently-reverted-item-info">
         <span class="recently-reverted-item-serial">${escapeHtml(item.serial)}</span>
         <span class="recently-reverted-item-model">${escapeHtml(item.model)}</span>
+        <span class="recently-reverted-item-brand">${escapeHtml(item.brand || 'Unbranded')}</span>
       </div>
       <button type="button" class="recently-reverted-add-one" onclick="addOneRevertedSerial(${idx})">Add</button>
     </div>

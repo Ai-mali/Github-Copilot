@@ -13212,6 +13212,59 @@ function clearDispatchCart() {
   persistStagedCart();
 }
 
+function captureStockOutViewState() {
+  const state = { brands: {}, models: {}, scrollTop: window.scrollY || 0 };
+  for (const [brand, brandData] of Object.entries(DB.inventory || {})) {
+    state.brands[brand] = {
+      open: brandData.open === true,
+      searchOpen: brandData.soSearchOpen
+    };
+    state.models[brand] = {};
+    for (const [model, modelData] of Object.entries(brandData.models || {})) {
+      state.models[brand][model] = {
+        open: modelData.open === true,
+        searchOpen: modelData.soSearchOpen
+      };
+    }
+  }
+  const container = document.getElementById('stockout-brands-container');
+  let scrollParent = container;
+  while (scrollParent && scrollParent !== document.body) {
+    if (scrollParent.scrollHeight > scrollParent.clientHeight) break;
+    scrollParent = scrollParent.parentElement;
+  }
+  state.scrollTop = scrollParent && scrollParent !== document.body
+    ? scrollParent.scrollTop : (window.scrollY || 0);
+  return state;
+}
+
+function restoreStockOutViewState(state) {
+  if (!state) return;
+  for (const [brand, brandState] of Object.entries(state.brands || {})) {
+    const brandData = DB.inventory[brand];
+    if (!brandData) continue;
+    brandData.open = brandState.open;
+    if (brandState.searchOpen !== undefined) brandData.soSearchOpen = brandState.searchOpen;
+    for (const [model, modelState] of Object.entries((state.models || {})[brand] || {})) {
+      const modelData = (brandData.models || {})[model];
+      if (!modelData) continue;
+      modelData.open = modelState.open;
+      if (modelState.searchOpen !== undefined) modelData.soSearchOpen = modelState.searchOpen;
+    }
+  }
+  renderStockOut();
+  requestAnimationFrame(() => {
+    const container = document.getElementById('stockout-brands-container');
+    let scrollParent = container;
+    while (scrollParent && scrollParent !== document.body) {
+      if (scrollParent.scrollHeight > scrollParent.clientHeight) break;
+      scrollParent = scrollParent.parentElement;
+    }
+    if (scrollParent && scrollParent !== document.body) scrollParent.scrollTop = state.scrollTop;
+    else window.scrollTo(0, state.scrollTop);
+  });
+}
+
 /* Delivery time only matters for bookings (future Date Out); same-day
    checkouts stay date-only, so the time row hides unless the picked
    date is after today. */
@@ -13299,6 +13352,8 @@ async function processCartCheckout() {
     ? `${isoOut} ${tEl.value}`
     : isoOut;
   const sent = DB.stagedCart.map(i => i.serial);
+  const stockOutViewState = DB.activeTab === 'stock-out'
+    ? captureStockOutViewState() : null;
   try {
     const res = await apiPost('/api/stock-out', {
       serials: sent,
@@ -13331,6 +13386,7 @@ async function processCartCheckout() {
     // Reset the dispatch date to today so a stale picked date can't tag the next sale
     initDatePicker('dispatch-date-out-picker', formatDateISO(new Date()));
     await refreshData();
+    restoreStockOutViewState(stockOutViewState);
   } catch (e) {
     showToast('Checkout failed: ' + e.message);
   } finally {

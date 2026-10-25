@@ -12986,13 +12986,14 @@ function persistStagedCart() {
 
 const RECENTLY_REVERTED_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
-async function persistRecentlyReverted() {
+function persistRecentlyReverted() {
   const items = DB.recentlyReverted;
   if (!items.length) {
-    return apiPost('/api/ui-prefs', { prefs: { recentlyReverted: null } });
+    apiPost('/api/ui-prefs', { prefs: { recentlyReverted: null } }).catch(() => {});
+    return;
   }
   const savedAt = new Date().toISOString();
-  return apiPost('/api/ui-prefs', {
+  apiPost('/api/ui-prefs', {
     prefs: {
       recentlyReverted: {
         items,
@@ -13000,7 +13001,7 @@ async function persistRecentlyReverted() {
         expiresAt: new Date(Date.now() + RECENTLY_REVERTED_TTL_MS).toISOString()
       }
     }
-  });
+  }).catch(() => {});
 }
 
 function removeFromCart(idx) {
@@ -14900,11 +14901,7 @@ async function doUndoDispatch() {
       model: String(unit.model || ''),
       brand: String(unit.brand || '')
     })).filter(unit => unit.serial && unit.model);
-    try {
-      await persistRecentlyReverted();
-    } catch (saveError) {
-      showToast('Reverted, but could not save the 14-day reminder: ' + saveError.message, '&#9888;');
-    }
+    persistRecentlyReverted();
     updateRevertedChip();
     showToast(`Reverted ${res.serials.length} unit(s) back to stock`, '&#8630;');
     await refreshData();
@@ -14988,8 +14985,7 @@ function addOneRevertedSerial(index) {
     DB.stagedCart.push({ serial: item.serial, model: item.model, brand });
   }
   DB.recentlyReverted.splice(index, 1);
-  persistRecentlyReverted().catch(e =>
-    showToast('Could not update the saved reverted list: ' + e.message, '&#9888;'));
+  persistRecentlyReverted();
   updateRevertedChip();
   renderRecentlyRevertedList();
   updateGlobalBadges();
@@ -15012,8 +15008,7 @@ function addRevertedSerialsToCart() {
     added++;
   }
   DB.recentlyReverted = [];
-  persistRecentlyReverted().catch(e =>
-    showToast('Could not clear the saved reverted list: ' + e.message, '&#9888;'));
+  persistRecentlyReverted();
   updateRevertedChip();
   if (added) {
     updateGlobalBadges();

@@ -7659,7 +7659,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                 <div style="display:flex; align-items:center; gap:6px;">
                   <button type="button" class="recently-reverted-trigger" id="reverted-serials-chip" onclick="toggleRecentlyReverted()" title="Show recently reverted units" style="display:none;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h10a5 5 0 0 1 5 5v2m0 0l-3-3m3 3l3-3M3 10l3-3M3 10l3 3"/></svg>
-                    <span id="reverted-serials-count">Recently Reverted: 0</span>
+                    <span id="reverted-serials-count">0</span>
                   </button>
                   <span class="badge badge-green" id="cart-pill-count">0 items</span>
                 </div>
@@ -14897,7 +14897,7 @@ function updateRevertedChip() {
   if (!chip || !countEl || !panel) return;
   const count = DB.recentlyReverted.length;
   chip.style.display = count ? 'inline-flex' : 'none';
-  countEl.textContent = `Recently Reverted: ${count}`;
+  countEl.textContent = count;
   if (panelCount) panelCount.textContent = `${count} unit${count === 1 ? '' : 's'}`;
   if (addAllCount) addAllCount.textContent = count;
   if (!count) {

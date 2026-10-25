@@ -3955,6 +3955,130 @@ body.theme-light .so-sel-pill {
   margin-left: 2px;
 }
 
+.recently-reverted-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 7px;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--amber-ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.recently-reverted-trigger:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.75);
+}
+
+.recently-reverted-panel {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  animation: fadeIn 0.16s ease;
+}
+
+.recently-reverted-panel-head,
+.recently-reverted-panel-subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recently-reverted-panel-head {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+.recently-reverted-panel-head strong {
+  color: var(--text);
+}
+
+.recently-reverted-collapse {
+  border: 0;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.recently-reverted-panel-subhead {
+  margin-top: 10px;
+  color: var(--text-sub);
+  font-size: 10.5px;
+}
+
+.recently-reverted-add-all,
+.recently-reverted-add-one {
+  border: 1px solid rgba(16, 185, 129, 0.7);
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--green-bright);
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.recently-reverted-add-one {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  min-width: 43px;
+}
+
+.recently-reverted-add-all:hover,
+.recently-reverted-add-one:hover {
+  filter: brightness(1.12);
+}
+
+.recently-reverted-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.recently-reverted-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 3px 0;
+}
+
+.recently-reverted-item-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.recently-reverted-item-serial {
+  color: var(--text);
+  font: 700 11px/1.2 var(--font-mono, monospace);
+}
+
+.recently-reverted-item-model {
+  overflow: hidden;
+  color: var(--text-sub);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cart-item-brand-badge {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px;
@@ -7532,15 +7656,26 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                 <div>
                   <div class="card-title">Dispatch Staging Cart</div>
                 </div>
-                <span class="badge badge-green" id="cart-pill-count">0 items</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="recently-reverted-trigger" id="reverted-serials-chip" onclick="toggleRecentlyReverted()" title="Show recently reverted units" style="display:none;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h10a5 5 0 0 1 5 5v2m0 0l-3-3m3 3l3-3M3 10l3-3M3 10l3 3"/></svg>
+                    <span id="reverted-serials-count">Recently Reverted: 0</span>
+                  </button>
+                  <span class="badge badge-green" id="cart-pill-count">0 items</span>
+                </div>
               </div>
               <!-- Brand breakdown pills row -->
               <div id="cart-brand-breakdown-row" style="display:flex; flex-wrap:wrap; gap:6px; width:100%; min-height:22px; align-items:center;"></div>
-              <div class="quick-chips-row" id="reverted-serials-chip" style="margin-top:4px; display:none;">
-                <button type="button" class="btn btn-ghost btn-sm" onclick="addRevertedSerialsToCart()" title="Add the most recently reverted units back to the dispatch cart" style="background:rgba(245, 158, 11, 0.15); border:1px solid rgba(245, 158, 11, 0.4); color:var(--amber-ink);">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h10a5 5 0 0 1 5 5v2m0 0l-3-3m3 3l3-3M3 10l3-3M3 10l3 3"/></svg>
-                  <span id="reverted-serials-count">Recently Reverted: 0 units</span>
-                </button>
+              <div id="recently-reverted-panel" class="recently-reverted-panel" style="display:none;">
+                <div class="recently-reverted-panel-head">
+                  <span><span class="mono">↶</span> Recently reverted · <strong id="recently-reverted-panel-count">0 units</strong></span>
+                  <button type="button" class="recently-reverted-collapse" onclick="toggleRecentlyReverted()">Hide⌄</button>
+                </div>
+                <div class="recently-reverted-panel-subhead">
+                  <span>Units that came back from a dispatch</span>
+                  <button type="button" class="recently-reverted-add-all" onclick="addRevertedSerialsToCart()">Add all <span id="recently-reverted-add-all-count">0</span></button>
+                </div>
+                <div id="recently-reverted-list" class="recently-reverted-list"></div>
               </div>
             </div>
 
@@ -14756,10 +14891,64 @@ async function doUndoDispatch() {
 function updateRevertedChip() {
   const chip = document.getElementById('reverted-serials-chip');
   const countEl = document.getElementById('reverted-serials-count');
-  if (!chip || !countEl) return;
+  const panel = document.getElementById('recently-reverted-panel');
+  const panelCount = document.getElementById('recently-reverted-panel-count');
+  const addAllCount = document.getElementById('recently-reverted-add-all-count');
+  if (!chip || !countEl || !panel) return;
   const count = DB.recentlyReverted.length;
-  chip.style.display = count ? 'block' : 'none';
-  countEl.textContent = `Recently Reverted: ${count} unit${count === 1 ? '' : 's'}`;
+  chip.style.display = count ? 'inline-flex' : 'none';
+  countEl.textContent = `Recently Reverted: ${count}`;
+  if (panelCount) panelCount.textContent = `${count} unit${count === 1 ? '' : 's'}`;
+  if (addAllCount) addAllCount.textContent = count;
+  if (!count) {
+    panel.style.display = 'none';
+    renderRecentlyRevertedList();
+  }
+}
+
+function toggleRecentlyReverted() {
+  if (!DB.recentlyReverted.length) return;
+  const panel = document.getElementById('recently-reverted-panel');
+  if (!panel) return;
+  const opening = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = opening ? 'block' : 'none';
+  if (opening) renderRecentlyRevertedList();
+}
+
+function renderRecentlyRevertedList() {
+  const list = document.getElementById('recently-reverted-list');
+  if (!list) return;
+  list.innerHTML = DB.recentlyReverted.map((item, idx) => `
+    <div class="recently-reverted-item">
+      <div class="recently-reverted-item-info">
+        <span class="recently-reverted-item-serial">${escapeHtml(item.serial)}</span>
+        <span class="recently-reverted-item-model">${escapeHtml(item.model)}</span>
+      </div>
+      <button type="button" class="recently-reverted-add-one" onclick="addOneRevertedSerial(${idx})">Add</button>
+    </div>
+  `).join('');
+}
+
+function addOneRevertedSerial(index) {
+  const item = DB.recentlyReverted[index];
+  if (!item) return;
+  const brand = resolveItemBrand(item);
+  const modelData = DB.inventory?.[brand]?.models?.[item.model];
+  if (!modelData?.units?.[item.serial]) {
+    showToast(`${item.serial} is no longer available`, '&#9888;');
+    return;
+  }
+  if (!DB.stagedCart.some(staged =>
+    staged.serial === item.serial && staged.model === item.model)) {
+    DB.stagedCart.push({ serial: item.serial, model: item.model, brand });
+  }
+  DB.recentlyReverted.splice(index, 1);
+  updateRevertedChip();
+  renderRecentlyRevertedList();
+  updateGlobalBadges();
+  renderStockOut();
+  persistStagedCart();
+  showToast(`Added ${item.serial} to cart`, '&#10162;');
 }
 
 function addRevertedSerialsToCart() {
@@ -14785,6 +14974,7 @@ function addRevertedSerialsToCart() {
   } else {
     showToast('No reverted units are available.', '&#9888;');
   }
+  renderRecentlyRevertedList();
 }
 
 async function confirmDeleteBrand(brand) {

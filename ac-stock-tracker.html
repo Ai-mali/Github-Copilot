@@ -16202,6 +16202,59 @@ function closeEditUnitModal() {
   if (modal) modal.classList.remove('open');
 }
 
+function captureAvailableViewState() {
+  const state = { brands: {}, models: {}, scrollTop: window.scrollY || 0 };
+  for (const [brand, brandData] of Object.entries(DB.inventory || {})) {
+    state.brands[brand] = {
+      open: brandData.open === true,
+      searchOpen: brandData.searchOpen
+    };
+    state.models[brand] = {};
+    for (const [model, modelData] of Object.entries(brandData.models || {})) {
+      state.models[brand][model] = {
+        open: modelData.open === true,
+        searchOpen: modelData.searchOpen
+      };
+    }
+  }
+  const container = document.getElementById('avail-accordion-container');
+  let scrollParent = container;
+  while (scrollParent && scrollParent !== document.body) {
+    if (scrollParent.scrollHeight > scrollParent.clientHeight) break;
+    scrollParent = scrollParent.parentElement;
+  }
+  state.scrollElement = scrollParent && scrollParent !== document.body ? scrollParent : null;
+  state.scrollValue = state.scrollElement ? state.scrollElement.scrollTop : state.scrollTop;
+  return state;
+}
+
+function restoreAvailableViewState(state) {
+  if (!state) return;
+  for (const [brand, brandState] of Object.entries(state.brands || {})) {
+    const brandData = DB.inventory[brand];
+    if (!brandData) continue;
+    brandData.open = brandState.open;
+    if (brandState.searchOpen !== undefined) brandData.searchOpen = brandState.searchOpen;
+    for (const [model, modelState] of Object.entries((state.models || {})[brand] || {})) {
+      const modelData = (brandData.models || {})[model];
+      if (!modelData) continue;
+      modelData.open = modelState.open;
+      if (modelState.searchOpen !== undefined) modelData.searchOpen = modelState.searchOpen;
+    }
+  }
+  renderAvailable();
+  requestAnimationFrame(() => {
+    const container = document.getElementById('avail-accordion-container');
+    let scrollParent = container;
+    while (scrollParent && scrollParent !== document.body) {
+      if (scrollParent.scrollHeight > scrollParent.clientHeight) break;
+      scrollParent = scrollParent.parentElement;
+    }
+    if (scrollParent && scrollParent !== document.body) scrollParent.scrollTop = state.scrollValue;
+    else window.scrollTo(0, state.scrollTop);
+  });
+}
+
 async function saveEditUnitModal() {
   const oldSerial = (document.getElementById('edit-unit-old-serial').value || '').trim();
   const oldModel = (document.getElementById('edit-unit-old-model').value || '').trim();
@@ -16221,6 +16274,8 @@ async function saveEditUnitModal() {
     return;
   }
 
+  const availableViewState = DB.activeTab === 'available'
+    ? captureAvailableViewState() : null;
   try {
     const res = await apiPost('/api/inventory/update', {
       old_serial: oldSerial,
@@ -16247,6 +16302,7 @@ async function saveEditUnitModal() {
       }
 
       await refreshData();
+      restoreAvailableViewState(availableViewState);
     }
   } catch (e) {
     showToast('Update failed: ' + e.message);

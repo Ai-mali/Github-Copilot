@@ -4051,9 +4051,9 @@ body.theme-light .so-sel-pill {
 }
 
 .recently-reverted-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   min-height: 30px;
   padding: 3px 0;
@@ -4062,17 +4062,21 @@ body.theme-light .so-sel-pill {
 .recently-reverted-item-info {
   min-width: 0;
   display: flex;
-  align-items: baseline;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .recently-reverted-item-number {
-  width: 24px;
-  flex: 0 0 24px;
   color: var(--text-sub);
   font: 700 9px/1.2 var(--font-mono, monospace);
   text-align: right;
+}
+
+.recently-reverted-item-summary {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 6px;
 }
 
 .recently-reverted-item-serial {
@@ -4081,6 +4085,7 @@ body.theme-light .so-sel-pill {
 }
 
 .recently-reverted-item-model {
+  min-width: 0;
   overflow: hidden;
   color: var(--text-sub);
   font-size: 9.5px;
@@ -4089,12 +4094,20 @@ body.theme-light .so-sel-pill {
 }
 
 .recently-reverted-item-brand {
+  min-width: 0;
   overflow: hidden;
-  color: var(--text-sub);
-  font-size: 9px;
+  color: var(--text);
+  font-size: 10px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.recently-reverted-item-details {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 6px;
 }
 
 .cart-item-brand-badge {
@@ -14940,9 +14953,15 @@ function renderRecentlyRevertedList() {
     <div class="recently-reverted-item">
       <span class="recently-reverted-item-number">#${String(idx + 1).padStart(2, '0')}</span>
       <div class="recently-reverted-item-info">
-        <span class="recently-reverted-item-serial">${escapeHtml(item.serial)}</span>
-        <span class="recently-reverted-item-model">${escapeHtml(item.model)}</span>
-        <span class="recently-reverted-item-brand">${escapeHtml(item.brand || 'Unbranded')}</span>
+        <div class="recently-reverted-item-summary">
+          <span class="recently-reverted-item-brand" title="${escapeHtml(item.brand || 'Unbranded')}">${escapeHtml(item.brand || 'Unbranded')}</span>
+          <span aria-hidden="true">|</span>
+          <span class="recently-reverted-item-model">${escapeHtml(item.model)}</span>
+        </div>
+        <div class="recently-reverted-item-details">
+          <span aria-hidden="true">|</span>
+          <span class="recently-reverted-item-serial">${escapeHtml(item.serial)}</span>
+        </div>
       </div>
       <button type="button" class="recently-reverted-add-one" onclick="addOneRevertedSerial(${idx})">Add</button>
     </div>

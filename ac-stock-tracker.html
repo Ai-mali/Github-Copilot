@@ -6788,7 +6788,7 @@ body.theme-light .autocomplete-dropdown {
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
   color: var(--text);
@@ -6802,9 +6802,32 @@ body.theme-light .autocomplete-dropdown {
   color: var(--green-bright);
 }
 .autocomplete-meta {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
   font-size: 10.5px;
   color: var(--text-muted);
   font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.autocomplete-remove {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 16px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.autocomplete-remove:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red-ink);
 }
 
 /* Quick chips */
@@ -9225,6 +9248,7 @@ const DB = {
 
   trackCols: { customer: true, dateIn: true, dateOut: true, warranty: true, qty: true, status: true },
   searchHistory: [],
+  dismissedCustomers: [],
   soRecentHidden: false, // hide the Recent customer chips row (ui_pref soRecent)
   rmaSearch: '',            // Return registry text search
   rmaDateOut: '',           // Return registry Date Out filter (raw value)
@@ -9481,6 +9505,8 @@ async function refreshData() {
   DB.returns = ret.records;
   DB.customers = cust.customers || [];
   DB.doPhotos = (doRes && doRes.photos) || [];
+  DB.dismissedCustomers = Array.isArray(uiPrefs && uiPrefs.dismissedCustomers)
+    ? uiPrefs.dismissedCustomers.map(v => String(v).toLowerCase()) : [];
   let storedSearchHistory = Array.isArray(uiPrefs && uiPrefs.searchHistory)
     ? uiPrefs.searchHistory : [];
   try {
@@ -15604,6 +15630,15 @@ function getAllKnownCustomers() {
   return Array.from(map.values());
 }
 
+function dismissCustomerSuggestion(name) {
+  const key = String(name || '').trim().toLowerCase();
+  if (!key) return;
+  DB.dismissedCustomers = [...new Set([...DB.dismissedCustomers, key])];
+  apiPost('/api/ui-prefs', { prefs: { dismissedCustomers: DB.dismissedCustomers } }).catch(() => {});
+  const input = document.getElementById('cart-customer');
+  handleCustomerInput(input ? input.value : '');
+}
+
 /* Checkout gate: the Complete Checkout button stays disabled and the
    customer box keeps a red border until a name is typed/picked. The
    border only shows once units are staged — no nagging on an empty
@@ -15662,7 +15697,8 @@ function renderRecentCustomerChips() {
   const wrap = document.getElementById('recent-customers-chips');
   if (!wrap) return;
   wrap.innerHTML = '';
-  const known = getAllKnownCustomers();
+  const known = getAllKnownCustomers().filter(c =>
+    !DB.dismissedCustomers.includes(c.name.toLowerCase()));
   if (!known.length) return;
   const top4 = known.slice(0, 4);
 
@@ -15700,7 +15736,8 @@ function handleCustomerInput(val) {
   const dropdown = document.getElementById('cart-customer-dropdown');
   if (!dropdown) return;
   const q = (val || '').trim().toLowerCase();
-  const known = getAllKnownCustomers();
+  const known = getAllKnownCustomers().filter(c =>
+    !DB.dismissedCustomers.includes(c.name.toLowerCase()));
   const filtered = q ? known.filter(c => c.name.toLowerCase().includes(q)) : known.slice(0, 8);
 
   if (!filtered.length) {
@@ -15721,9 +15758,17 @@ function handleCustomerInput(val) {
     item.innerHTML = `
       <span style="font-weight:600;">${c.name}</span>
       <span class="autocomplete-meta">${metaStr}</span>
+      <button type="button" class="autocomplete-remove" title="Remove from suggestions"
+              aria-label="Remove ${escapeHtml(c.name)} from suggestions">&times;</button>
     `;
+    item.querySelector('.autocomplete-remove').onmousedown = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dismissCustomerSuggestion(c.name);
+    };
     item.onmousedown = (e) => {
       e.preventDefault(); // prevent input blur before click
+      if (e.target.closest('.autocomplete-remove')) return;
       selectCustomer(c.name);
     };
     dropdown.appendChild(item);

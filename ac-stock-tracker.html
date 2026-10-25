@@ -4062,8 +4062,17 @@ body.theme-light .so-sel-pill {
 .recently-reverted-item-info {
   min-width: 0;
   display: flex;
+  align-items: baseline;
   flex-direction: column;
   gap: 1px;
+}
+
+.recently-reverted-item-number {
+  width: 24px;
+  flex: 0 0 24px;
+  color: var(--text-sub);
+  font: 700 9px/1.2 var(--font-mono, monospace);
+  text-align: right;
 }
 
 .recently-reverted-item-serial {
@@ -14920,6 +14929,7 @@ function renderRecentlyRevertedList() {
   if (!list) return;
   list.innerHTML = DB.recentlyReverted.map((item, idx) => `
     <div class="recently-reverted-item">
+      <span class="recently-reverted-item-number">#${String(idx + 1).padStart(2, '0')}</span>
       <div class="recently-reverted-item-info">
         <span class="recently-reverted-item-serial">${escapeHtml(item.serial)}</span>
         <span class="recently-reverted-item-model">${escapeHtml(item.model)}</span>

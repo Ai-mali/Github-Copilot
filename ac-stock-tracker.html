@@ -4052,7 +4052,7 @@ body.theme-light .so-sel-pill {
 
 .recently-reverted-item {
   display: grid;
-  grid-template-columns: 27px minmax(0, 1fr) auto;
+  grid-template-columns: 27px minmax(0, 0.9fr) minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-height: 34px;
@@ -14948,6 +14948,7 @@ function renderRecentlyRevertedList() {
   list.innerHTML = DB.recentlyReverted.map((item, idx) => `
     <div class="recently-reverted-item">
       <span class="recently-reverted-item-number">#${String(idx + 1).padStart(2, '0')}</span>
+      <span class="recently-reverted-item-brand" title="${escapeHtml(item.brand || 'Unbranded')}">${escapeHtml(item.brand || 'Unbranded')}</span>
       <span class="recently-reverted-item-info">
         <span class="recently-reverted-item-model" title="${escapeHtml(item.model)}">${escapeHtml(item.model)}</span>
         <span class="recently-reverted-item-serial" title="${escapeHtml(item.serial)}">${escapeHtml(item.serial)}</span>

@@ -1777,6 +1777,65 @@ body.theme-light .search-filter-bar {
   background: rgba(239, 68, 68, 0.12);
 }
 
+.search-history-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+  z-index: 1200;
+  padding: 4px 0;
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.act-search-wrap {
+  position: relative;
+}
+body.theme-light .search-history-dropdown {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+.search-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 12px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.search-history-item:hover {
+  background: var(--surface3);
+  color: var(--green-bright);
+}
+.search-history-value {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-history-remove {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 16px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.search-history-remove:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red-ink);
+}
+
 .filter-pills-row {
   display: flex;
   align-items: center;
@@ -9165,6 +9224,7 @@ const DB = {
   trackBreakdownCollapsed: true, // hydrated from /api/ui-prefs
 
   trackCols: { customer: true, dateIn: true, dateOut: true, warranty: true, qty: true, status: true },
+  searchHistory: [],
   soRecentHidden: false, // hide the Recent customer chips row (ui_pref soRecent)
   rmaSearch: '',            // Return registry text search
   rmaDateOut: '',           // Return registry Date Out filter (raw value)
@@ -9421,6 +9481,13 @@ async function refreshData() {
   DB.returns = ret.records;
   DB.customers = cust.customers || [];
   DB.doPhotos = (doRes && doRes.photos) || [];
+  let storedSearchHistory = Array.isArray(uiPrefs && uiPrefs.searchHistory)
+    ? uiPrefs.searchHistory : [];
+  try {
+    const localSearchHistory = JSON.parse(localStorage.getItem('ac_stock_search_history') || '[]');
+    if (Array.isArray(localSearchHistory)) storedSearchHistory = [...storedSearchHistory, ...localSearchHistory];
+  } catch (e) {}
+  DB.searchHistory = [...new Set(storedSearchHistory.map(v => String(v).trim()).filter(Boolean))].slice(0, 30);
   DB.trackBreakdownCollapsed = (uiPrefs && uiPrefs.tlCollapsed !== undefined) ? uiPrefs.tlCollapsed : true;
   DB.trackSidebarMini = !!(uiPrefs && uiPrefs.tlMini);
   DB.soSidebarMini = !!(uiPrefs && uiPrefs.soMini);
@@ -11628,11 +11695,100 @@ function clearSearchBox(btn) {
   inp.focus();
 }
 
+const SEARCH_HISTORY_INPUT_IDS = [
+  'avail-search-side', 'avail-search', 'stockout-search-side', 'stockout-search',
+  'track-search-side', 'track-search', 'rma-search', 'act-search'
+];
+
+function persistSearchHistory() {
+  const values = DB.searchHistory.slice(0, 30);
+  try { localStorage.setItem('ac_stock_search_history', JSON.stringify(values)); } catch (e) {}
+  apiPost('/api/ui-prefs', { prefs: { searchHistory: values } }).catch(() => {});
+}
+
+function rememberSearchValue(value) {
+  const query = String(value || '').trim();
+  if (!query) return;
+  DB.searchHistory = [query, ...DB.searchHistory.filter(v => v.toLowerCase() !== query.toLowerCase())].slice(0, 30);
+  persistSearchHistory();
+}
+
+function removeSearchHistoryValue(value) {
+  const query = String(value || '').trim().toLowerCase();
+  DB.searchHistory = DB.searchHistory.filter(v => v.toLowerCase() !== query);
+  persistSearchHistory();
+  document.querySelectorAll('.search-history-dropdown').forEach(dropdown => {
+    const input = dropdown.parentElement && dropdown.parentElement.querySelector('input');
+    if (input) renderSearchHistory(input);
+  });
+}
+
+function renderSearchHistory(input) {
+  const wrap = input && input.closest('.search-box-wrap, .act-search-wrap');
+  if (!wrap) return;
+  let dropdown = wrap.querySelector('.search-history-dropdown');
+  if (!dropdown) {
+    dropdown = document.createElement('div');
+    dropdown.className = 'search-history-dropdown';
+    wrap.appendChild(dropdown);
+  }
+  const query = String(input.value || '').trim().toLowerCase();
+  const values = DB.searchHistory
+    .filter(value => !query || value.toLowerCase().includes(query))
+    .slice(0, 10);
+  dropdown.innerHTML = values.map(value => `
+    <div class="search-history-item" data-search-value="${escapeHtml(value)}">
+      <span class="search-history-value" title="${escapeHtml(value)}">${escapeHtml(value)}</span>
+      <button type="button" class="search-history-remove" data-remove-search="${escapeHtml(value)}"
+              aria-label="Remove ${escapeHtml(value)}" title="Remove">&times;</button>
+    </div>
+  `).join('');
+  dropdown.style.display = values.length ? 'block' : 'none';
+}
+
+function initSearchHistoryInputs() {
+  SEARCH_HISTORY_INPUT_IDS.forEach(id => {
+    const input = document.getElementById(id);
+    if (!input || input.dataset.searchHistoryReady) return;
+    input.dataset.searchHistoryReady = '1';
+    const wrap = input.closest('.search-box-wrap, .act-search-wrap');
+    if (!wrap) return;
+    wrap.classList.add('search-history-wrap');
+    input.addEventListener('focus', () => renderSearchHistory(input));
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') rememberSearchValue(input.value);
+    });
+    input.addEventListener('change', () => rememberSearchValue(input.value));
+    input.addEventListener('blur', () => setTimeout(() => {
+      const dropdown = wrap.querySelector('.search-history-dropdown');
+      if (dropdown) dropdown.style.display = 'none';
+    }, 180));
+    wrap.addEventListener('mousedown', event => {
+      const remove = event.target.closest('[data-remove-search]');
+      const item = event.target.closest('[data-search-value]');
+      if (remove) {
+        event.preventDefault();
+        event.stopPropagation();
+        removeSearchHistoryValue(remove.dataset.removeSearch);
+      } else if (item) {
+        event.preventDefault();
+        input.value = item.dataset.searchValue || '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        rememberSearchValue(input.value);
+        input.focus();
+      }
+    });
+  });
+}
+
 document.addEventListener('input', e => {
   const wrap = e.target && e.target.closest ? e.target.closest('.search-box-wrap, .act-search-wrap') : null;
   if (!wrap) return;
   const btn = wrap.querySelector('.search-clear-btn');
   if (btn) btn.style.display = e.target.value ? '' : 'none';
+  if (e.target.matches('input[type="text"]') && SEARCH_HISTORY_INPUT_IDS.includes(e.target.id)) {
+    renderSearchHistory(e.target);
+  }
 });
 
 function setAvailFilter(filter) {
@@ -17591,6 +17747,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!(await licenseGateCheck())) return;
 
   await refreshData();
+  initSearchHistoryInputs();
   await loadConfig();
   logEntry('info', { text: 'App initialized. Scan Engine ready.' });
   logEntry('info', { text: 'Ready: Drag & drop or load an aircon invoice photo to begin scanning.' });

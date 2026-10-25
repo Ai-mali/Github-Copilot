@@ -480,11 +480,11 @@ class RevertSaleBody(BaseModel):
 @app.post("/api/sales/revert")
 def revert_sale(body: RevertSaleBody):
     _fresh()
-    done, err = store.revert_sale(body.batch, body.customer, body.date_out)
+    done, err, units = store.revert_sale(body.batch, body.customer, body.date_out)
     if err:
         return JSONResponse({"ok": False, "error": err}, status_code=400)
     _saved()
-    return {"ok": True, "serials": done}
+    return {"ok": True, "serials": done, "units": units}
 
 
 class RescheduleBody(BaseModel):

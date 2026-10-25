@@ -7536,6 +7536,12 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               </div>
               <!-- Brand breakdown pills row -->
               <div id="cart-brand-breakdown-row" style="display:flex; flex-wrap:wrap; gap:6px; width:100%; min-height:22px; align-items:center;"></div>
+              <div class="quick-chips-row" id="reverted-serials-chip" style="margin-top:4px; display:none;">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="addRevertedSerialsToCart()" title="Add the most recently reverted units back to the dispatch cart" style="background:rgba(245, 158, 11, 0.15); border:1px solid rgba(245, 158, 11, 0.4); color:var(--amber-ink);">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h10a5 5 0 0 1 5 5v2m0 0l-3-3m3 3l3-3M3 10l3-3M3 10l3 3"/></svg>
+                  <span id="reverted-serials-count">Recently Reverted: 0 units</span>
+                </button>
+              </div>
             </div>
 
             <!-- 2. Staged Serials List (Scrollable) -->
@@ -9009,6 +9015,7 @@ const DB = {
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
   availSel: new Set(), // marquee-selected serials awaiting bulk delete
   stagedCart: [],   // client-side staging; POST /api/stock-out on checkout
+  recentlyReverted: [], // in-memory only; cleared when used or when the app closes
   trackList: [],    // GET /api/track       (sold units)
   returns: [],      // GET /api/returns
   brands: [],       // from /api/inventory
@@ -14733,10 +14740,50 @@ async function doUndoDispatch() {
     const res = await apiPost('/api/sales/revert', {
       batch: ctx.batch, customer: ctx.customer, date_out: ctx.date_out
     });
+    DB.recentlyReverted = (res.units || []).map(unit => ({
+      serial: String(unit.serial || ''),
+      model: String(unit.model || ''),
+      brand: String(unit.brand || '')
+    })).filter(unit => unit.serial && unit.model);
+    updateRevertedChip();
     showToast(`Reverted ${res.serials.length} unit(s) back to stock`, '&#8630;');
     await refreshData();
   } catch (e) {
     showToast('Revert failed: ' + e.message);
+  }
+}
+
+function updateRevertedChip() {
+  const chip = document.getElementById('reverted-serials-chip');
+  const countEl = document.getElementById('reverted-serials-count');
+  if (!chip || !countEl) return;
+  const count = DB.recentlyReverted.length;
+  chip.style.display = count ? 'block' : 'none';
+  countEl.textContent = `Recently Reverted: ${count} unit${count === 1 ? '' : 's'}`;
+}
+
+function addRevertedSerialsToCart() {
+  if (!DB.recentlyReverted.length) return;
+  let added = 0;
+  for (const item of DB.recentlyReverted) {
+    const brand = resolveItemBrand(item);
+    const modelData = DB.inventory?.[brand]?.models?.[item.model];
+    const unit = modelData?.units?.[item.serial];
+    if (!unit) continue;
+    if (DB.stagedCart.some(staged =>
+      staged.serial === item.serial && staged.model === item.model)) continue;
+    DB.stagedCart.push({ serial: item.serial, model: item.model, brand });
+    added++;
+  }
+  DB.recentlyReverted = [];
+  updateRevertedChip();
+  if (added) {
+    updateGlobalBadges();
+    renderStockOut();
+    persistStagedCart();
+    showToast(`Added ${added} reverted unit(s) to cart`, '&#10162;');
+  } else {
+    showToast('No reverted units are available.', '&#9888;');
   }
 }
 

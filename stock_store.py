@@ -975,15 +975,16 @@ class StockStore:
         return done, done_units
 
     def revert_sale(self, batch: str = "", customer: str = "",
-                    date_out: str = "") -> tuple[list[str], str]:
+                    date_out: str = "") -> tuple[list[str], str, list[dict]]:
         """Undo a whole dispatch: flip its Sold units back to In Stock and
         clear Customer/Date Out/Batch. Matches by Batch id; legacy rows
-        without one match on Customer + Date Out. Returns (serials, error)."""
+        without one match on Customer + Date Out. Returns (serials, error,
+        unit details)."""
         batch = (batch or "").strip()
         cust = (customer or "").strip().lower()
         dout = (date_out or "").strip()
         if not batch and not (cust and dout):
-            return [], "Nothing identifies this dispatch"
+            return [], "Nothing identifies this dispatch", []
         targets = [r for r in self.records
                    if str(r["Status"]).strip() == SOLD
                    and ((batch and str(r.get("Batch") or "").strip() == batch)
@@ -991,10 +992,15 @@ class StockStore:
                             and str(r.get("Customer") or "").strip().lower() == cust
                             and str(r.get("Date Out") or "").strip() == dout))]
         if not targets:
-            return [], "No sold units found for this dispatch"
-        done, models = [], set()
+            return [], "No sold units found for this dispatch", []
+        done, models, units = [], set(), []
         for rec in targets:
             row = rec["_row"]
+            units.append({
+                "serial": str(rec["Serial"]),
+                "model": str(rec["Model"]),
+                "brand": str(rec.get("Brand") or ""),
+            })
             rec["Status"] = IN_STOCK
             rec["Customer"] = ""
             rec["Date Out"] = ""
@@ -1012,7 +1018,7 @@ class StockStore:
                           count=len(done),
                           details=f"Customer: {customer} | Batch: {batch or 'legacy'} | {len(done)} units restored to stock | Serials: {', '.join(done)}")
         self.save(backup=True)
-        return done, ""
+        return done, "", units
 
     def reschedule_sale(self, batch: str = "", customer: str = "",
                         date_out: str = "", new_date: str = "") -> tuple[list[str], str]:

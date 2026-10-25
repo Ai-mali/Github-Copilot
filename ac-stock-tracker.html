@@ -7442,7 +7442,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
             </button>
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="avail-search-side" oninput="handleAvailSideSearchInput(this.value)" placeholder="Search brand...">
+              <input type="text" id="avail-search-side" autocomplete="off" oninput="handleAvailSideSearchInput(this.value)" placeholder="Search brand...">
               <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
@@ -7492,7 +7492,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                 </div>
                 <div class="search-box-wrap">
                   <span class="search-icon">&#128269;</span>
-                  <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
+                  <input type="text" id="avail-search" autocomplete="off" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
                   <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
               </div>
@@ -7532,7 +7532,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
             </button>
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand...">
+              <input type="text" id="stockout-search-side" autocomplete="off" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand...">
               <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
@@ -7575,7 +7575,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                 </div>
                 <div class="search-box-wrap">
                   <span class="search-icon">&#128269;</span>
-                  <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
+                  <input type="text" id="stockout-search" autocomplete="off" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
                   <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
               </div>
@@ -7735,7 +7735,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
           </button>
           <div class="search-box-wrap tl-side-search">
             <span class="search-icon">&#128269;</span>
-            <input type="text" id="track-search-side" oninput="handleTrackSideSearchInput(this.value)" placeholder="Search customer...">
+            <input type="text" id="track-search-side" autocomplete="off" oninput="handleTrackSideSearchInput(this.value)" placeholder="Search customer...">
             <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
           </div>
         </div>
@@ -7807,7 +7807,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
             </div>
             <div class="search-box-wrap tl-search">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Serial, model or customer...">
+              <input type="text" id="track-search" autocomplete="off" oninput="handleTrackSearchInput(this.value)" placeholder="Serial, model or customer...">
               <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
@@ -7998,7 +7998,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
           <div class="rma-toolbar">
             <div class="search-box-wrap" style="flex:1; min-width:180px;">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="rma-search" oninput="handleRmaSearch(this.value)" placeholder="Search serial (e.g. K001492), model or customer...">
+              <input type="text" id="rma-search" autocomplete="off" oninput="handleRmaSearch(this.value)" placeholder="Search serial (e.g. K001492), model or customer...">
               <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
             </div>
             <div class="search-box-wrap rma-dateout-wrap">

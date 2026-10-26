@@ -53,7 +53,17 @@ PROVIDERS = {
     },
 }
 
-PROMPT = """Extract model numbers and serial numbers from this Daikin equipment parts list.
+PROMPT = """Extract the document metadata and the model/serial rows from this full scanned document.
+The document may contain a Delivery Order (DO) and Sales Order (SO) header.
+Read these fields from the image when present:
+- do_number: Delivery Order number, digits only
+- do_date: Delivery Order date, normalized to YYYY-MM-DD
+- so_number: Sales Order number, digits only
+- so_date: Sales Order date, normalized to YYYY-MM-DD
+- confidence: a number from 0 to 100 for each extracted field, based on
+  legibility and certainty; use 0 when the field is missing.
+
+Then extract model numbers and serial numbers from the equipment parts list.
 No = the line item number in the leftmost No column.
 Model = equipment model code from the Material column (e.g. BCR50FF, FTKU60AV1F).
 Serial = every serial number after "Serial No:" — copy each one exactly as
@@ -78,8 +88,10 @@ Rules:
 - Ignore handwritten checkmarks, ticks, and pen annotations.
 - If the sheet prints a Brand/Manufacturer column or a brand name in the
   letterhead (e.g. Daikin, LG, Panasonic), put it in brand; else empty.
-Return ONLY a JSON array, one object per row, including rows without serials:
-[{"no":"","model":"","serial":"","qty":"","desc":"","brand":""}]
+Return ONLY one JSON object with this shape:
+{"document":{"do_number":"","do_date":"","so_number":"","so_date":"",
+ "confidence":{"do_number":0,"do_date":0,"so_number":0,"so_date":0}},
+ "rows":[{"no":"","model":"","serial":"","qty":"","desc":"","brand":""}]}
 """
 
 _RANGE_RE = re.compile(
@@ -92,6 +104,46 @@ _RANGE_SHORT_RE = re.compile(
 
 _MIME_BY_EXT = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
                 "webp": "image/webp", "bmp": "image/bmp"}
+
+_MONTHS = {
+    name: index for index, name in enumerate(
+        ("JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+         "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"), 1
+    )
+}
+
+
+def normalize_document_date(value: object) -> str:
+    """Return a scanned document date as ISO, or an empty string if invalid."""
+    text = str(value or "").strip().upper()
+    if not text:
+        return ""
+    text = re.sub(r"[.,]", " ", text)
+    text = re.sub(r"\s*([/-])\s*", r"\1", text)
+    text = re.sub(r"\s+", " ", text)
+    # Vision OCR occasionally confuses zero with O/C/D in a four-digit year.
+    text = re.sub(r"(?<=\b2)[OCD](?=\d{2}\b)", "0", text)
+
+    match = re.fullmatch(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", text)
+    if match:
+        year, month, day = map(int, match.groups())
+    else:
+        match = re.fullmatch(r"(\d{1,2})[-/ ]([A-Z]{3,9})[-/ ](\d{4})", text)
+        if match and match.group(2)[:3] in _MONTHS:
+            day, month_name, year = match.groups()
+            day, year = int(day), int(year)
+            month = _MONTHS[month_name[:3]]
+        else:
+            match = re.fullmatch(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})", text)
+            if not match:
+                return ""
+            day, month, year = map(int, match.groups())
+
+    try:
+        from datetime import date
+        return date(year, month, day).isoformat()
+    except (TypeError, ValueError):
+        return ""
 
 
 # ------------------------------------------------------------- config
@@ -437,6 +489,52 @@ def parse_scan_json(raw: str) -> list[dict]:
     return rows
 
 
+def parse_scan_response(raw: str) -> dict:
+    """Parse the combined document metadata and inventory rows response."""
+    text = raw.strip()
+    fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
+    if fenced:
+        text = fenced.group(1).strip()
+    decoder = json.JSONDecoder()
+    data = None
+    for m in re.finditer(r"\{", text):
+        try:
+            obj, _ = decoder.raw_decode(text, m.start())
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict) and ("rows" in obj or "document" in obj):
+            data = obj
+            break
+    if data is None:
+        # Backward compatibility for providers/models that still return the
+        # older bare-array shape.
+        return {"document": {}, "rows": parse_scan_json(raw)}
+    document = data.get("document") if isinstance(data.get("document"), dict) else {}
+    confidence = document.get("confidence")
+    if not isinstance(confidence, dict):
+        confidence = {}
+    def confidence_value(key: str) -> int:
+        try:
+            return max(0, min(100, int(float(confidence.get(key) or 0))))
+        except (TypeError, ValueError):
+            return 0
+
+    clean_doc = {
+        "do_number": re.sub(r"\D", "", str(document.get("do_number") or "")),
+        "do_date": normalize_document_date(document.get("do_date")),
+        "so_number": re.sub(r"\D", "", str(document.get("so_number") or "")),
+        "so_date": normalize_document_date(document.get("so_date")),
+        "confidence": {
+            key: confidence_value(key)
+            for key in ("do_number", "do_date", "so_number", "so_date")
+        }
+    }
+    rows = data.get("rows")
+    if not isinstance(rows, list):
+        rows = []
+    return {"document": clean_doc, "rows": parse_scan_json(json.dumps(rows))}
+
+
 def _flag_detail(flags, n_serials: int, qty: str) -> tuple:
     """Map flag codes to (severity, human-readable message). A row can
     carry several issues at once — severity is the worst of them."""
@@ -655,7 +753,7 @@ _SCANNERS = {
 }
 
 
-def scan_image(img_bytes: bytes, filename: str, log) -> list[dict]:
+def scan_image(img_bytes: bytes, filename: str, log) -> dict:
     """Run the active provider on the photo; returns parsed rows.
 
     `log` is a callable(str) — status lines for the UI log console.
@@ -675,9 +773,10 @@ def scan_image(img_bytes: bytes, filename: str, log) -> list[dict]:
     log(f"Sending to {label} ({cfg['model']}), waiting for response...")
     raw = _SCANNERS[pid](img_bytes, mime, cfg, log)
     try:
-        rows = parse_scan_json(raw)
+        result = parse_scan_response(raw)
     except Exception as ex:
         raise RuntimeError(f"Could not parse {label} response: {ex}")
+    rows = result["rows"]
     n_serial = sum(len(r["serials"]) for r in rows)
     log(f"Extract complete. {len(rows)} models and "
         f"{n_serial} serial numbers found.")
@@ -685,4 +784,4 @@ def scan_image(img_bytes: bytes, filename: str, log) -> list[dict]:
     if flagged:
         log(f"{len(flagged)} row(s) need review: "
             + ", ".join(f"No {n or '?'}" for n in flagged))
-    return rows
+    return result

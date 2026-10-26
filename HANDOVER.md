@@ -66,13 +66,13 @@ Sheets inside `daikin_stock.xlsx`:
 
 **Warranty:** `compute_warranty(date_out, months=12)` → expiry shown in UI + tracked on sold units.
 
-**Sidecar dirs next to the workbook:** `backups/` (auto snapshot on every save, pruned to 60 + `ready_exports/`), `delivery_orders/` (scanned photos, auto-purged >3 days), `ui_prefs.json` (theme, wallpaper, AI model config, API keys).
+**Sidecar files/dirs next to the workbook:** `backups/` (auto snapshot on every save, pruned to 60 + `ready_exports/`), `delivery_orders/` (Recent DO scan photos, auto-purged >3 days), `permanent_do/` (photos copied here when a scan is committed; never auto-purged; names include `DO number`, `SO number`, document date, and scan date/time), `serial_provenance.json` (model/serial links to permanent DO/SO photos), and `ui_prefs.json` (theme, wallpaper, AI model config, API keys).
 
 ## 5. Backend specifics
 
 - Global `_store_lock` serializes **all** `/api/` requests — the workbook isn't concurrency-safe; single-operator design so a lock is correct.
 - `licenseGate` middleware (in `backend.py`) returns `403 {"ok":false,"error":"license_required","state":…,"machine":…,"detail":…}` for every `/api/*` EXCEPT `/api/license/status` and `/api/license/activate`. Frontend `api()` catches `license_required` → shows gate.
-- `/api/scan` → vision AI; DO photos saved to `delivery_orders/` before scanning.
+- `/api/scan` → one full-image vision AI request that extracts document metadata (DO/SO number/date/confidence) plus inventory rows; the uploaded image is archived to `delivery_orders/` before scanning and copied to `permanent_do/` when its stock-in batch is committed.
 - `/api/config*` → AI engine router (Gemini keys etc.) stored in `ui_prefs.json`.
 - Exports: `/api/export/available` (xlsx), `/api/export/sales`, CSV paths for returns/activity — all emit `DD/MM/YYYY`; filenames use `-` separators (`/` is illegal in filenames).
 
@@ -100,7 +100,7 @@ Sheets inside `daikin_stock.xlsx`:
 
 `sys.frozen` ⇒ all writable paths resolve to **`Path(sys.executable).parent`** — the exe's folder:
 - `_resolve_db_path()` adopts the newest `*.xlsx` beside the exe if `daikin_stock.xlsx` is absent (ignores `~$*` lock files) — customers drop their real workbook with any name.
-- `license.lic`, `license_state.json`, `ui_prefs.json`, `backups/`, `delivery_orders/` all beside the exe → **install folder must be writable** (never Program Files).
+- `license.lic`, `license_state.json`, `ui_prefs.json`, `serial_provenance.json`, `backups/`, `delivery_orders/`, `permanent_do/` all beside the exe → **install folder must be writable** (never Program Files).
 - Bundled read-only assets (`ac-stock-tracker.html`, icons) resolve via `sys._MEIPASS` (`BASE` in backend.py).
 - `build-exe.bat` handles: `--collect-all cryptography` (bundled .pyd backends), `--collect-submodules webview`, `--hidden-import multipart` (FastAPI lazily imports it for UploadFile — photo upload breaks without it), uvicorn loop/protocol hidden imports.
 

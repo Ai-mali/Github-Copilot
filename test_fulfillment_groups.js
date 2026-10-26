@@ -230,7 +230,7 @@ const orig = { date: '2026-10-07', time: '07:00' };
 check('unchanged -> disabled', rsSaveDisabled(orig, { date: '2026-10-07', time: '07:00' }, TODAY));
 check('empty date -> disabled', rsSaveDisabled(orig, { date: '', time: '07:00' }, TODAY));
 check('empty time -> disabled', rsSaveDisabled(orig, { date: '2026-10-08', time: '' }, TODAY));
-check('past date -> disabled', rsSaveDisabled(orig, { date: '2026-10-05', time: '07:00' }, TODAY));
+check('past date -> enabled', !rsSaveDisabled(orig, { date: '2026-10-05', time: '07:00' }, TODAY));
 check('new date -> enabled', !rsSaveDisabled(orig, { date: '2026-10-08', time: '07:00' }, TODAY));
 check('same date, new time -> enabled', !rsSaveDisabled(orig, { date: '2026-10-07', time: '09:00' }, TODAY));
 

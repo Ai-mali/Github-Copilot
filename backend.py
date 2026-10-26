@@ -187,13 +187,15 @@ def scan(file: UploadFile):
         try:
             from stock_store import save_do_photo
             photo_name = save_do_photo(img, file.filename or "photo.jpg")
-            logs.append(f"DO Photo archived: {photo_name} (3-day rolling retention)")
+            logs.append(f"DO Photo archived: {photo_name} (kept in Recent DOs for 3 days; preserved permanently when committed)")
         except Exception as p_ex:
             logs.append(f"Photo save note: {p_ex}")
 
-        rows = scanner.scan_image(img, file.filename or "photo.jpg",
+        scan = scanner.scan_image(img, file.filename or "photo.jpg",
                                   logs.append)
-        return {"ok": True, "rows": rows, "log": logs, "photo": photo_name}
+        document = scan.get("document") or {}
+        return {"ok": True, "rows": scan.get("rows", []),
+                "document": document, "log": logs, "photo": photo_name}
     except Exception as ex:
         logs.append(f"Scan failed: {ex}")
         return JSONResponse({"ok": False, "log": logs, "error": str(ex), "photo": photo_name},
@@ -208,10 +210,13 @@ def get_delivery_orders():
 
 @app.get("/api/delivery-orders/{filename}")
 def get_delivery_order_photo(filename: str):
-    from stock_store import DO_DIR
+    from stock_store import DO_DIR, PERMANENT_DO_DIR
     safe_name = Path(filename).name
-    target = DO_DIR / safe_name
-    if not target.exists() or not target.is_file():
+    target = next((candidate for candidate in (
+        PERMANENT_DO_DIR / safe_name,
+        DO_DIR / safe_name,
+    ) if candidate.exists() and candidate.is_file()), None)
+    if target is None:
         return JSONResponse({"ok": False, "error": "Photo not found"}, status_code=404)
     ext = target.suffix.lower()
     media_type = ("image/jpeg" if ext in (".jpg", ".jpeg")
@@ -368,6 +373,7 @@ class StockInBody(BaseModel):
     date_in: str
     brand: str = ""
     auto_ids: bool = False  # ' #' unit IDs may auto-increment (non-serial rows)
+    document: dict = {}
 
 
 @app.post("/api/stock-in")
@@ -381,11 +387,12 @@ def stock_in(body: StockInBody):
     if body.brand.strip():
         added, dupes = store.stock_in_with_brand(
             body.model, serials, body.date_in, body.brand,
-            auto_ids=body.auto_ids)
+            auto_ids=body.auto_ids, document=body.document)
         needs_brand = False
     else:
         added, dupes, ok = store.stock_in(
-            body.model, serials, body.date_in, auto_ids=body.auto_ids)
+            body.model, serials, body.date_in, auto_ids=body.auto_ids,
+            document=body.document)
         needs_brand = not ok
     _saved()
     return {"added": added, "dupes": dupes, "needs_brand": needs_brand}
@@ -396,6 +403,7 @@ class StockInBatchRow(BaseModel):
     serials: list[str]
     brand: str = ""
     auto_ids: bool = False
+    document: dict = {}
     # Scan-table index the frontend uses to match per-row results back to
     # its rows. Undeclared fields are stripped at validation, so without
     # this the store fell back to list positions and the UI could never
@@ -406,6 +414,7 @@ class StockInBatchRow(BaseModel):
 class StockInBatchBody(BaseModel):
     rows: list[StockInBatchRow] = Field(min_length=1, max_length=500)
     date_in: str
+    document: dict = {}
 
 
 @app.post("/api/stock-in-batch")
@@ -415,7 +424,8 @@ def stock_in_batch(body: StockInBatchBody):
     if not body.date_in.strip():
         raise HTTPException(status_code=400, detail="date_in is required")
     res = store.stock_in_batch(
-        [r.model_dump() for r in body.rows], body.date_in)
+        [r.model_dump() for r in body.rows], body.date_in,
+        document=body.document)
     _saved()
     return res
 

@@ -3332,6 +3332,82 @@ body.theme-light .brand-accordion-header {
   background: var(--surface3);
 }
 
+.model-header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.model-header-main .tl-copy {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.go-stockout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 10px 0 3px;
+  border: 1px solid #d9dfe7;
+  border-radius: 7px;
+  background: #fff;
+  color: #1b2430;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease;
+}
+
+.go-stockout-btn-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border-radius: 5px;
+  background: #e3f4f0;
+  color: #0f766e;
+  transition: background .15s ease, color .15s ease;
+}
+
+.go-stockout-btn:hover {
+  border-color: #0f766e;
+}
+
+.go-stockout-btn:hover .go-stockout-btn-icon {
+  background: #0f766e;
+  color: #fff;
+}
+
+.go-stockout-btn:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .go-stockout-btn,
+  .go-stockout-btn-icon {
+    transition: none;
+  }
+}
+
+.go-stockout-target {
+  animation: go-stockout-target-pulse 1.4s ease-out;
+}
+
+@keyframes go-stockout-target-pulse {
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  25% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 35%, transparent); }
+}
+
 .model-accordion.is-closed .model-accordion-header {
   border-radius: 7px;
   border-bottom: none;
@@ -3669,9 +3745,9 @@ body.avail-marquee-active, body.avail-marquee-active * {
 }
 
 .unit-action-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface3);
   color: var(--text-muted);
@@ -3683,6 +3759,32 @@ body.avail-marquee-active, body.avail-marquee-active * {
   transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   font-family: inherit;
   opacity: 0.7;
+}
+
+.unit-action-btn.btn-photo-unit {
+  background: #e3f4f0;
+  border-color: #a8d8cc;
+  color: #0f766e;
+  opacity: 1;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.unit-action-btn.btn-photo-unit:hover:not(:disabled) {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.unit-action-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.unit-action-btn:focus-visible,
+.so-photo-btn:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
 }
 
 .avail-unit-card:hover .unit-action-btn {
@@ -3894,6 +3996,150 @@ body.theme-light .unit-action-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.so-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 5;
+}
+
+.so-photo-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #a8d8cc;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #e3f4f0;
+  color: #0f766e;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.so-photo-btn:hover:not(:disabled) {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.so-photo-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.stock-in-doc-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 7px 16px;
+  border-top: 1px solid #dbe1e8;
+  background: #f4f7f9;
+}
+.stock-in-doc-box {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 8px;
+  border: 1px solid #dbe1e8;
+  border-radius: 8px;
+  background: #fff;
+}
+.stock-in-doc-tag {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 6px;
+  background: #e3f4f0;
+  color: #0f766e;
+  font: 800 10px 'JetBrains Mono', monospace;
+}
+.stock-in-doc-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(92px, 1fr);
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.stock-in-doc-field { min-width: 0; }
+.stock-in-doc-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6a7b91;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.stock-in-doc-confidence {
+  font: 9px 'JetBrains Mono', monospace;
+  color: #15803d;
+}
+.stock-in-doc-confidence.low { color: #a15c07; }
+.stock-in-doc-confidence::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #15803d;
+}
+.stock-in-doc-confidence.low::before { background: #e08a00; }
+.stock-in-doc-input {
+  width: 100%;
+  height: 20px;
+  padding: 0 3px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text);
+  font: 600 11.5px 'JetBrains Mono', monospace;
+}
+.stock-in-doc-date-picker {
+  min-width: 0;
+}
+.stock-in-doc-date-picker .datepicker-trigger {
+  width: 100%;
+  height: 20px;
+  justify-content: flex-start;
+  padding: 0 3px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+  font: 600 11.5px 'JetBrains Mono', monospace;
+}
+.stock-in-doc-date-picker .datepicker-trigger:hover {
+  border-color: #dbe1e8;
+  background: #f4f7f9;
+}
+.stock-in-doc-date-picker .dp-icon-cal,
+.stock-in-doc-date-picker .dp-icon-chevron,
+.stock-in-doc-date-picker .dp-badge-relative {
+  display: none;
+}
+.stock-in-doc-date-picker .datepicker-popover {
+  right: 0;
+  left: auto;
+}
+.stock-in-doc-input:focus {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+  border-color: #0f766e;
+  background: #fff;
+}
+@media (max-width: 820px) {
+  .stock-in-doc-strip { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unit-action-btn.btn-photo-unit,
+  .so-photo-btn { transition: none; }
 }
 
 .so-card-top .serial-val {
@@ -7479,6 +7725,46 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               </button>
             </div>
           </div>
+          <div class="stock-in-doc-strip" id="stock-in-doc-strip" aria-label="Scanned document details">
+            <div class="stock-in-doc-box" role="group" aria-label="Delivery Order">
+              <span class="stock-in-doc-tag">DO</span>
+              <div class="stock-in-doc-fields">
+                <div class="stock-in-doc-field">
+                  <div class="stock-in-doc-label">Delivery Order No. <span id="scan-do-number-confidence" class="stock-in-doc-confidence">0%</span></div>
+                  <input id="scan-do-number" class="stock-in-doc-input" aria-label="Delivery Order number" placeholder="—" inputmode="numeric">
+                </div>
+                <div class="stock-in-doc-field">
+                  <div class="stock-in-doc-label">Date <span id="scan-do-date-confidence" class="stock-in-doc-confidence">Not found</span></div>
+                  <div class="custom-datepicker stock-in-doc-date-picker" id="scan-do-date-picker">
+                    <input type="hidden" id="scan-do-date" value="">
+                    <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('scan-do-date-picker', event)" aria-label="Delivery Order date">
+                      <span class="dp-icon-cal"></span><span class="dp-date-text" id="scan-do-date-display">Date</span><span class="dp-badge-relative"></span><span class="dp-icon-chevron">&#9662;</span>
+                    </button>
+                    <div class="datepicker-popover" id="scan-do-date-popover"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="stock-in-doc-box" role="group" aria-label="Sales Order">
+              <span class="stock-in-doc-tag">SO</span>
+              <div class="stock-in-doc-fields">
+                <div class="stock-in-doc-field">
+                  <div class="stock-in-doc-label">Sales Order No. <span id="scan-so-number-confidence" class="stock-in-doc-confidence">0%</span></div>
+                  <input id="scan-so-number" class="stock-in-doc-input" aria-label="Sales Order number" placeholder="—" inputmode="numeric">
+                </div>
+                <div class="stock-in-doc-field">
+                  <div class="stock-in-doc-label">Date <span id="scan-so-date-confidence" class="stock-in-doc-confidence">Not found</span></div>
+                  <div class="custom-datepicker stock-in-doc-date-picker" id="scan-so-date-picker">
+                    <input type="hidden" id="scan-so-date" value="">
+                    <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('scan-so-date-picker', event)" aria-label="Sales Order date">
+                      <span class="dp-icon-cal"></span><span class="dp-date-text" id="scan-so-date-display">Date</span><span class="dp-badge-relative"></span><span class="dp-icon-chevron">&#9662;</span>
+                    </button>
+                    <div class="datepicker-popover" id="scan-so-date-popover"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="table-container stock-in-table-scroll" style="flex:1 1 0; min-height:0;">
             <table class="data-table" id="scan-results-table">
               <thead>
@@ -8747,6 +9033,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
         <div class="modal-title" id="photo-viewer-title" style="font-size:13px;">Delivery Order Photo</div>
         <div style="font-size:11px; color:var(--text-sub);" id="photo-viewer-sub"></div>
       </div>
+
       <div style="display:flex; gap:8px;">
         <a id="photo-viewer-download" href="#" class="btn btn-ghost btn-sm" onclick="event.preventDefault(); downloadServerFile(this.href, document.getElementById('photo-viewer-title').textContent || 'photo.jpg')">&#11015; Download</a>
         <button class="btn-circle" onclick="closePhotoViewerModal()">&#10005;</button>
@@ -8754,6 +9041,43 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     </div>
     <div class="modal-body" style="overflow:auto; flex:1; display:flex; justify-content:center; align-items:center; padding:12px;">
       <img id="photo-viewer-img" src="" alt="Delivery Order Full Photo" style="max-width:100%; max-height:80vh; object-fit:contain; border-radius:4px; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+    </div>
+  </div>
+</div>
+
+<!-- Serial-linked DO/SO photo viewer. The workbook remains unchanged; links are
+     persisted in the sidecar serial_provenance.json file. -->
+<div class="modal-overlay" id="serial-photo-viewer-modal" style="z-index:10000;">
+  <div class="modal-dialog serial-photo-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="serial-photo-title"
+       style="max-width:760px; max-height:92vh; display:flex; flex-direction:column; border-radius:16px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="serial-photo-title">Photo for —</div>
+        <div id="serial-photo-subtitle" class="mono" style="font-size:11px; color:var(--text-sub);">DO — · SO —</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+        <div id="serial-photo-tabs" role="group" aria-label="Which document"
+             style="display:flex; gap:3px; padding:3px; border-radius:8px; background:#eef1f5;">
+          <button type="button" id="serial-photo-tab-do" class="btn btn-ghost btn-sm" aria-pressed="true"
+                  style="height:24px; padding:0 14px; border:0; font:700 11px 'JetBrains Mono',monospace;">DO</button>
+          <button type="button" id="serial-photo-tab-so" class="btn btn-ghost btn-sm" aria-pressed="false"
+                  style="height:24px; padding:0 14px; border:0; font:700 11px 'JetBrains Mono',monospace;">SO</button>
+        </div>
+        <button type="button" class="btn-circle" id="serial-photo-close" aria-label="Close">&#10005;</button>
+      </div>
+    </div>
+    <div class="modal-body" style="overflow:auto; flex:1; padding:16px; background:#f4f7f9;">
+      <div id="serial-photo-stage" style="min-height:300px; border:1px solid #dbe1e8; border-radius:6px; background:#f4f7f9; display:flex; align-items:center; justify-content:center; padding:10px;">
+        <img id="serial-photo-img" alt="" style="max-width:100%; max-height:70vh; object-fit:contain; border-radius:4px;">
+        <div id="serial-photo-error" style="display:none; text-align:center; color:var(--text-sub); font-size:12px;">
+          Photo unavailable. The archived file may have been removed.
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span id="serial-photo-file" class="mono" style="font-size:11px; color:var(--text-sub);"></span>
+      <a id="serial-photo-open" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Open in new tab</a>
     </div>
   </div>
 </div>
@@ -9272,6 +9596,9 @@ const DB = {
   activities: [],   // GET /api/activity
   backups: [],      // GET /api/backups
   photoFile: null,  // File picked for scanning
+  scanPhoto: '',     // archived photo filename for the current scan batch
+  scanDocument: { do_number: '', do_date: '', so_number: '', so_date: '',
+    confidence: { do_number: 0, do_date: 0, so_number: 0, so_date: 0 } },
   config: null,     // GET /api/config      (active provider/model)
   doPhotos: [],     // GET /api/delivery-orders (last 3 days)
 };
@@ -10345,6 +10672,52 @@ function jumpToDuplicateInStock(brand, model, serial) {
   }, 120);
 }
 
+function goToStockOutModel(brand, model) {
+  const brandData = DB.inventory && DB.inventory[brand];
+  if (!brandData || !brandData.models || !brandData.models[model]) {
+    showToast(`Could not find ${model} in Stock Out.`, '&#9888;');
+    return;
+  }
+
+  // Keep the exact brand selected while using the model search to open the
+  // matching accordion. Clear any prior search expansion state so an older
+  // query cannot keep the target model collapsed.
+  DB.soFilter = brand;
+  DB.soDateFilter = '';
+  _soSavedExpandState = null;
+  Object.keys(DB.inventory || {}).forEach(b => {
+    delete DB.inventory[b].soSearchOpen;
+    Object.keys(DB.inventory[b].models || {}).forEach(m => {
+      delete DB.inventory[b].models[m].soSearchOpen;
+    });
+  });
+
+  const dateClear = document.getElementById('so-datein-clear');
+  if (dateClear) dateClear.style.display = 'none';
+  const searchInput = document.getElementById('stockout-search');
+  if (searchInput) searchInput.value = model;
+
+  switchTab('stock-out');
+  setTimeout(() => {
+    renderBrandPills();
+    updateGlobalBadges();
+    renderStockOut(model);
+    requestAnimationFrame(() => {
+      const target = Array.from(document.querySelectorAll(
+        '#stockout-brands-container .model-accordion[data-stockout-brand][data-stockout-model]'
+      )).find(el =>
+        el.dataset.stockoutBrand === brand && el.dataset.stockoutModel === model
+      );
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.add('go-stockout-target');
+        setTimeout(() => target.classList.remove('go-stockout-target'), 1400);
+      }
+    });
+    showToast(`Showing ${model} in Stock Out (${brand})`, '&#128205;');
+  }, 80);
+}
+
 function jumpToDuplicateInTrack(serial) {
   closeDuplicateLocationModal();
   // Reset leftover customer/warranty filters — a stale pill filter would
@@ -10920,6 +11293,7 @@ document.addEventListener('paste', e => {
 function processLoadedPhoto(file) {
   if (!file) return;
   DB.photoFile = file;
+  DB.scanPhoto = '';
   const reader = new FileReader();
   reader.onload = function(evt) {
     const img = document.getElementById('preview-photo-img');
@@ -11004,10 +11378,77 @@ function clearPreview(e) {
   if (previewDisplay) previewDisplay.style.display = 'none';
   if (emptyState) emptyState.style.display = 'flex';
   DB.photoFile = null;
+  DB.scanPhoto = '';
+  DB.scanDocument = { do_number: '', do_date: '', so_number: '', so_date: '',
+    confidence: { do_number: 0, do_date: 0, so_number: 0, so_date: 0 } };
+  renderScanDocument();
 
   logEntry('info', { text: 'Preview cleared. Ready for new photo.' });
   showToast('Preview cleared.');
 }
+
+function renderScanDocument() {
+  const doc = DB.scanDocument || {};
+  const confidence = doc.confidence || {};
+  [
+    ['do_number', 'scan-do-number', 'scan-do-number-confidence'],
+    ['do_date', 'scan-do-date', 'scan-do-date-confidence'],
+    ['so_number', 'scan-so-number', 'scan-so-number-confidence'],
+    ['so_date', 'scan-so-date', 'scan-so-date-confidence']
+  ].forEach(([key, inputId, confidenceId]) => {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(confidenceId);
+    const value = String(doc[key] || '');
+    const pct = Number(confidence[key] || 0);
+    if (input && document.activeElement !== input) input.value = value;
+    if (label) {
+      label.textContent = pct ? `${pct}%` : (value ? 'Captured' : 'Not found');
+      label.classList.toggle('low', pct < 90);
+    }
+  });
+  syncScanDocumentDatePicker('scan-do-date-picker', 'scan-do-date', 'do_date', 'Delivery Order');
+  syncScanDocumentDatePicker('scan-so-date-picker', 'scan-so-date', 'so_date', 'Sales Order');
+}
+
+function syncScanDocumentDatePicker(pickerId, inputId, key, label) {
+  const value = String((DB.scanDocument || {})[key] || '');
+  if (typeof initDatePicker !== 'function') return;
+  initDatePicker(pickerId, value || null, date => {
+    DB.scanDocument[key] = date;
+    renderScanDocument();
+  }, { inputId, placeholder: 'Date' });
+}
+
+function readScanDocumentFromInputs() {
+  const value = id => (document.getElementById(id)?.value || '').trim();
+  DB.scanDocument = {
+    do_number: value('scan-do-number').replace(/\D/g, ''),
+    do_date: value('scan-do-date'),
+    so_number: value('scan-so-number').replace(/\D/g, ''),
+    so_date: value('scan-so-date'),
+    confidence: DB.scanDocument?.confidence || {}
+  };
+}
+
+function scanDocumentPayload() {
+  readScanDocumentFromInputs();
+  const d = DB.scanDocument || {};
+  return {
+    do_photo: DB.scanPhoto,
+    do_no: d.do_number || '',
+    do_date: d.do_date || '',
+    so_photo: d.so_photo || '',
+    so_no: d.so_number || '',
+    so_date: d.so_date || ''
+  };
+}
+
+['scan-do-number', 'scan-do-date', 'scan-so-number', 'scan-so-date'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    readScanDocumentFromInputs();
+    renderScanDocument();
+  });
+});
 
 async function triggerScanSimulation() {
   const laser = document.getElementById('scan-laser');
@@ -11050,6 +11491,9 @@ async function triggerScanSimulation() {
 
     (res.log || []).forEach(l => addLog(l, res.ok ? 'log-line-ok' : 'log-line-warn'));
     if (res.ok) {
+      DB.scanPhoto = res.photo || '';
+      DB.scanDocument = res.document || DB.scanDocument;
+      renderScanDocument();
       DB.scans = res.rows.map(r => ({
         no: r.no, model: r.model, serials: r.serials,
         qty: r.qty, flag: r.flag || '', desc: r.desc || '',
@@ -11065,6 +11509,7 @@ async function triggerScanSimulation() {
     } else {
       showToast('Scan failed \u2014 see Status Log.');
     }
+
     fetchDoPhotos();
   } catch (e) {
     if (e.name === 'AbortError' || scanAbortController?.signal?.aborted) {
@@ -11384,7 +11829,8 @@ async function commitScanRow(idx, assignedBrand = null) {
       model: row.model,
       serials: serials,
       auto_ids: isNonSerialRow(row),
-      brand: row.brand || ''
+      brand: row.brand || '',
+      document: scanDocumentPayload()
     };
     if (assignedBrand) {
       payload.brand = assignedBrand;
@@ -11477,14 +11923,16 @@ async function commitSelectedOrAllScans() {
       model: row.model,
       serials: commitSerialsOf(row),
       brand: brand || row.brand || '',
-      auto_ids: isNonSerialRow(row)
+      auto_ids: isNonSerialRow(row),
+      document: scanDocumentPayload()
     };
   });
 
   try {
     let res = await apiPost('/api/stock-in-batch', {
       ...scanBatchFields(),
-      rows: buildRows('')
+      rows: buildRows(''),
+      document: scanDocumentPayload()
     });
 
     if (res.needs_brands && res.needs_brands.length) {
@@ -11498,7 +11946,8 @@ async function commitSelectedOrAllScans() {
       }
       res = await apiPost('/api/stock-in-batch', {
         ...scanBatchFields(),
-        rows: buildRows(brand)
+        rows: buildRows(brand),
+        document: scanDocumentPayload()
       });
       if (res.needs_brands && res.needs_brands.length) {
         showToast('Brand mapping still incomplete — commit cancelled.', '&#9888;');
@@ -12237,6 +12686,8 @@ function renderAvailable(searchTerm) {
       const cardsHtml = matchedSerials.map(s => {
         const staged = isSerialInCart(s, mKey);
         const unitData = (mData.units && mData.units[s]) || {};
+        const documentLink = unitData.document || {};
+        const hasPhoto = !!(documentLink.doPhoto || documentLink.soPhoto);
         const unitDateIn = unitData.dateIn || mData.dateIn || '';
         const secondHand = !!unitData.secondHand;
         const isSerialMatch = q && s.toLowerCase().includes(q);
@@ -12252,6 +12703,11 @@ function renderAvailable(searchTerm) {
             <div class="avail-card-header">
               <span class="serial-text">${serialDisplay}</span>
               <div class="avail-card-actions" onclick="event.stopPropagation()">
+                <button type="button" class="unit-action-btn btn-photo-unit" ${hasPhoto ? `onclick="event.stopPropagation(); openSerialPhotoViewer('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(JSON.stringify(documentLink)))}')"` : 'disabled'} aria-label="${hasPhoto ? `View DO/SO photo for ${escapeHtml(s)}` : 'No DO/SO photo'}" title="${hasPhoto ? 'View DO/SO photo' : 'No DO/SO photo'}">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="2.5"></rect><circle cx="9" cy="10" r="1.8"></circle><path d="M21 16l-5-5-8 8"></path>
+                  </svg>
+                </button>
                 <button type="button" class="unit-action-btn btn-edit-unit" onclick="event.stopPropagation(); openEditUnitModal('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(unitDateIn))}')" title="Edit unit (${escapeHtml(s)})">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"></path>
@@ -12296,11 +12752,21 @@ function renderAvailable(searchTerm) {
 
       const modelDisplay = modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey);
       modelsHtml += `
-        <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
+        <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}" data-available-brand="${escapeHtml(brandKey)}" data-available-model="${escapeHtml(mKey)}">
           <div class="model-accordion-header" onclick="toggleModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
-            <div style="display:flex; align-items:center;">
+            <div class="model-header-main">
               <span class="model-index-pill">${mData.idx || '01'}</span>
               <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeHtml(escapeJs(mKey))}')" title="Click to copy model">${modelDisplay}</span>
+              <button type="button" class="go-stockout-btn" onclick="event.stopPropagation(); goToStockOutModel('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')" aria-label="Go to stock out for ${escapeHtml(mKey)}" title="Go to Stock Out">
+                <span class="go-stockout-btn-icon" aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <path d="M16 17l5-5-5-5"></path>
+                    <path d="M21 12H9"></path>
+                  </svg>
+                </span>
+                Stock out
+              </button>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${badgeClass}">${badgeText}</span>
@@ -12817,6 +13283,11 @@ function clearSOSearch() {
     input.value = '';
     input.focus();
   }
+  // Clearing the model/serial query returns to the complete depot view,
+  // rather than leaving the brand selected by a previous navigation.
+  DB.soFilter = 'ALL';
+  renderBrandPills();
+  updateGlobalBadges();
   const clearBtn = document.getElementById('so-search-clear');
   if (clearBtn) clearBtn.style.display = 'none';
   renderStockOut('');
@@ -12902,6 +13373,8 @@ function renderStockOut(searchTerm) {
       const chipsHtml = serials.map(s => {
         const staged = isSerialInCart(s, mKey);
         const unitData = (mData.units && mData.units[s]) || {};
+        const documentLink = unitData.document || {};
+        const hasPhoto = !!(documentLink.doPhoto || documentLink.soPhoto);
         const unitDateIn = unitData.dateIn || mData.dateIn || '';
         const secondHand = !!unitData.secondHand;
         const isSerialMatch = q && s.toLowerCase().includes(q);
@@ -12915,7 +13388,14 @@ function renderStockOut(searchTerm) {
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
               <span class="serial-val">${serialDisplay}</span>
-              <span class="indicator-dot"></span>
+              <span class="so-card-actions">
+                <button type="button" class="so-photo-btn" ${hasPhoto ? `onclick="event.stopPropagation(); openSerialPhotoViewer('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(JSON.stringify(documentLink)))}')"` : 'disabled'} aria-label="${hasPhoto ? `View DO/SO photo for ${escapeHtml(s)}` : 'No DO/SO photo'}" title="${hasPhoto ? 'View DO/SO photo' : 'No DO/SO photo'}">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="2.5"></rect><circle cx="9" cy="10" r="1.8"></circle><path d="M21 16l-5-5-8 8"></path>
+                  </svg>
+                </button>
+                <span class="indicator-dot"></span>
+              </span>
             </div>
             <div class="so-card-bottom">
               <span>IN: ${dateDisplay}</span>
@@ -12942,7 +13422,7 @@ function renderStockOut(searchTerm) {
         : (mData.open === true);
 
       modelsHtml += `
-        <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
+        <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}" data-stockout-brand="${escapeHtml(brandKey)}" data-stockout-model="${escapeHtml(mKey)}">
           <div class="model-accordion-header" onclick="toggleSOModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
@@ -16734,6 +17214,93 @@ function openPhotoViewer(filename, timestamp, sizeStr) {
   modal.classList.add('open');
 }
 
+let serialPhotoOpener = null;
+let serialPhotoDocument = null;
+let serialPhotoWhich = 'DO';
+
+function setSerialPhotoTab(which) {
+  serialPhotoWhich = which;
+  const doc = serialPhotoDocument || {};
+  const file = which === 'DO' ? doc.doPhoto : doc.soPhoto;
+  const tabDo = document.getElementById('serial-photo-tab-do');
+  const tabSo = document.getElementById('serial-photo-tab-so');
+  const img = document.getElementById('serial-photo-img');
+  const error = document.getElementById('serial-photo-error');
+  const fileLabel = document.getElementById('serial-photo-file');
+  const open = document.getElementById('serial-photo-open');
+  const url = file ? `/api/delivery-orders/${encodeURIComponent(file)}` : '';
+  if (tabDo) tabDo.setAttribute('aria-pressed', String(which === 'DO'));
+  if (tabSo) tabSo.setAttribute('aria-pressed', String(which === 'SO'));
+  if (img) {
+    img.onerror = () => {
+      img.style.display = 'none';
+      if (error) error.style.display = 'block';
+    };
+    img.onload = () => {
+      img.style.display = 'block';
+      if (error) error.style.display = 'none';
+    };
+    img.alt = `${which} photo`;
+    img.src = url;
+    img.style.display = url ? 'block' : 'none';
+  }
+  if (error) error.style.display = url ? 'none' : 'block';
+  if (fileLabel) fileLabel.textContent = file || 'Photo unavailable';
+  if (open) {
+    open.href = url || '#';
+    open.style.pointerEvents = url ? '' : 'none';
+    open.style.opacity = url ? '' : '.45';
+  }
+}
+
+function openSerialPhotoViewer(serial, model, documentJson, opener = null) {
+  const modal = document.getElementById('serial-photo-viewer-modal');
+  if (!modal) return;
+  serialPhotoOpener = opener || document.activeElement;
+  try {
+    serialPhotoDocument = typeof documentJson === 'string'
+      ? JSON.parse(documentJson) : (documentJson || {});
+  } catch (e) {
+    serialPhotoDocument = {};
+  }
+  const doc = serialPhotoDocument;
+  const title = document.getElementById('serial-photo-title');
+  const sub = document.getElementById('serial-photo-subtitle');
+  const tabDo = document.getElementById('serial-photo-tab-do');
+  const tabSo = document.getElementById('serial-photo-tab-so');
+  if (title) title.textContent = `Photo for ${serial}`;
+  if (sub) sub.textContent = `DO ${doc.doNo || '—'} · SO ${doc.soNo || '—'}`;
+  if (tabDo) tabDo.disabled = !doc.doPhoto;
+  if (tabSo) tabSo.disabled = !doc.soPhoto;
+  const initial = doc.doPhoto ? 'DO' : (doc.soPhoto ? 'SO' : 'DO');
+  setSerialPhotoTab(initial);
+  modal.classList.add('open');
+  document.getElementById('serial-photo-close')?.focus();
+}
+
+function closeSerialPhotoViewer() {
+  const modal = document.getElementById('serial-photo-viewer-modal');
+  if (modal) modal.classList.remove('open');
+  if (serialPhotoOpener && typeof serialPhotoOpener.focus === 'function') {
+    serialPhotoOpener.focus();
+  }
+  serialPhotoOpener = null;
+  serialPhotoDocument = null;
+}
+
+document.getElementById('serial-photo-tab-do')?.addEventListener('click', () => setSerialPhotoTab('DO'));
+document.getElementById('serial-photo-tab-so')?.addEventListener('click', () => setSerialPhotoTab('SO'));
+document.getElementById('serial-photo-close')?.addEventListener('click', closeSerialPhotoViewer);
+document.getElementById('serial-photo-viewer-modal')?.addEventListener('mousedown', e => {
+  if (e.target === e.currentTarget) closeSerialPhotoViewer();
+});
+document.addEventListener('keydown', e => {
+  const modal = document.getElementById('serial-photo-viewer-modal');
+  if (modal && modal.classList.contains('open') && e.key === 'Escape') {
+    closeSerialPhotoViewer();
+  }
+});
+
 function closePhotoViewerModal() {
   const modal = document.getElementById('photo-viewer-modal');
   if (modal) modal.classList.remove('open');
@@ -16777,7 +17344,8 @@ function initDatePicker(id, initialDateStr = null, onChange = null, opts = {}) {
     onChange,
     picked: !!initialDateStr,
     minDate: md,
-    presets: Array.isArray(opts.presets) && opts.presets.length ? opts.presets : null
+    presets: Array.isArray(opts.presets) && opts.presets.length ? opts.presets : null,
+    placeholder: opts.placeholder || ''
   };
 
   updateDatePickerDisplay(id);
@@ -16847,6 +17415,19 @@ function updateDatePickerDisplay(id) {
     }
     if (input) input.value = isoText;
     syncCartTimeVisibility();
+  } else if (id === 'scan-do-date-picker' || id === 'scan-so-date-picker') {
+    const prefix = id === 'scan-do-date-picker' ? 'scan-do-date' : 'scan-so-date';
+    const container = document.getElementById(id);
+    const disp = document.getElementById(`${prefix}-display`);
+    const rel = container ? container.querySelector('.dp-badge-relative') : null;
+    const input = document.getElementById(prefix);
+    if (container) container.classList.toggle('picked', !!state.picked);
+    if (disp) disp.textContent = state.picked ? dateText : (state.placeholder || 'Date');
+    if (rel) {
+      rel.textContent = state.picked ? relText : '';
+      rel.style.display = (state.picked && relText) ? 'inline-block' : 'none';
+    }
+    if (input) input.value = state.picked ? isoText : '';
   } else {
     // Generic filter pickers: placeholder until picked, then a batch chip
     const container = document.getElementById(id);
@@ -16865,7 +17446,7 @@ function updateDatePickerDisplay(id) {
       rel.textContent = state.picked ? relText : '';
       rel.style.display = (state.picked && relText) ? 'inline-block' : 'none';
     }
-    if (input) input.value = isoText;
+    if (input) input.value = state.picked ? isoText : '';
   }
 }
 

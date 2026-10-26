@@ -20,6 +20,7 @@ Supplier column is automatically migrated and removed if present.
 
 import calendar
 import datetime
+import json
 import os
 from pathlib import Path
 import re
@@ -51,6 +52,8 @@ def _resolve_db_path() -> Path:
 DB_PATH = _resolve_db_path()
 BACKUP_DIR = DB_PATH.parent / "backups"
 DO_DIR = DB_PATH.parent / "delivery_orders"
+PERMANENT_DO_DIR = DB_PATH.parent / "permanent_do"
+SERIAL_PROVENANCE_PATH = DB_PATH.parent / "serial_provenance.json"
 
 RECORD_HEADER = ["Brand", "Model", "Serial",
                  "Date In", "Status", "Customer", "Date Out", "Batch"]
@@ -193,6 +196,50 @@ def save_do_photo(img_bytes: bytes, original_name: str = "do_scan.jpg") -> str:
     return dest_name
 
 
+def preserve_do_photo(filename: str, document: dict | None = None) -> str:
+    """Copy a recent scan into permanent_do with document identity in its name."""
+    safe_name = Path(filename or "").name
+    if not safe_name:
+        return ""
+    source = DO_DIR / safe_name
+    if not source.is_file():
+        return ""
+    PERMANENT_DO_DIR.mkdir(parents=True, exist_ok=True)
+    document = document or {}
+    do_no = re.sub(r"\D", "", str(document.get("do_no") or "")) or "UNKNOWN"
+    so_no = re.sub(r"\D", "", str(document.get("so_no") or "")) or "UNKNOWN"
+    doc_date = re.sub(r"\D", "", str(
+        document.get("do_date") or document.get("so_date") or "")) or "UNKNOWN"
+    scan_time = datetime.datetime.fromtimestamp(
+        source.stat().st_mtime).strftime("%Y%m%d_%H%M%S")
+    suffix = Path(safe_name).suffix.lower() or ".jpg"
+    target_name = f"DO_{do_no}_SO_{so_no}_{doc_date}_{scan_time}{suffix}"
+    target = PERMANENT_DO_DIR / target_name
+    if not target.exists():
+        shutil.copy2(source, target)
+    return target.name
+
+
+def _provenance_key(model: str, serial: str) -> str:
+    return f"{str(model).strip().upper()}::{str(serial).strip().lower()}"
+
+
+def load_serial_provenance(path: Path = SERIAL_PROVENANCE_PATH) -> dict:
+    try:
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        pass
+    return {}
+
+
+def save_serial_provenance(data: dict, path: Path = SERIAL_PROVENANCE_PATH):
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
 class StockStore:
     def __init__(self, path: Path | None = None):
         self.path = Path(path or DB_PATH)
@@ -205,6 +252,8 @@ class StockStore:
         self.returns: list[dict] = []            # parsed Returns rows
         self.activities: list[dict] = []         # parsed ActivityLog rows
         self._pair_set: set[tuple] = set()       # (UPPER model, lower serial) — a unit is unique per model+serial pair
+        self.provenance_path = self.path.parent / "serial_provenance.json"
+        self.serial_provenance = load_serial_provenance(self.provenance_path)
         self.load()
 
     # ---------------------------------------------------------- load/save
@@ -665,7 +714,9 @@ class StockStore:
             m["serials"].append(s)
             m["units"][s] = {
                 "dateIn": str(rec.get("Date In", "")).strip(),
-                "secondHand": self._pair_key(model, s) in restocked
+                "secondHand": self._pair_key(model, s) in restocked,
+                "document": dict(self.serial_provenance.get(
+                    _provenance_key(model, s), {}))
             }
         # keep zero-stock brands visible too
         for brand in self.brands:
@@ -739,7 +790,8 @@ class StockStore:
 
     # ---------------------------------------------------------- mutations
     def stock_in(self, model: str, serials: list[str],
-                 date_in: str, auto_ids: bool = False):
+                 date_in: str, auto_ids: bool = False,
+                 document: dict | None = None):
         """Shared save path for manual entry and scanned rows."""
         serials = [s.strip() for s in serials if s.strip()]
         if not model.strip() or not serials:
@@ -750,11 +802,13 @@ class StockStore:
             return [], dupes, False
         self._write_rows(self._canon_model(model), brand,
                          new_serials, date_in)
+        self.link_serial_document(model, new_serials, document)
         return new_serials, dupes, True
 
     def stock_in_with_brand(self, model: str, serials: list[str],
                             date_in: str, brand: str,
-                            auto_ids: bool = False):
+                            auto_ids: bool = False,
+                            document: dict | None = None):
         """Completes stock_in for a Model the user just assigned a Brand."""
         brand = self._canon_brand(brand)
         if not brand:
@@ -764,7 +818,34 @@ class StockStore:
             [s.strip() for s in serials if s.strip()], model, auto_ids)
         self._write_rows(self._canon_model(model), brand,
                          new_serials, date_in)
+        self.link_serial_document(model, new_serials, document)
         return new_serials, dupes
+
+    def link_serial_document(self, model: str, serials: list[str],
+                             document: dict | None = None):
+        """Persist scan-photo provenance outside the workbook schema.
+
+        TODO: add DO/SO numbers and both document files when the scanner
+        exposes those values; the current scanner archives the uploaded photo
+        only and does not yet return separate DO/SO documents.
+        """
+        if not document or not document.get("do_photo"):
+            return
+        permanent_photo = preserve_do_photo(
+            str(document.get("do_photo") or ""), document)
+        if not permanent_photo:
+            return
+        entry = {
+            "doPhoto": permanent_photo,
+            "soPhoto": str(document.get("so_photo") or ""),
+            "doNo": str(document.get("do_no") or ""),
+            "soNo": str(document.get("so_no") or ""),
+            "doDate": str(document.get("do_date") or ""),
+            "soDate": str(document.get("so_date") or "")
+        }
+        for serial in serials:
+            self.serial_provenance[_provenance_key(model, serial)] = entry
+        save_serial_provenance(self.serial_provenance, self.provenance_path)
 
     def _canon_brand(self, brand: str) -> str:
         """Match an existing brand case-insensitively so 'daikin' and
@@ -877,7 +958,8 @@ class StockStore:
             if save:
                 self.save(backup=True)
 
-    def stock_in_batch(self, rows: list[dict], date_in: str) -> dict:
+    def stock_in_batch(self, rows: list[dict], date_in: str,
+                       document: dict | None = None) -> dict:
         """Commit many rows in ONE save — a 40-row scan produces one
         before/after backup pair instead of flooding the rotation.
 
@@ -918,6 +1000,8 @@ class StockStore:
             if new_serials:
                 self._write_rows(self._canon_model(model), brand,
                                  new_serials, date_in, save=False)
+                self.link_serial_document(model, new_serials,
+                                          row.get("document") or document)
             results.append({"idx": idx, "model": model,
                             "added": new_serials, "dupes": dupes,
                             "brand": brand})

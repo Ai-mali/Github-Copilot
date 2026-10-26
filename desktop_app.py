@@ -1204,6 +1204,89 @@ class DesktopApi:
         if u.startswith(("http://", "https://", "tg://")):
             webbrowser.open(u)
 
+    def read_clipboard_image(self):
+        """Read an image from the local Windows clipboard without WebView permission prompts."""
+        try:
+            from PIL import ImageGrab
+            from io import BytesIO
+            import base64
+
+            image = ImageGrab.grabclipboard()
+            if image is None or not hasattr(image, 'save'):
+                return None
+
+            output = BytesIO()
+            image.convert('RGBA').save(output, format='PNG')
+            encoded = base64.b64encode(output.getvalue()).decode('ascii')
+            return 'data:image/png;base64,' + encoded
+        except Exception:
+            return None
+
+    def save_photo(self, file_name: str):
+        """Show a native Save As dialog and copy an archived photo unchanged."""
+        try:
+            import shutil
+            import webview
+
+            safe_name = os.path.basename(str(file_name or "").strip())
+            if not safe_name or safe_name in ('.', '..'):
+                return None
+
+            source = None
+            for folder in ('permanent_do', 'delivery_orders'):
+                candidate = os.path.join(_APP_DIR, folder, safe_name)
+                if os.path.isfile(candidate):
+                    source = candidate
+                    break
+            if not source or not self._window:
+                return None
+
+            prefs_path = os.path.join(_APP_DIR, 'ui_prefs.json')
+            prefs = {}
+            try:
+                import json
+                with open(prefs_path, 'r', encoding='utf-8') as f:
+                    loaded = json.load(f)
+                    if isinstance(loaded, dict):
+                        prefs = loaded
+            except (OSError, ValueError):
+                pass
+
+            last_folder = prefs.get('photo_save_folder')
+            if not isinstance(last_folder, str) or not os.path.isdir(last_folder):
+                last_folder = os.path.join(os.path.expanduser('~'), 'Documents')
+            if not os.path.isdir(last_folder):
+                last_folder = os.path.expanduser('~')
+
+            result = self._window.create_file_dialog(
+                webview.SAVE_DIALOG,
+                directory=last_folder,
+                save_filename=safe_name,
+                file_types=('Image files (*.png;*.jpg;*.jpeg;*.webp)',))
+            if not result:
+                return None
+            target = result if isinstance(result, str) else result[0]
+            if not target:
+                return None
+            target = os.path.abspath(str(target))
+            source_ext = os.path.splitext(safe_name)[1]
+            if not os.path.splitext(target)[1] and source_ext:
+                target += source_ext
+
+            shutil.copyfile(source, target)
+            prefs['photo_save_folder'] = os.path.dirname(target)
+            try:
+                import json
+                tmp_path = prefs_path + '.tmp'
+                with open(tmp_path, 'w', encoding='utf-8') as f:
+                    json.dump(prefs, f, indent=2)
+                os.replace(tmp_path, prefs_path)
+            except OSError:
+                pass
+            return target
+        except Exception:
+            return None
+
     def save_file(self, filename: str, content_b64: str):
         """Native Save-As dialog then write file. Returns saved path or None."""
         try:

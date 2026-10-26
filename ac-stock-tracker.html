@@ -8,6 +8,27 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+.serial-photo-download {
+  display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 12px 0 3px;
+  border:1px solid #d9dfe7; border-radius:7px; background:#fff; color:#1b2430;
+  font-size:11.5px; font-weight:600; transition:border-color .15s;
+}
+.serial-photo-download-icon {
+  display:grid; place-items:center; width:22px; height:22px; border-radius:5px;
+  background:#e3f4f0; color:#0f766e; transition:background .15s, color .15s;
+}
+.serial-photo-download:hover:not(:disabled) { border-color:#0f766e; }
+.serial-photo-download:hover:not(:disabled) .serial-photo-download-icon {
+  background:#0f766e; color:#fff;
+}
+.serial-photo-download:disabled { opacity:.6; cursor:progress; }
+.serial-photo-download:focus-visible {
+  outline:2px solid #0f766e; outline-offset:2px;
+}
+@media (prefers-reduced-motion:reduce) {
+  .serial-photo-download, .serial-photo-download-icon { transition:none; }
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -2417,6 +2438,55 @@ body.theme-light .scan-serial-badge-dupe {
   user-select: none;
 }
 
+.dropzone-paste-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px 0 8px;
+  border: 1px solid rgba(22, 163, 74, .45);
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .7);
+  backdrop-filter: blur(4px);
+  color: #14532d;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  z-index: 2;
+}
+
+.dropzone-paste-button:hover:not(:disabled) {
+  background: #fff;
+  border-color: #0f766e;
+  color: #0f766e;
+}
+
+.dropzone-paste-button:disabled {
+  opacity: .6;
+  cursor: progress;
+}
+
+.dropzone-paste-button:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+
+.dropzone-paste-message {
+  min-height: 16px;
+  color: #c62828;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropzone-paste-button { transition: none; }
+}
+
 .image-preview-dropzone:hover {
   border-color: rgba(38, 208, 124, 0.55);
   background: rgba(38, 208, 124, 0.03);
@@ -4067,6 +4137,9 @@ body.theme-light .unit-action-btn {
   flex: 1;
 }
 .stock-in-doc-field { min-width: 0; }
+.stock-in-doc-date-field {
+  text-align: center;
+}
 .stock-in-doc-label {
   display: flex;
   align-items: center;
@@ -4076,6 +4149,9 @@ body.theme-light .unit-action-btn {
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
+}
+.stock-in-doc-date-field .stock-in-doc-label {
+  justify-content: center;
 }
 .stock-in-doc-confidence {
   font: 9px 'JetBrains Mono', monospace;
@@ -4107,7 +4183,7 @@ body.theme-light .unit-action-btn {
 .stock-in-doc-date-picker .datepicker-trigger {
   width: 100%;
   height: 20px;
-  justify-content: flex-start;
+  justify-content: center;
   padding: 0 3px;
   border-color: transparent;
   background: transparent;
@@ -7543,6 +7619,13 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               <!-- Drag and Drop Image Uploader / Previewer -->
               <input type="file" id="image-file-input" accept="image/*,.pdf" style="display:none;" onchange="handleFileSelected(event)">
               <div class="image-preview-dropzone" id="image-dropzone" onclick="handleDropzoneClick(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" title="Click, Drag & Drop, or Ctrl+V paste photo here">
+                <button type="button" class="dropzone-paste-button" id="dropzone-paste-button" title="Paste the image from your clipboard (same as Ctrl+V)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="8" y="3" width="8" height="4" rx="1"></rect>
+                    <path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path>
+                  </svg>
+                  <span>Paste</span>
+                </button>
                 <!-- Empty State -->
                 <div class="dropzone-empty-state" id="dropzone-empty-state">
                   <div class="dropzone-icon-circle">
@@ -7554,6 +7637,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                   </div>
                   <div class="dropzone-title">Drag & Drop Photo to Scan</div>
                   <div class="dropzone-sub">Drop aircon invoice, packing slip or parts photo here, click to browse, or Ctrl+V to paste</div>
+                  <div class="dropzone-paste-message" id="dropzone-paste-message" role="status" aria-live="polite"></div>
                   <div class="dropzone-tags">
                     <span class="dropzone-tag">JPG</span>
                     <span class="dropzone-tag">PNG</span>
@@ -7733,7 +7817,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                   <div class="stock-in-doc-label">Delivery Order No. <span id="scan-do-number-confidence" class="stock-in-doc-confidence">0%</span></div>
                   <input id="scan-do-number" class="stock-in-doc-input" aria-label="Delivery Order number" placeholder="—" inputmode="numeric">
                 </div>
-                <div class="stock-in-doc-field">
+                <div class="stock-in-doc-field stock-in-doc-date-field">
                   <div class="stock-in-doc-label">Date <span id="scan-do-date-confidence" class="stock-in-doc-confidence">Not found</span></div>
                   <div class="custom-datepicker stock-in-doc-date-picker" id="scan-do-date-picker">
                     <input type="hidden" id="scan-do-date" value="">
@@ -7752,7 +7836,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                   <div class="stock-in-doc-label">Sales Order No. <span id="scan-so-number-confidence" class="stock-in-doc-confidence">0%</span></div>
                   <input id="scan-so-number" class="stock-in-doc-input" aria-label="Sales Order number" placeholder="—" inputmode="numeric">
                 </div>
-                <div class="stock-in-doc-field">
+                <div class="stock-in-doc-field stock-in-doc-date-field">
                   <div class="stock-in-doc-label">Date <span id="scan-so-date-confidence" class="stock-in-doc-confidence">Not found</span></div>
                   <div class="custom-datepicker stock-in-doc-date-picker" id="scan-so-date-picker">
                     <input type="hidden" id="scan-so-date" value="">
@@ -9057,13 +9141,16 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
         <div id="serial-photo-subtitle" class="mono" style="font-size:11px; color:var(--text-sub);">DO — · SO —</div>
       </div>
       <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
-        <div id="serial-photo-tabs" role="group" aria-label="Which document"
-             style="display:flex; gap:3px; padding:3px; border-radius:8px; background:#eef1f5;">
-          <button type="button" id="serial-photo-tab-do" class="btn btn-ghost btn-sm" aria-pressed="true"
-                  style="height:24px; padding:0 14px; border:0; font:700 11px 'JetBrains Mono',monospace;">DO</button>
-          <button type="button" id="serial-photo-tab-so" class="btn btn-ghost btn-sm" aria-pressed="false"
-                  style="height:24px; padding:0 14px; border:0; font:700 11px 'JetBrains Mono',monospace;">SO</button>
-        </div>
+        <button type="button" id="serial-photo-download" class="serial-photo-download"
+                title="Download this photo (choose where to save)">
+          <span class="serial-photo-download-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12M7 10l5 5 5-5"></path><path d="M4 20h16"></path>
+            </svg>
+          </span>
+          <span>Download</span>
+        </button>
         <button type="button" class="btn-circle" id="serial-photo-close" aria-label="Close">&#10005;</button>
       </div>
     </div>
@@ -9077,6 +9164,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     </div>
     <div class="modal-footer">
       <span id="serial-photo-file" class="mono" style="font-size:11px; color:var(--text-sub);"></span>
+      <span id="serial-photo-download-status" aria-live="polite" style="font-size:11px; font-weight:600;"></span>
       <a id="serial-photo-open" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Open in new tab</a>
     </div>
   </div>
@@ -11290,8 +11378,84 @@ document.addEventListener('paste', e => {
   }
 });
 
+function setDropzonePasteMessage(message) {
+  const el = document.getElementById('dropzone-paste-message');
+  if (el) el.textContent = message || '';
+}
+
+async function pastePhotoFromClipboard() {
+  const button = document.getElementById('dropzone-paste-button');
+  if (button) button.disabled = true;
+  try {
+    const desktopApi = window.pywebview && window.pywebview.api;
+    if (desktopApi && typeof desktopApi.read_clipboard_image === 'function') {
+      const dataUrl = await desktopApi.read_clipboard_image();
+      if (!dataUrl) {
+        setDropzonePasteMessage('No image on the clipboard. Copy a photo or screenshot first.');
+        return;
+      }
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
+      processLoadedPhoto(new File([blob], `clipboard-${stamp}.png`, { type: 'image/png' }));
+      return;
+    }
+
+    if (!navigator.clipboard || typeof navigator.clipboard.read !== 'function') {
+      setDropzonePasteMessage('Paste button is not supported here. Press Ctrl+V instead.');
+      return;
+    }
+
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const type = (item.types || []).find(t => t.startsWith('image/'));
+      if (!type) continue;
+      const blob = await item.getType(type);
+      const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
+      const ext = type === 'image/jpeg' ? 'jpg' : (type.split('/')[1] || 'png');
+      const file = new File([blob], `clipboard-${stamp}.${ext}`, { type });
+      processLoadedPhoto(file);
+      return;
+    }
+    setDropzonePasteMessage('No image on the clipboard. Copy a photo or screenshot first.');
+  } catch (error) {
+    if (error && error.name === 'NotAllowedError') {
+      setDropzonePasteMessage('Clipboard access was blocked. Press Ctrl+V instead.');
+    } else {
+      console.error('Clipboard image read failed:', error);
+      setDropzonePasteMessage('Could not read the clipboard. Press Ctrl+V instead.');
+    }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+const dropzonePasteButton = document.getElementById('dropzone-paste-button');
+if (dropzonePasteButton) {
+  dropzonePasteButton.addEventListener('click', event => {
+    event.stopPropagation();
+    pastePhotoFromClipboard();
+  });
+  dropzonePasteButton.addEventListener('keydown', event => {
+    event.stopPropagation();
+  });
+}
+
+/* Enter submits a pasted/loaded photo only on Stock In. Keep text fields,
+   dialogs, and other tabs on their normal keyboard behavior. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || DB.activeTab !== 'stock-in' || isScanningActive) return;
+  const t = e.target;
+  if (t && (t.isContentEditable ||
+      (t.closest && t.closest('input, textarea, select, button, [contenteditable]')))) return;
+  if (!DB.photoFile) return;
+  e.preventDefault();
+  handleScanButtonClick();
+});
+
 function processLoadedPhoto(file) {
   if (!file) return;
+  setDropzonePasteMessage('');
   DB.photoFile = file;
   DB.scanPhoto = '';
   const reader = new FileReader();
@@ -17216,21 +17380,21 @@ function openPhotoViewer(filename, timestamp, sizeStr) {
 
 let serialPhotoOpener = null;
 let serialPhotoDocument = null;
-let serialPhotoWhich = 'DO';
+let serialPhotoFile = '';
 
-function setSerialPhotoTab(which) {
-  serialPhotoWhich = which;
-  const doc = serialPhotoDocument || {};
-  const file = which === 'DO' ? doc.doPhoto : doc.soPhoto;
-  const tabDo = document.getElementById('serial-photo-tab-do');
-  const tabSo = document.getElementById('serial-photo-tab-so');
+function setSerialPhotoFile(file) {
   const img = document.getElementById('serial-photo-img');
   const error = document.getElementById('serial-photo-error');
   const fileLabel = document.getElementById('serial-photo-file');
   const open = document.getElementById('serial-photo-open');
+  const status = document.getElementById('serial-photo-download-status');
   const url = file ? `/api/delivery-orders/${encodeURIComponent(file)}` : '';
-  if (tabDo) tabDo.setAttribute('aria-pressed', String(which === 'DO'));
-  if (tabSo) tabSo.setAttribute('aria-pressed', String(which === 'SO'));
+  serialPhotoFile = file || '';
+  if (status) {
+    status.textContent = '';
+    status.className = '';
+    status.style.color = '';
+  }
   if (img) {
     img.onerror = () => {
       img.style.display = 'none';
@@ -17240,7 +17404,7 @@ function setSerialPhotoTab(which) {
       img.style.display = 'block';
       if (error) error.style.display = 'none';
     };
-    img.alt = `${which} photo`;
+    img.alt = 'Archived DO/SO photo';
     img.src = url;
     img.style.display = url ? 'block' : 'none';
   }
@@ -17250,6 +17414,62 @@ function setSerialPhotoTab(which) {
     open.href = url || '#';
     open.style.pointerEvents = url ? '' : 'none';
     open.style.opacity = url ? '' : '.45';
+  }
+}
+
+function setSerialPhotoDownloadStatus(message, isError = false) {
+  const status = document.getElementById('serial-photo-download-status');
+  if (!status) return;
+  status.textContent = message || '';
+  status.style.color = message ? (isError ? '#c62828' : '#0f766e') : '';
+}
+
+async function downloadSerialPhoto() {
+  const file = serialPhotoFile;
+  if (!file) return;
+  const button = document.getElementById('serial-photo-download');
+  if (button) button.disabled = true;
+  try {
+    const desktopApi = window.pywebview && window.pywebview.api;
+    if (desktopApi && typeof desktopApi.save_photo === 'function') {
+      const savedPath = await desktopApi.save_photo(file);
+      if (savedPath) setSerialPhotoDownloadStatus(`Saved to ${file}`);
+      return;
+    }
+
+    const url = `/api/delivery-orders/${encodeURIComponent(file)}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const blob = await response.blob();
+    if (window.showSaveFilePicker) {
+      const ext = (file.match(/\.([a-z0-9]+)$/i) || ['', 'png'])[1].toLowerCase();
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+        : ext === 'webp' ? 'image/webp' : 'image/png';
+      const handle = await window.showSaveFilePicker({
+        suggestedName: file,
+        types: [{ description: 'Image', accept: { [mime]: [`.${ext}`] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      setSerialPhotoDownloadStatus(`Saved to ${file}`);
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = file;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
+    setSerialPhotoDownloadStatus('Downloaded to your Downloads folder');
+  } catch (error) {
+    if (error && error.name === 'AbortError') return;
+    console.error('Photo download failed:', error);
+    setSerialPhotoDownloadStatus('Could not save the photo. Try again.', true);
+  } finally {
+    if (button) button.disabled = false;
   }
 }
 
@@ -17266,14 +17486,14 @@ function openSerialPhotoViewer(serial, model, documentJson, opener = null) {
   const doc = serialPhotoDocument;
   const title = document.getElementById('serial-photo-title');
   const sub = document.getElementById('serial-photo-subtitle');
-  const tabDo = document.getElementById('serial-photo-tab-do');
-  const tabSo = document.getElementById('serial-photo-tab-so');
+  const status = document.getElementById('serial-photo-download-status');
   if (title) title.textContent = `Photo for ${serial}`;
   if (sub) sub.textContent = `DO ${doc.doNo || '—'} · SO ${doc.soNo || '—'}`;
-  if (tabDo) tabDo.disabled = !doc.doPhoto;
-  if (tabSo) tabSo.disabled = !doc.soPhoto;
-  const initial = doc.doPhoto ? 'DO' : (doc.soPhoto ? 'SO' : 'DO');
-  setSerialPhotoTab(initial);
+  if (status) {
+    status.textContent = '';
+    status.style.color = '';
+  }
+  setSerialPhotoFile(doc.doPhoto || doc.soPhoto || '');
   modal.classList.add('open');
   document.getElementById('serial-photo-close')?.focus();
 }
@@ -17286,10 +17506,10 @@ function closeSerialPhotoViewer() {
   }
   serialPhotoOpener = null;
   serialPhotoDocument = null;
+  serialPhotoFile = '';
 }
 
-document.getElementById('serial-photo-tab-do')?.addEventListener('click', () => setSerialPhotoTab('DO'));
-document.getElementById('serial-photo-tab-so')?.addEventListener('click', () => setSerialPhotoTab('SO'));
+document.getElementById('serial-photo-download')?.addEventListener('click', downloadSerialPhoto);
 document.getElementById('serial-photo-close')?.addEventListener('click', closeSerialPhotoViewer);
 document.getElementById('serial-photo-viewer-modal')?.addEventListener('mousedown', e => {
   if (e.target === e.currentTarget) closeSerialPhotoViewer();

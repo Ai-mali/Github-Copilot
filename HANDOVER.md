@@ -135,3 +135,65 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 4. Ship: exe + xlsx in a writable folder. Warn about SmartScreen (unsigned) — *More info → Run anyway*.
 
 **Never commit/ship:** `license_private.pem`, `license_state.json`, `*.lic`, real customer workbooks.
+
+## 12. Latest session update
+
+- Corrected the DO/SO strip markup so only the two date fields use centered alignment.
+- Delivery Order and Sales Order number fields, tags, and boxes remain left-aligned.
+- On the Stock In screen only, pressing Enter after loading/pasting an image triggers the Scan action; inputs, buttons, dialogs, and other tabs retain normal Enter behavior.
+- Added the Option D frosted-pill Paste button inside the Stock In drop zone. It uses `navigator.clipboard.read()`, reuses `processLoadedPhoto(File)`, shows inline clipboard errors, and does not trigger the drop zone's file browser.
+- Desktop Paste now uses a local `DesktopApi.read_clipboard_image()` Pillow bridge first, so the Windows WebView2 permission popup is avoided; browser/non-desktop mode retains the Clipboard API fallback.
+- Added Pillow to `requirements.txt` for the local clipboard image bridge.
+- Replaced the serial-linked photo viewer's DO/SO toggle with a styled Download button. The viewer now always shows the archived scan image, and desktop downloads use a native Save As dialog with the last-used folder remembered in `ui_prefs.json`; browser fallback uses `showSaveFilePicker()` or Downloads.
+- The viewer download preserves the archived file bytes with `shutil.copyfile`, supports cancel without feedback, and shows inline save success/error status that clears when another serial is opened.
+- Rebuilt `dist\VRE AC Stock.exe` with the native clipboard bridge on 2026-10-26. SHA-256: `51E976116642FFAFCEC3D02C4E80549F47BB834608A788FBA82490FA6CEF507C`.
+- The rebuilt executable was smoke-launched successfully and remained running for 12 seconds before being closed.
+- Rebuilt `dist\VRE AC Stock.exe` again on 2026-10-26 after the serial-photo Download/Save As viewer change. SHA-256: `EE124850865740847538D3D759695BD242FA0AA511C19C9F4231EDE7014CA714`.
+- The latest executable was smoke-launched successfully and remained running for 12 seconds before being closed.
+- Frontend syntax, `git diff --check`, Python compilation, and all 73 regression tests pass.
+- The user explicitly requested that Force Scan not be implemented yet; the current version remains the one to use.
+- This session pins the current source and built executable after the photo-viewer Download/Save As change. The new commit/tag and push details are recorded below after publishing.
+
+## 13. Continuation prompt for another Copilot account
+
+Copy the prompt below into the next Copilot chat after opening this repository:
+
+> You are continuing work on the **VRE AC Stock** Windows desktop inventory application in this repository. Read `HANDOVER.md` completely before changing anything. Treat the repository files and this handover as the source of truth; do not assume the previous chat is available.
+>
+> Current stable source/build point: use the latest commit and tag recorded in §12 above. The built executable is `dist\VRE AC Stock.exe`; its latest SHA-256 is `EE124850865740847538D3D759695BD242FA0AA511C19C9F4231EDE7014CA714`.
+>
+> Important current behavior:
+> - Stock In scans the full image once and extracts inventory rows plus DO/SO numbers, dates, and confidence.
+> - Scanned photos first go to `delivery_orders` (Recent DOs, 3-day retention).
+> - When scanned stock is committed, the photo is copied to `permanent_do`, which is never auto-purged.
+> - Permanent filenames include DO number, SO number, document date, scan date, and scan time.
+> - `serial_provenance.json` links committed model/serial pairs to the permanent photo and DO/SO metadata.
+> - Existing legacy provenance filenames may remain in the JSON; preserve compatibility unless explicitly migrating them.
+> - Visible dates use `DD/MM/YYYY`; API/picker values use ISO `YYYY-MM-DD`; workbook dates remain `MM/DD/YYYY`.
+> - The DO/SO date picker is editable for correcting an OCR result. The date confidence label and date value are centered in the current UI.
+>
+> Current status and user decision:
+> - The current build includes the background local clipboard bridge and the serial-photo viewer Download button with native Save As.
+> - Do not implement Force Scan yet. The user's next planned feature is a low-confidence recovery flow: when scan confidence is below 60%, warn or offer Force Scan, then improve extraction with image enlargement, sharpening, contrast/deskew, and targeted DO/SO/model/serial crops or retries. This is only a future requirement, not current behavior.
+> - Inspect `git status` and the latest commit/tag before making changes.
+>
+> Required working rules:
+> - Read relevant code before editing and preserve existing behavior.
+> - Do not rebuild the executable unless explicitly requested.
+> - Run targeted syntax/tests after changes; the normal regression suite is `node test_fulfillment_groups.js` (currently 73 tests).
+> - Do not alter the Excel schema for provenance work.
+> - Do not expose or commit credentials, private keys, real licenses, or real customer data.
+> - If the user asks for a build, build with `build-exe.bat`, smoke-test the executable, report its path and SHA-256, and only then mark the task complete.
+>
+> Before ending every work session, update this `HANDOVER.md` with:
+> 1. what changed,
+> 2. what remains unfinished,
+> 3. tests/builds run and their results,
+> 4. the current commit/tag/build state,
+> 5. any user decisions or constraints from that session.
+>
+> Do not claim completion while any requested change or verification remains unfinished. Use the existing project conventions and keep changes surgical.
+
+## 14. Handover maintenance rule
+
+This file is the persistent cross-account context. **Update it at the end of every future implementation or build session**, including the current working-tree status, latest stable commit/tag, tests, build artifact/checksum when applicable, remaining work, and the next continuation prompt. Keep the continuation prompt aligned with the actual repository state; do not leave stale claims about a build or completed feature.

@@ -152,7 +152,10 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 - The latest executable was smoke-launched successfully and remained running for 12 seconds before being closed.
 - Frontend syntax, `git diff --check`, Python compilation, and all 73 regression tests pass.
 - The user explicitly requested that Force Scan not be implemented yet; the current version remains the one to use.
-- This session pins the current source and built executable after the photo-viewer Download/Save As change. The new commit/tag and push details are recorded below after publishing.
+- This session pins the current source and built executable after the photo-viewer Download/Save As change.
+- Published stable source commit: `2e3762f` (`Finalize photo download build`).
+- Published annotated tag: `stable-20261026-photo-download`.
+- Pushed to `origin/main` and `origin/stable-20261026-photo-download` at `https://github.com/Ai-mali/Github-Copilot`.
 
 ## 13. Continuation prompt for another Copilot account
 
@@ -160,7 +163,7 @@ Copy the prompt below into the next Copilot chat after opening this repository:
 
 > You are continuing work on the **VRE AC Stock** Windows desktop inventory application in this repository. Read `HANDOVER.md` completely before changing anything. Treat the repository files and this handover as the source of truth; do not assume the previous chat is available.
 >
-> Current stable source/build point: use the latest commit and tag recorded in §12 above. The built executable is `dist\VRE AC Stock.exe`; its latest SHA-256 is `EE124850865740847538D3D759695BD242FA0AA511C19C9F4231EDE7014CA714`.
+> Current stable source/build point: commit `2e3762f`, annotated tag `stable-20261026-photo-download`. The built executable is `dist\VRE AC Stock.exe`; its latest SHA-256 is `EE124850865740847538D3D759695BD242FA0AA511C19C9F4231EDE7014CA714`.
 >
 > Important current behavior:
 > - Stock In scans the full image once and extracts inventory rows plus DO/SO numbers, dates, and confidence.

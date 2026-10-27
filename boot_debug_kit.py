@@ -30,6 +30,20 @@ _LOG_PATH = os.environ.get("BOOT_DEBUG_FILE") or os.path.join(
 _log_lock = threading.Lock()
 
 
+def _frame_debug_marker(message):
+    if os.environ.get("VRE_DEBUG_FRAME", "").strip() != "1":
+        return
+    try:
+        app_dir = (os.path.dirname(sys.executable)
+                   if getattr(sys, "frozen", False)
+                   else os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(app_dir, "frame_debug.log"),
+                  "a", encoding="ascii") as f:
+            f.write("%s\n" % message)
+    except Exception:
+        pass
+
+
 def t(msg):
     """Milestone log. No-op unless BOOT_DEBUG is set."""
     if not _DBG:
@@ -426,6 +440,15 @@ def make_on_started(splash, app_url, backend_healthy, bring_to_front=None,
                     bring_to_front()
             except Exception as e:
                 t("pre-reveal bring_to_front raised %r" % (e,))
+            try:
+                _frame_debug_marker("pre-reveal fit begin")
+                if enable_window_features:
+                    enable_window_features()
+                _frame_debug_marker("pre-reveal fit end")
+            except Exception as e:
+                t("pre-reveal enable_window_features raised %r" % (e,))
+                _frame_debug_marker(
+                    "pre-reveal fit end error=%s" % type(e).__name__)
             try:
                 if hider is not None:
                     hider.reveal()

@@ -177,6 +177,7 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 - Added `VRE_NO_THICKFRAME=1` support in `desktop_app.py` and enabled it in `run_desktop_laptop.vbs` for native-frame diagnosis; default launch behavior is unchanged. `_desktop_window_geometry()` now converts the centered physical work-area origin to CSS-pixel x/y before passing it to pywebview. No executable rebuild was performed.
 - Privacy cleanup: the two DO/SO preview HTML files are ignored and are not part of this branch. Validation for this session: 73 Node tests, Python compilation, embedded JavaScript syntax, and `git diff --check` passed.
 - Added a defensive Win32 client-area fit for work-area-sized windows. After native frame setup and custom maximize, it measures the client rectangle in screen coordinates and adjusts only the outer rectangle until all sides are within 1px; smaller windows are unchanged, the taskbar remains protected, and optional `VRE_DEBUG_FRAME=1` diagnostics go to ignored `frame_debug.log`.
+- Moved the existing frame setup/fit callback to run once before reveal while the window is hidden, with explicit debug markers around that pass; the original post-reveal pass remains as an idempotent compatibility fallback.
 
 ## 13. Continuation prompt for another Copilot account
 

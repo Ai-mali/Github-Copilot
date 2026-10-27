@@ -179,6 +179,9 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 - Added a defensive Win32 client-area fit for work-area-sized windows. After native frame setup and custom maximize, it measures the client rectangle in screen coordinates and adjusts only the outer rectangle until all sides are within 1px; smaller windows are unchanged, the taskbar remains protected, and optional `VRE_DEBUG_FRAME=1` diagnostics go to ignored `frame_debug.log`.
 - Moved the existing frame setup/fit callback to run once before reveal while the window is hidden, with explicit debug markers around that pass; the original post-reveal pass remains as an idempotent compatibility fallback.
 - Startup recording showed a residual visible resize before the pre-reveal pass, so the same idempotent frame setup now also runs immediately after the HWND is hidden and before the first `w.show()`; the later pre-reveal and post-reveal passes remain fail-open safeguards.
+- **Stable laptop-fit point (2026-10-27):** on the real 1920x1080 laptop at 150% scaling, the usable work area is 1280x680 CSS px (approximately 294x156 mm excluding the taskbar). The latest EXE opens fully fitted from startup without the visible expansion; source and EXE use the same frameless client-area fit.
+- Current layout testing should use `run_desktop_laptop.vbs`, which sets the 1280x680 preview and no-thickframe diagnostic mode. Continue making UI adjustments against that fixed target; do not rebuild the EXE unless explicitly requested. The latest shipped test EXE was built from commit `7059600`, size 86,600,009 bytes, SHA-256 `C2ED41F95F2E1552A2B07739E75A8AF3B33D6C8E0BC1D5460BCCEDEC0C772195`.
+- Stable source branch is `ui-fit-laptop-v2`; `main` remains unchanged. The branch includes DPI-aware work-area sizing, corrected CSS-pixel placement, native-frame opt-out, runtime client-area correction, pre-show fitting to prevent startup flicker, compact 40px desktop header, safe resize zones, and privacy exclusions for real DO/SO preview/runtime data. No CSS/business-logic/Excel schema changes were made for the window-fit work.
 
 ## 13. Continuation prompt for another Copilot account
 
@@ -186,7 +189,7 @@ Copy the prompt below into the next Copilot chat after opening this repository:
 
 > You are continuing work on the **VRE AC Stock** Windows desktop inventory application in this repository. Read `HANDOVER.md` completely before changing anything. Treat the repository files and this handover as the source of truth; do not assume the previous chat is available.
 >
-> Current stable source/build point: commit `2e3762f`, annotated tag `stable-20261026-photo-download`. The built executable is `dist\VRE AC Stock.exe`; its latest SHA-256 is `EE124850865740847538D3D759695BD242FA0AA511C19C9F4231EDE7014CA714`.
+> Current stable source/build point: branch `ui-fit-laptop-v2`, commit `7059600` (`Fit window before first show`). The latest built executable is `dist\VRE AC Stock.exe`; SHA-256 `C2ED41F95F2E1552A2B07739E75A8AF3B33D6C8E0BC1D5460BCCEDEC0C772195`. Use `run_desktop_laptop.vbs` for ongoing 1280x680 CSS-pixel layout testing; do not rebuild unless explicitly requested.
 >
 > Important current behavior:
 > - Stock In scans the full image once and extracts inventory rows plus DO/SO numbers, dates, and confidence.

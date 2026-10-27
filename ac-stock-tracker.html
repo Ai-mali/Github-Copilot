@@ -4175,6 +4175,164 @@ body.theme-light .unit-action-btn {
 #view-available .tl-side-list { flex: 1 1 auto; }
 .avail-left-col { flex: 1; min-width: 0; }
 
+/* Available Stock desktop density: keep the title and controls on one line
+   while leaving the stacked/mobile layout unchanged. */
+@media (min-width: 1121px) {
+  #view-available .view-header {
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+  #view-available .view-header > div:first-child {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+  #view-available .view-title {
+    font-size: 20px;
+    white-space: nowrap;
+  }
+  #view-available .view-subtitle {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  #view-available .units-pill {
+    height: 22px;
+    padding: 2px 8px;
+    gap: 4px;
+  }
+  #view-available .units-pill .units-num {
+    font-size: 12px;
+  }
+  #view-available .units-pill .units-lbl {
+    font-size: 10px;
+  }
+  #view-available .hdr-search-side {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: 0;
+  }
+  #view-available .hdr-search-side > .btn,
+  #view-available .hdr-search-side > .filters-toggle-btn {
+    height: 28px;
+    min-height: 28px;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 11px;
+  }
+  #view-available .hdr-search-side .search-group {
+    flex: 1 1 260px;
+    max-width: 360px;
+    min-width: 190px;
+    height: 28px;
+  }
+  #view-available .hdr-search-side .search-group .datepicker-trigger {
+    padding: 4px 6px;
+  }
+  #view-available .hdr-search-side .search-group .search-box-wrap {
+    flex: 1 1 auto;
+    min-width: 110px;
+  }
+  #view-available .hdr-search-side .filters-toggle-btn {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  #view-available .avail-export-btn {
+    width: 30px;
+    min-width: 30px;
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: center;
+  }
+  #view-available .avail-export-label {
+    display: none;
+  }
+}
+
+@media (min-width: 1500px) {
+  #view-available .avail-export-btn {
+    width: auto;
+    min-width: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  #view-available .avail-export-label {
+    display: inline;
+  }
+}
+
+@media (min-width: 1121px) {
+  #view-available .brand-accordion {
+    margin-bottom: 6px;
+    border-radius: 8px;
+  }
+  #view-available .brand-accordion-header {
+    height: 34px;
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 4px 10px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-left-width: 3px;
+  }
+  #view-available .brand-accordion.is-closed .brand-accordion-header {
+    border-radius: 7px;
+  }
+  #view-available .brand-title-group {
+    gap: 5px;
+    min-width: 0;
+  }
+  #view-available .brand-name-tag {
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+  #view-available .brand-title-group > span[style*="font-size:12px"] {
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+  #view-available .brand-metrics-pill {
+    gap: 5px;
+    min-height: 20px;
+    padding: 2px 7px;
+    box-shadow: none;
+  }
+  #view-available .brand-metrics-pill .bmp-seg {
+    gap: 3px;
+  }
+  #view-available .brand-metrics-pill .bmp-num {
+    font-size: 11px;
+  }
+  #view-available .brand-metrics-pill .bmp-label,
+  #view-available .brand-metrics-pill .bmp-total {
+    font-size: 10px;
+  }
+  #view-available .brand-metrics-pill .bmp-divider {
+    height: 10px;
+  }
+  #view-available .brand-expand-btn {
+    height: 22px;
+    padding: 0 8px;
+    gap: 4px;
+    font-size: 10px;
+  }
+  #view-available .brand-peek {
+    height: 21px;
+    min-height: 21px;
+    box-sizing: border-box;
+    gap: 4px;
+    padding: 2px 10px 3px;
+  }
+  #view-available .brand-peek .bp-chip {
+    height: 16px;
+    padding: 0 5px;
+    font-size: 10px;
+    line-height: 14px;
+  }
+  #view-available .brand-peek .bp-more {
+    font-size: 10px;
+  }
+}
+
 /* Search bar inside the new right columns — cancel the section-edge bleed
    (base rule uses -20px margins + 20px padding to span full section width) */
 .avail-left-col > .search-filter-bar,
@@ -8169,9 +8327,9 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
               </button>
-              <button class="btn btn-ghost btn-sm" onclick="exportAvailCsv()" title="Export the per-model stock summary workbook">
+              <button class="btn btn-ghost btn-sm avail-export-btn" onclick="exportAvailCsv()" title="Export Excel" aria-label="Export Excel">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Export Excel
+                <span class="avail-export-label">Export Excel</span>
               </button>
             </div>
           </div>

@@ -411,6 +411,20 @@ def make_on_started(splash, app_url, backend_healthy, bring_to_front=None,
             hider.hide()                      # BEFORE show(), so no visible frame can ever exist
             t("hider.active=%s" % (hider.active,))
 
+            # Apply native frame geometry before the first show. Some Windows
+            # builds briefly paint a newly-created pywebview window despite the
+            # later cloak/opacity guard, so this is the earliest safe point at
+            # which the HWND exists and can be fitted.
+            try:
+                _frame_debug_marker("pre-show fit begin")
+                if enable_window_features:
+                    enable_window_features()
+                _frame_debug_marker("pre-show fit end")
+            except Exception as e:
+                t("pre-show enable_window_features raised %r" % (e,))
+                _frame_debug_marker(
+                    "pre-show fit end error=%s" % type(e).__name__)
+
             w.show()
             t("w.show() returned")
 

@@ -178,6 +178,7 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 - Privacy cleanup: the two DO/SO preview HTML files are ignored and are not part of this branch. Validation for this session: 73 Node tests, Python compilation, embedded JavaScript syntax, and `git diff --check` passed.
 - Added a defensive Win32 client-area fit for work-area-sized windows. After native frame setup and custom maximize, it measures the client rectangle in screen coordinates and adjusts only the outer rectangle until all sides are within 1px; smaller windows are unchanged, the taskbar remains protected, and optional `VRE_DEBUG_FRAME=1` diagnostics go to ignored `frame_debug.log`.
 - Moved the existing frame setup/fit callback to run once before reveal while the window is hidden, with explicit debug markers around that pass; the original post-reveal pass remains as an idempotent compatibility fallback.
+- Startup recording showed a residual visible resize before the pre-reveal pass, so the same idempotent frame setup now also runs immediately after the HWND is hidden and before the first `w.show()`; the later pre-reveal and post-reveal passes remain fail-open safeguards.
 
 ## 13. Continuation prompt for another Copilot account
 

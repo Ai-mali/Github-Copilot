@@ -185,6 +185,7 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 - The attempted millimeter-based preview was removed because Windows monitor millimeter metadata produced an incorrect 944x501 CSS window. For reliable layout matching, use `run_desktop_laptop_screen.vbs` (or `.bat`), which explicitly previews the laptop's measured 1280x680 CSS-pixel work area. The existing `run_desktop_laptop.vbs` remains equivalent.
 - Fixed the laptop launcher title-bar discrepancy: when `VRE_NO_THICKFRAME=1`, `desktop_app.py` now explicitly clears the native caption, border, dialog-frame, and thick-frame style bits. This keeps the VBS preview frameless like the intended laptop layout; no EXE rebuild was made.
 - Confirmed on 2026-10-27 with the desktop screenshot: `run_desktop_laptop.vbs` now visually matches the laptop EXE startup—frameless, flush to the 1280x680 usable area, with the custom header and taskbar-preserving client fit. Continue using this VBS for layout tuning; rebuild the EXE only when explicitly requested.
+- Reduced the fixed resize hit zones to minimize interference with the Stock In scan preview: top/bottom/left/right edges are now 2px (about 0.5mm CSS-equivalent), and all corners are 4x4px. Resize behavior remains available while the scan drop area keeps its full usable width.
 
 ## 13. Continuation prompt for another Copilot account
 

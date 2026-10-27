@@ -20,6 +20,7 @@ ui_prefs.json
 boot_capture.py
 test_v2.py
 boot_debug*.log
+frame_debug.log
 boot_frames*/
 bf_*/
 _*.png

@@ -304,6 +304,10 @@ _u32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int,
                               wintypes.UINT]
 _u32.GetWindowRect.restype = wintypes.BOOL
 _u32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+_u32.GetClientRect.restype = wintypes.BOOL
+_u32.GetClientRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+_u32.ClientToScreen.restype = wintypes.BOOL
+_u32.ClientToScreen.argtypes = [wintypes.HWND, ctypes.POINTER(_POINT)]
 _k32.OpenProcess.restype = wintypes.HANDLE
 _k32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
 _k32.TerminateProcess.restype = wintypes.BOOL
@@ -466,6 +470,140 @@ except AttributeError:
     pass
 
 
+def _frame_debug_enabled():
+    return os.environ.get("VRE_DEBUG_FRAME", "").strip() == "1"
+
+
+def _frame_debug_path():
+    return os.path.join(_APP_DIR, "frame_debug.log")
+
+
+def _rect_tuple(rect):
+    return (int(rect.left), int(rect.top), int(rect.right), int(rect.bottom))
+
+
+def _client_rect_screen(hwnd):
+    client = wintypes.RECT()
+    if not _u32.GetClientRect(hwnd, ctypes.byref(client)):
+        return None
+    origin = _POINT(client.left, client.top)
+    if not _u32.ClientToScreen(hwnd, ctypes.byref(origin)):
+        return None
+    width = int(client.right - client.left)
+    height = int(client.bottom - client.top)
+    return (int(origin.x), int(origin.y),
+            int(origin.x + width), int(origin.y + height))
+
+
+def _extended_frame_rect(hwnd):
+    try:
+        rect = wintypes.RECT()
+        DWMWA_EXTENDED_FRAME_BOUNDS = 9
+        dwmapi = ctypes.windll.dwmapi
+        result = dwmapi.DwmGetWindowAttribute(
+            hwnd, DWMWA_EXTENDED_FRAME_BOUNDS,
+            ctypes.byref(rect), ctypes.sizeof(rect))
+        if result == 0:
+            return _rect_tuple(rect)
+    except Exception:
+        pass
+    return None
+
+
+def _append_frame_debug(outer_before, client_before, extended_before,
+                        outer_after, client_after, work, dpi,
+                        deficits_before, deficits_after):
+    if not _frame_debug_enabled():
+        return
+    try:
+        with open(_frame_debug_path(), "a", encoding="ascii") as f:
+            f.write(
+                "outer_before=%r client_before=%r extended_before=%r "
+                "outer_after=%r client_after=%r work=%r dpi=%s "
+                "deficits_before=%r deficits_after=%r\n"
+                % (outer_before, client_before, extended_before,
+                   outer_after, client_after, work, dpi,
+                   deficits_before, deficits_after)
+            )
+    except Exception:
+        pass
+
+
+def _fit_client_to_rect(hwnd, target_rect):
+    """Adjust the outer window until its client rect matches target_rect."""
+    try:
+        if not hwnd or not target_rect:
+            return False
+        target = tuple(int(v) for v in target_rect)
+        if len(target) != 4:
+            return False
+        SWP_NOZORDER = 0x0004
+        SWP_NOACTIVATE = 0x0010
+        outer_before = wintypes.RECT()
+        if not _u32.GetWindowRect(hwnd, ctypes.byref(outer_before)):
+            return False
+        client_before = _client_rect_screen(hwnd)
+        if not client_before:
+            return False
+        work = target
+        try:
+            dpi = float(_u32.GetDpiForSystem() or 96)
+        except Exception:
+            dpi = 96.0
+        extended_before = _extended_frame_rect(hwnd)
+
+        def deficits(client):
+            return (
+                target[0] - client[0],
+                target[1] - client[1],
+                target[2] - client[2],
+                target[3] - client[3],
+            )
+
+        before = deficits(client_before)
+        last_outer = _rect_tuple(outer_before)
+        last_client = client_before
+        if max(abs(v) for v in before) <= 1:
+            _append_frame_debug(
+                last_outer, last_client, extended_before,
+                last_outer, last_client, work, dpi, before, before)
+            return False
+
+        for _ in range(3):
+            outer = wintypes.RECT()
+            if not _u32.GetWindowRect(hwnd, ctypes.byref(outer)):
+                break
+            client = _client_rect_screen(hwnd)
+            if not client:
+                break
+            d = deficits(client)
+            if max(abs(v) for v in d) <= 1:
+                last_outer, last_client = _rect_tuple(outer), client
+                break
+            new_left = int(outer.left + d[0])
+            new_top = int(outer.top + d[1])
+            new_right = int(outer.right + d[2])
+            new_bottom = int(outer.bottom + d[3])
+            _u32.SetWindowPos(
+                hwnd, 0, new_left, new_top,
+                new_right - new_left, new_bottom - new_top,
+                SWP_NOZORDER | SWP_NOACTIVATE)
+            last_outer = (new_left, new_top, new_right, new_bottom)
+            last_client = _client_rect_screen(hwnd) or client
+
+        final_outer = wintypes.RECT()
+        if _u32.GetWindowRect(hwnd, ctypes.byref(final_outer)):
+            last_outer = _rect_tuple(final_outer)
+        last_client = _client_rect_screen(hwnd) or last_client
+        after = deficits(last_client)
+        _append_frame_debug(
+            _rect_tuple(outer_before), client_before, extended_before,
+            last_outer, last_client, work, dpi, before, after)
+        return max(abs(v) for v in after) <= 1
+    except Exception:
+        return False
+
+
 def _desktop_window_geometry():
     """Return CSS-sized window geometry constrained to the primary work area."""
     spi_getworkarea = 0x0030
@@ -484,7 +622,12 @@ def _desktop_window_geometry():
     real_css_w = max(1, round(real_work_w / scale))
     real_css_h = max(1, round(real_work_h / scale))
 
+    # Keep the packaged laptop build identical to run_desktop_laptop.vbs.
+    # Source launches still use the real monitor work area unless the
+    # preview variable is supplied explicitly.
     preview = os.environ.get("VRE_PREVIEW_WORKAREA", "").strip().lower()
+    if not preview and getattr(sys, "frozen", False):
+        preview = "1280x680"
     preview_match = None
     if preview:
         import re
@@ -1111,7 +1254,15 @@ class DesktopApi:
                 WS_MAXIMIZEBOX = 0x00010000
                 style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
                 style |= WS_MINIMIZEBOX | WS_MAXIMIZEBOX
-                if os.environ.get("VRE_NO_THICKFRAME", "").strip() != "1":
+                # The packaged executable must match the laptop launcher,
+                # which opts out of the native thick frame to remove the
+                # extra top strip. Source launches keep the historical
+                # default unless VRE_NO_THICKFRAME=1 is set explicitly.
+                no_thickframe = (
+                    os.environ.get("VRE_NO_THICKFRAME", "").strip() == "1"
+                    or getattr(sys, "frozen", False)
+                )
+                if not no_thickframe:
                     style |= WS_THICKFRAME
                 ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style)
                 ctypes.windll.user32.SetWindowPos(
@@ -1140,6 +1291,27 @@ class DesktopApi:
         except Exception:
             pass
         return False
+
+    def fit_client_to_work_area(self, intended_width=None, intended_height=None):
+        """Fit the client area only when this window is intended to fill work."""
+        try:
+            hwnd = self.get_hwnd()
+            work = self._get_work_area(hwnd)
+            if not hwnd or not work:
+                return False
+            try:
+                dpi = float(_u32.GetDpiForSystem() or 96)
+            except Exception:
+                dpi = 96.0
+            if intended_width is not None and intended_height is not None:
+                work_css_w = max(1, round(work[2] / max(dpi / 96.0, 1.0)))
+                work_css_h = max(1, round(work[3] / max(dpi / 96.0, 1.0)))
+                if intended_width < work_css_w or intended_height < work_css_h:
+                    return False
+            target = (work[0], work[1], work[0] + work[2], work[1] + work[3])
+            return _fit_client_to_rect(hwnd, target)
+        except Exception:
+            return False
 
     def bring_to_front(self):
         """Raise the window to the top of the NORMAL z-order and take focus —
@@ -1409,7 +1581,11 @@ class DesktopApi:
                         self._window._restore_bounds = (
                             int(rect.left), int(rect.top),
                             int(rect.right - rect.left), int(rect.bottom - rect.top))
-                        _u32.SetWindowPos(hwnd, 0, wa[0], wa[1], wa[2], wa[3], 0x0004)
+                        _u32.SetWindowPos(
+                            hwnd, 0, wa[0], wa[1], wa[2], wa[3],
+                            0x0004 | 0x0010)
+                        _fit_client_to_rect(
+                            hwnd, (wa[0], wa[1], wa[0] + wa[2], wa[1] + wa[3]))
                         self._window._is_maximized = True
                         return True
                 self._window.maximize()
@@ -1684,6 +1860,12 @@ def main():
     api.set_window(window)
     bk.t("window created")
 
+    def enable_and_fit_window():
+        api.enable_window_features()
+        api.fit_client_to_work_area(
+            intended_width=window_geometry["width"],
+            intended_height=window_geometry["height"])
+
     # boot_debug_kit: hide the main window while the app loads (DWM cloak ->
     # opacity-on-GUI-thread -> fail-open), confirm a real painted frame, then
     # reveal atomically and let the native splash fade out. All milestones go
@@ -1691,7 +1873,7 @@ def main():
     on_started = bk.make_on_started(
         splash, APP_URL, backend_healthy,
         bring_to_front=api.bring_to_front,
-        enable_window_features=api.enable_window_features)
+        enable_window_features=enable_and_fit_window)
 
     # Start the desktop window (blocking until closed). os._exit skips the
     # interpreter shutdown that can hang joining threads — the port and all

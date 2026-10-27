@@ -184,6 +184,7 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 - Stable source branch is `ui-fit-laptop-v2`; `main` remains unchanged. The branch includes DPI-aware work-area sizing, corrected CSS-pixel placement, native-frame opt-out, runtime client-area correction, pre-show fitting to prevent startup flicker, compact 40px desktop header, safe resize zones, and privacy exclusions for real DO/SO preview/runtime data. No CSS/business-logic/Excel schema changes were made for the window-fit work.
 - The attempted millimeter-based preview was removed because Windows monitor millimeter metadata produced an incorrect 944x501 CSS window. For reliable layout matching, use `run_desktop_laptop_screen.vbs` (or `.bat`), which explicitly previews the laptop's measured 1280x680 CSS-pixel work area. The existing `run_desktop_laptop.vbs` remains equivalent.
 - Fixed the laptop launcher title-bar discrepancy: when `VRE_NO_THICKFRAME=1`, `desktop_app.py` now explicitly clears the native caption, border, dialog-frame, and thick-frame style bits. This keeps the VBS preview frameless like the intended laptop layout; no EXE rebuild was made.
+- Confirmed on 2026-10-27 with the desktop screenshot: `run_desktop_laptop.vbs` now visually matches the laptop EXE startup—frameless, flush to the 1280x680 usable area, with the custom header and taskbar-preserving client fit. Continue using this VBS for layout tuning; rebuild the EXE only when explicitly requested.
 
 ## 13. Continuation prompt for another Copilot account
 

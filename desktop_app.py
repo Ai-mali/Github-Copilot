@@ -1248,9 +1248,14 @@ class DesktopApi:
                     ctypes.sizeof(val)
                 )
 
-                # 2. Add native OS window sizing & Aero Snap unless the
-                # diagnostic launcher explicitly opts out of WS_THICKFRAME.
+                # 2. Apply native sizing/frame behavior. The laptop
+                # diagnostic and packaged build must explicitly clear the
+                # caption/border styles; pywebview's frameless flag alone is
+                # not sufficient on every Windows/WebView2 combination.
                 GWL_STYLE = -16
+                WS_CAPTION = 0x00C00000
+                WS_BORDER = 0x00800000
+                WS_DLGFRAME = 0x00400000
                 WS_THICKFRAME = 0x00040000
                 WS_MINIMIZEBOX = 0x00020000
                 WS_MAXIMIZEBOX = 0x00010000
@@ -1266,6 +1271,9 @@ class DesktopApi:
                 )
                 if not no_thickframe:
                     style |= WS_THICKFRAME
+                else:
+                    style &= ~(WS_CAPTION | WS_BORDER | WS_DLGFRAME
+                               | WS_THICKFRAME)
                 ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style)
                 ctypes.windll.user32.SetWindowPos(
                     hwnd, 0, 0, 0, 0, 0,

@@ -2430,10 +2430,12 @@ body.theme-light .scan-serial-badge-dupe {
 
 /* Stock In Screen Layout */
 .stock-in-layout {
+  --stock-in-left-w: 410px;
   display: grid;
-  grid-template-columns: 410px 1fr;
+  grid-template-columns: var(--stock-in-left-w) 1fr;
   gap: 16px;
   align-items: stretch;
+  position: relative;
 }
 
 /* Stock In fills the viewport height: Status Log and Scan Results
@@ -2451,6 +2453,7 @@ body.theme-light .scan-serial-badge-dupe {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  gap: 16px;
   height: 100%;
 }
 .stock-in-left-col > .card:not(.status-log-card) {
@@ -2467,6 +2470,8 @@ body.theme-light .scan-serial-badge-dupe {
 .stock-in-resize-handle {
   flex: 0 0 auto;
   height: 4px;
+  position: relative;
+  z-index: 20;
   cursor: ns-resize;
   display: flex;
   align-items: center;
@@ -2474,20 +2479,72 @@ body.theme-light .scan-serial-badge-dupe {
   background: transparent;
   transition: background 0.2s;
 }
-.stock-in-resize-handle:hover {
-  background: rgba(38, 208, 124, 0.1);
-}
-.stock-in-resize-handle::before {
+.stock-in-resize-handle::after {
   content: '';
   width: 40px;
-  height: 4px;
+  height: 2px;
   background: var(--border);
   border-radius: 2px;
   opacity: 0.5;
+  transition: background 0.2s, opacity 0.2s;
 }
-.stock-in-resize-handle:hover::before {
+.stock-in-resize-handle::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: 1;
+}
+.stock-in-resize-handle:hover::after,
+.stock-in-resize-handle.is-dragging::after {
   background: var(--green-bright);
   opacity: 0.8;
+}
+.stock-in-col-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--stock-in-left-w) + 1px);
+  width: 2px;
+  z-index: 20;
+  cursor: ew-resize;
+  background: transparent;
+  transition: background 0.2s;
+}
+.stock-in-col-resize-handle::before {
+  content: '';
+  position: absolute;
+  inset: 0 -3px;
+  z-index: 1;
+}
+.stock-in-col-resize-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background 0.2s;
+}
+.stock-in-col-resize-handle:hover::after,
+.stock-in-col-resize-handle.is-dragging::after {
+  background: var(--green-bright);
+  opacity: 0.8;
+}
+@media (min-width: 1121px) {
+  .stock-in-layout {
+    gap: 2px;
+  }
+
+  .stock-in-left-col {
+    gap: 2px;
+  }
+
+  .stock-in-resize-handle {
+    height: 2px;
+  }
+}
+@media (max-width: 1120px) {
+  .stock-in-col-resize-handle {
+    display: none;
+  }
 }
 .status-log-card {
   flex: 1 1 0;
@@ -7704,7 +7761,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     <section id="view-stock-in" class="view-section">
       <div class="stock-in-layout">
         <!-- Left column: Image preview & Status log -->
-        <div class="stock-in-left-col" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="stock-in-left-col">
           <!-- Image preview card -->
           <div class="card">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -7872,6 +7929,8 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
             </div>
           </div>
         </div>
+
+        <div class="stock-in-col-resize-handle" id="stock-in-col-resize-handle" title="Drag to resize columns"></div>
 
         <!-- Right column: Scan Results -->
         <div class="card" style="display:flex; flex-direction:column; height:100%; min-height:100%;">
@@ -18900,6 +18959,7 @@ let _stockInPreviewHeight = null;
     };
 
     document.body.classList.add('no-select-drag');
+    handle.classList.add('is-dragging');
     handle.setPointerCapture(e.pointerId);
   });
 
@@ -18922,6 +18982,7 @@ let _stockInPreviewHeight = null;
     if (!_stockInResizeState) return;
 
     document.body.classList.remove('no-select-drag');
+    handle.classList.remove('is-dragging');
     _stockInResizeState = null;
   });
 
@@ -18945,6 +19006,137 @@ let _stockInPreviewHeight = null;
     state.previewCard.style.flex = '0 0 ' + clampedHeight + 'px';
     state.logCard.style.flex = '';
     _stockInPreviewHeight = clampedHeight;
+  });
+})();
+
+/* Stock In column resize — drag between the left column and Scan Results */
+(function initStockInColumnResize() {
+  const layout = document.querySelector('#view-stock-in .stock-in-layout');
+  const handle = document.getElementById('stock-in-col-resize-handle');
+  if (!layout || !handle) return;
+
+  const storageKey = 'vre_stock_in_left_width';
+  const defaultWidth = 410;
+  const minScanWidth = 520;
+
+  const getElements = () => ({
+    leftCol: layout.querySelector('.stock-in-left-col'),
+    previewCard: layout.querySelector('.stock-in-left-col > .card:not(.status-log-card)'),
+    previewActions: layout.querySelector('.preview-actions-row'),
+    previewHeader: layout.querySelector('.stock-in-left-col > .card:not(.status-log-card) .card-header'),
+    statusHead: layout.querySelector('.status-log-head')
+  });
+
+  const measureLeftMinimum = () => {
+    const { leftCol, previewActions, previewHeader, statusHead } = getElements();
+    if (!leftCol) return 0;
+    const intrinsicWidth = (element) => {
+      if (!element) return 0;
+      const saved = {
+        width: element.style.width,
+        minWidth: element.style.minWidth,
+        flex: element.style.flex
+      };
+      element.style.width = 'max-content';
+      element.style.minWidth = 'max-content';
+      element.style.flex = '0 0 max-content';
+      const width = Math.ceil(element.getBoundingClientRect().width);
+      element.style.width = saved.width;
+      element.style.minWidth = saved.minWidth;
+      element.style.flex = saved.flex;
+      return width;
+    };
+    const horizontalPadding = (element) => {
+      if (!element) return 0;
+      const style = getComputedStyle(element);
+      return parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    };
+    const measured = Math.max(
+      intrinsicWidth(previewActions) + horizontalPadding(previewActions && previewActions.parentElement),
+      intrinsicWidth(previewHeader),
+      intrinsicWidth(statusHead)
+    );
+    return Math.ceil(measured);
+  };
+
+  const getBounds = () => {
+    const gap = parseFloat(getComputedStyle(layout).columnGap || getComputedStyle(layout).gap) || 0;
+    const minLeftWidth = measureLeftMinimum();
+    const maxLeftWidth = Math.max(minLeftWidth, layout.clientWidth - gap - minScanWidth);
+    return { minLeftWidth, maxLeftWidth };
+  };
+
+  const clampWidth = (width) => {
+    const { minLeftWidth, maxLeftWidth } = getBounds();
+    return Math.max(minLeftWidth, Math.min(maxLeftWidth, width));
+  };
+
+  const applyWidth = (width, persist) => {
+    const clamped = clampWidth(width);
+    layout.style.setProperty('--stock-in-left-w', clamped + 'px');
+    if (persist) {
+      try {
+        localStorage.setItem(storageKey, String(clamped));
+      } catch (_) {
+        /* localStorage may be unavailable in private or embedded modes. */
+      }
+    }
+    return clamped;
+  };
+
+  let storedWidth = defaultWidth;
+  try {
+    const parsed = parseFloat(localStorage.getItem(storageKey));
+    if (Number.isFinite(parsed)) storedWidth = parsed;
+  } catch (_) {
+    /* localStorage may be unavailable in private or embedded modes. */
+  }
+  let restoreAttempts = 0;
+  const restoreWidth = () => {
+    requestAnimationFrame(() => {
+      if (layout.clientWidth <= minScanWidth && restoreAttempts++ < 20) {
+        setTimeout(restoreWidth, 50);
+        return;
+      }
+      applyWidth(storedWidth, false);
+    });
+  };
+  restoreWidth();
+
+  let state = null;
+  handle.addEventListener('pointerdown', e => {
+    if (window.matchMedia('(max-width: 1120px)').matches) return;
+    e.preventDefault();
+    const leftWidth = layout.querySelector('.stock-in-left-col').getBoundingClientRect().width;
+    state = { startX: e.clientX, startWidth: leftWidth };
+    document.body.classList.add('no-select-drag');
+    handle.classList.add('is-dragging');
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (!state) return;
+    e.preventDefault();
+    applyWidth(state.startWidth + (e.clientX - state.startX), false);
+  });
+
+  window.addEventListener('pointerup', () => {
+    if (!state) return;
+    const width = parseFloat(getComputedStyle(layout).getPropertyValue('--stock-in-left-w'));
+    applyWidth(width, true);
+    state = null;
+    document.body.classList.remove('no-select-drag');
+    handle.classList.remove('is-dragging');
+  });
+
+  handle.addEventListener('dblclick', e => {
+    e.preventDefault();
+    applyWidth(defaultWidth, true);
+  });
+
+  window.addEventListener('resize', () => {
+    const width = parseFloat(getComputedStyle(layout).getPropertyValue('--stock-in-left-w'));
+    if (Number.isFinite(width)) applyWidth(width, false);
   });
 })();
 </script>

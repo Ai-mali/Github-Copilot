@@ -4142,8 +4142,9 @@ body.theme-light .unit-action-btn {
 
 /* Stock Out Layout */
 .stockout-layout {
+  --so-right-w: 340px;
   display: grid;
-  grid-template-columns: auto 1fr 340px;
+  grid-template-columns: auto 1fr var(--so-right-w);
   gap: 16px;
   align-items: flex-start;
 }
@@ -4178,20 +4179,24 @@ body.theme-light .unit-action-btn {
 /* Available Stock desktop density: keep the title and controls on one line
    while leaving the stacked/mobile layout unchanged. */
 @media (min-width: 1121px) {
-  #view-available .view-header {
+  #view-available .view-header,
+  #view-stock-out .view-header {
     align-items: center;
     flex-wrap: nowrap;
     gap: 10px;
   }
-  #view-available .view-header > div:first-child {
+  #view-available .view-header > div:first-child,
+  #view-stock-out .view-header > div:first-child {
     flex: 0 0 auto;
     min-width: 0;
   }
-  #view-available .view-title {
+  #view-available .view-title,
+  #view-stock-out .view-title {
     font-size: 20px;
     white-space: nowrap;
   }
-  #view-available .view-subtitle {
+  #view-available .view-subtitle,
+  #view-stock-out .view-subtitle {
     font-size: 11px;
     white-space: nowrap;
   }
@@ -4212,6 +4217,12 @@ body.theme-light .unit-action-btn {
     gap: 6px;
     min-width: 0;
   }
+  #view-stock-out .hdr-search-side {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: 0;
+  }
   #view-available .hdr-search-side > .btn,
   #view-available .hdr-search-side > .filters-toggle-btn {
     height: 28px;
@@ -4226,16 +4237,34 @@ body.theme-light .unit-action-btn {
     min-width: 190px;
     height: 28px;
   }
+  #view-stock-out .hdr-search-side .search-group {
+    flex: 1 1 260px;
+    max-width: 360px;
+    min-width: 190px;
+    height: 28px;
+  }
   #view-available .hdr-search-side .search-group .datepicker-trigger {
+    padding: 4px 6px;
+  }
+  #view-stock-out .hdr-search-side .search-group .datepicker-trigger {
     padding: 4px 6px;
   }
   #view-available .hdr-search-side .search-group .search-box-wrap {
     flex: 1 1 auto;
     min-width: 110px;
   }
+  #view-stock-out .hdr-search-side .search-group .search-box-wrap {
+    flex: 1 1 auto;
+    min-width: 110px;
+  }
   #view-available .hdr-search-side .filters-toggle-btn {
     padding-left: 6px;
     padding-right: 6px;
+  }
+  #view-stock-out .hdr-search-side .filters-toggle-btn {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 6px;
   }
   #view-available .avail-export-btn {
     width: 30px;
@@ -4262,11 +4291,11 @@ body.theme-light .unit-action-btn {
 }
 
 @media (min-width: 1121px) {
-  #view-available .brand-accordion {
+  .brand-accordion {
     margin-bottom: 6px;
     border-radius: 8px;
   }
-  #view-available .brand-accordion-header {
+  .brand-accordion-header {
     height: 34px;
     min-height: 34px;
     box-sizing: border-box;
@@ -4275,61 +4304,127 @@ body.theme-light .unit-action-btn {
     border-top-right-radius: 7px;
     border-left-width: 3px;
   }
-  #view-available .brand-accordion.is-closed .brand-accordion-header {
+  .brand-accordion.is-closed .brand-accordion-header {
     border-radius: 7px;
   }
-  #view-available .brand-title-group {
+  .brand-title-group {
     gap: 5px;
     min-width: 0;
   }
-  #view-available .brand-name-tag {
+  .brand-name-tag {
     font-size: 12px !important;
     white-space: nowrap;
   }
-  #view-available .brand-title-group > span[style*="font-size:12px"] {
+  .brand-title-group > span[style*="font-size:12px"] {
     font-size: 12px !important;
     white-space: nowrap;
   }
-  #view-available .brand-metrics-pill {
+  .brand-metrics-pill {
     gap: 5px;
     min-height: 20px;
     padding: 2px 7px;
     box-shadow: none;
   }
-  #view-available .brand-metrics-pill .bmp-seg {
+  .brand-metrics-pill .bmp-seg {
     gap: 3px;
   }
-  #view-available .brand-metrics-pill .bmp-num {
+  .brand-metrics-pill .bmp-num {
     font-size: 11px;
   }
-  #view-available .brand-metrics-pill .bmp-label,
-  #view-available .brand-metrics-pill .bmp-total {
+  .brand-metrics-pill .bmp-label,
+  .brand-metrics-pill .bmp-total {
     font-size: 10px;
   }
-  #view-available .brand-metrics-pill .bmp-divider {
+  .brand-metrics-pill .bmp-divider {
     height: 10px;
   }
-  #view-available .brand-expand-btn {
+  .brand-expand-btn {
     height: 22px;
     padding: 0 8px;
     gap: 4px;
     font-size: 10px;
   }
-  #view-available .brand-peek {
+  .brand-peek {
     height: 21px;
     min-height: 21px;
     box-sizing: border-box;
     gap: 4px;
     padding: 2px 10px 3px;
   }
-  #view-available .brand-peek .bp-chip {
+  .brand-peek .bp-chip {
     height: 16px;
     padding: 0 5px;
     font-size: 10px;
     line-height: 14px;
   }
-  #view-available .brand-peek .bp-more {
+  .brand-peek .bp-more {
     font-size: 10px;
+  }
+}
+
+@media (min-width: 1121px) {
+  .stockout-layout {
+    gap: 2px;
+  }
+  .avail-layout {
+    gap: 2px;
+  }
+  #stockout-right-sidebar {
+    width: 100%;
+    min-width: 0;
+    position: sticky;
+    box-sizing: border-box;
+  }
+  .stockout-left-col {
+    container: stockout-middle / inline-size;
+  }
+  #view-stock-out .brand-name-tag {
+    min-width: 0;
+    flex: 0 1 auto;
+    max-width: min(250px, 30vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #view-stock-out .brand-inventory-label {
+    flex: 0 1 auto;
+    white-space: nowrap;
+  }
+  #stockout-right-sidebar {
+    position: sticky;
+  }
+  #stockout-right-sidebar > .stockout-right-resizer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 30;
+    border-radius: 12px 0 0 12px;
+  }
+  #stockout-right-sidebar > .stockout-right-resizer:hover,
+  #stockout-right-sidebar > .stockout-right-resizer.dragging {
+    background: rgba(38, 208, 124, 0.35);
+  }
+}
+
+@container stockout-middle (max-width: 420px) {
+  #view-stock-out .brand-inventory-label {
+    display: none;
+  }
+  #view-stock-out .brand-name-tag {
+    max-width: 150px;
+  }
+}
+
+@container stockout-middle (max-width: 479px) {
+  #view-stock-out .view-header {
+    flex-wrap: wrap;
+  }
+  #view-stock-out .hdr-search-side {
+    width: 100%;
+    flex-basis: 100%;
   }
 }
 
@@ -7432,8 +7527,8 @@ body.light .act-code { background: var(--surface3); }
 }
 @media (min-width: 1025px) and (max-width: 1180px) {
   .stockout-chips-grid { grid-template-columns: repeat(2, 1fr); }
-  #stockout-right-sidebar { width: 300px !important; }
-  .stockout-layout { grid-template-columns: auto 1fr 300px; }
+  #stockout-right-sidebar { width: 100% !important; }
+  .stockout-layout { grid-template-columns: auto 1fr var(--so-right-w); }
   #view-stock-out .tl-sidebar { width: 230px; }
   #view-available .tl-sidebar { width: 230px; }
 }
@@ -8431,7 +8526,8 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
         </div>
 
         <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
-        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:var(--searchbar-sticky-top, 0); max-height:calc(100vh - 60px); display:flex; flex-direction:column; gap:10px;">
+        <div id="stockout-right-sidebar" style="flex-shrink:0; position:sticky; top:var(--searchbar-sticky-top, 0); max-height:calc(100vh - 60px); display:flex; flex-direction:column; gap:10px;">
+          <div class="stockout-right-resizer" id="stockout-right-resizer" title="Drag to resize Dispatch &amp; Checkout panel"></div>
           
           <!-- Card 1: Dispatch & Checkout (Own Closed Border, Frozen at Top) -->
           <div class="card" id="dispatch-checkout-card" style="flex-shrink:0; position:relative; z-index:20; overflow:visible;">
@@ -10341,6 +10437,7 @@ async function refreshData() {
   DB.soSidebarW = (uiPrefs && uiPrefs.soW) || 0;
   DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
   DB.trackSidebarW = (uiPrefs && uiPrefs.tlW) || 0;
+  DB.soRightW = (uiPrefs && uiPrefs.soRightW) || 340;
   DB.availBarHidden = (uiPrefs && uiPrefs.availBar !== undefined) ? uiPrefs.availBar : true;
   DB.soBarHidden = (uiPrefs && uiPrefs.soBar !== undefined) ? uiPrefs.soBar : true;
   DB.soRecentHidden = (uiPrefs && uiPrefs.soRecent !== undefined) ? uiPrefs.soRecent : true;
@@ -13372,8 +13469,8 @@ function renderAvailable(searchTerm) {
       <div class="brand-accordion-header" onclick="toggleBrandAcc('${escapeHtml(escapeJs(brandKey))}')">
         <div class="brand-title-group">
           <span class="brand-color-dot"></span>
-          <span class="brand-name-tag" style="font-size:13px;">${markSearchHit(brandKey, q)}</span>
-          <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
+          <span class="brand-name-tag" title="${escapeHtml(brandKey)}" style="font-size:13px;">${markSearchHit(brandKey, q)}</span>
+          <span class="brand-inventory-label" style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="brand-metrics-pill">
             <span class="bmp-dot"></span>
             <span class="bmp-seg"><span class="bmp-num">${brandModels.length}</span><span class="bmp-label">${brandModels.length === 1 ? 'Model' : 'Models'}</span></span>
@@ -13597,6 +13694,86 @@ function initSideResizer(handleId, sidebarId, prefKey, miniKey, applyMini) {
           sb.style.width = pendingW + 'px';
           rafId = 0;
         });
+      }
+
+      function initStockoutRightResizer() {
+        const layout = document.querySelector('#view-stock-out .stockout-layout');
+        const panel = document.getElementById('stockout-right-sidebar');
+        const handle = document.getElementById('stockout-right-resizer');
+        if (!layout || !panel || !handle) return;
+
+        const DEFAULT_W = 340;
+        const MIN_W = 260;
+        const MAX_W = 560;
+        const MIN_MIDDLE_W = 480;
+        let currentW = DEFAULT_W;
+        let drag = null;
+
+        const getBounds = () => {
+          const gap = parseFloat(getComputedStyle(layout).columnGap || getComputedStyle(layout).gap) || 0;
+          const sidebar = layout.querySelector('.tl-sidebar');
+          const sidebarW = sidebar ? sidebar.getBoundingClientRect().width : 0;
+          const maxByMiddle = layout.clientWidth - sidebarW - (gap * 2) - MIN_MIDDLE_W;
+          return {
+            min: MIN_W,
+            max: Math.max(MIN_W, Math.min(MAX_W, maxByMiddle))
+          };
+        };
+
+        const clamp = width => {
+          const bounds = getBounds();
+          return Math.max(bounds.min, Math.min(bounds.max, Number(width)));
+        };
+
+        const apply = (width, persist) => {
+          const numeric = Number(width);
+          if (!Number.isFinite(numeric)) return currentW;
+          currentW = clamp(numeric);
+          layout.style.setProperty('--so-right-w', currentW + 'px');
+          if (persist) apiPost('/api/ui-prefs', { prefs: { soRightW: Math.round(currentW) } }).catch(() => {});
+          return currentW;
+        };
+
+        apply(Number.isFinite(Number(DB.soRightW)) ? Number(DB.soRightW) : DEFAULT_W, false);
+
+        handle.addEventListener('pointerdown', e => {
+          if (window.matchMedia('(max-width: 1120px)').matches) return;
+          e.preventDefault();
+          drag = { startX: e.clientX, startW: currentW, pointerId: e.pointerId };
+          document.body.classList.add('tl-resizing');
+          handle.classList.add('dragging');
+          try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+
+        handle.addEventListener('pointermove', e => {
+          if (!drag || e.pointerId !== drag.pointerId) return;
+          e.preventDefault();
+          apply(drag.startW - (e.clientX - drag.startX), false);
+        });
+
+        handle.addEventListener('pointerup', e => {
+          if (!drag || e.pointerId !== drag.pointerId) return;
+          e.preventDefault();
+          apply(currentW, true);
+          try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+          drag = null;
+          document.body.classList.remove('tl-resizing');
+          handle.classList.remove('dragging');
+        });
+        handle.addEventListener('pointercancel', e => {
+          if (!drag || e.pointerId !== drag.pointerId) return;
+          try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+          drag = null;
+          document.body.classList.remove('tl-resizing');
+          handle.classList.remove('dragging');
+        });
+
+        handle.addEventListener('dblclick', e => {
+          e.preventDefault();
+          apply(DEFAULT_W, true);
+        });
+
+        window.addEventListener('resize', () => apply(currentW, false));
       }
     };
     const onUp = () => {
@@ -14036,8 +14213,8 @@ function renderStockOut(searchTerm) {
       <div class="brand-accordion-header" onclick="toggleSOBrandAcc('${escapeHtml(escapeJs(brandKey))}')">
         <div class="brand-title-group">
           <span class="brand-color-dot"></span>
-          <span class="brand-name-tag" style="font-size:13px;">${markSearchHit(brandKey, q)}</span>
-          <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
+          <span class="brand-name-tag" title="${escapeHtml(brandKey)}" style="font-size:13px;">${markSearchHit(brandKey, q)}</span>
+          <span class="brand-inventory-label" style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="brand-metrics-pill">
             <span class="bmp-dot"></span>
             <span class="bmp-seg"><span class="bmp-num">${brandModels.length}</span><span class="bmp-label">${brandModels.length === 1 ? 'Model' : 'Models'}</span></span>
@@ -19118,6 +19295,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initSideResizer('avail-side-resizer', 'avail-sidebar', 'availW', 'availSidebarMini', applyAvailSidebarMini);
   initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
   initSideResizer('tl-side-resizer', 'tl-sidebar', 'tlW', 'trackSidebarMini', applyTrackSidebarMini);
+  initStockoutRightResizer();
   
   // Initialize Custom Datepickers with today's date
   const todayStr = formatDateISO(new Date());

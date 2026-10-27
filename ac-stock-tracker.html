@@ -18837,10 +18837,41 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 /* Stock In left column resize — drag between Image Preview and Status Log */
 let _stockInResizeState = null;
+let _stockInPreviewHeight = null;
 
 (function initStockInResize() {
   const handle = document.getElementById('stock-in-resize-handle');
   if (!handle) return;
+
+  const measurePreviewMinimum = (previewCard) => {
+    const previewBody = previewCard.querySelector('.card-body');
+    const dropzone = previewCard.querySelector('.image-preview-dropzone');
+    const actions = previewCard.querySelector('.preview-actions-row');
+    const bodyStyle = previewBody ? getComputedStyle(previewBody) : null;
+    const dropzoneStyle = dropzone ? getComputedStyle(dropzone) : null;
+    const actionStyle = actions ? getComputedStyle(actions) : null;
+    return (
+      (previewCard.offsetHeight - (previewBody ? previewBody.offsetHeight : 0)) +
+      (bodyStyle ? parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom) : 0) +
+      (dropzoneStyle ? parseFloat(dropzoneStyle.minHeight) : 80) +
+      (actions ? actions.offsetHeight : 0) +
+      (actionStyle ? parseFloat(actionStyle.marginTop) + parseFloat(actionStyle.marginBottom) : 0)
+    );
+  };
+
+  const getColumnMetrics = (state) => {
+    const columnStyle = getComputedStyle(state.leftCol);
+    const columnGap = parseFloat(columnStyle.rowGap || columnStyle.gap) || 0;
+    const handleHeight = handle.offsetHeight;
+    const maxPreviewHeight = state.leftCol.clientHeight -
+      handleHeight - (columnGap * 2) - state.logMinHeight;
+    return { columnGap, handleHeight, maxPreviewHeight };
+  };
+
+  const clampPreviewHeight = (state, height) => {
+    const { maxPreviewHeight } = getColumnMetrics(state);
+    return Math.max(state.previewMinHeight, Math.min(maxPreviewHeight, height));
+  };
 
   handle.addEventListener('pointerdown', e => {
     e.preventDefault();
@@ -18852,36 +18883,16 @@ let _stockInResizeState = null;
 
     if (!previewCard || !logCard) return;
 
+    logCard.style.flex = '';
     const startY = e.clientY;
     const previewHeight = previewCard.offsetHeight;
-    const logHeight = logCard.offsetHeight;
-    const handleHeight = handle.offsetHeight;
-    const columnStyle = getComputedStyle(leftCol);
-    const columnGap = parseFloat(columnStyle.rowGap || columnStyle.gap) || 0;
-
-    const previewBody = previewCard.querySelector('.card-body');
-    const dropzone = previewCard.querySelector('.image-preview-dropzone');
-    const actions = previewCard.querySelector('.preview-actions-row');
-    const bodyStyle = previewBody ? getComputedStyle(previewBody) : null;
-    const dropzoneStyle = dropzone ? getComputedStyle(dropzone) : null;
-    const actionStyle = actions ? getComputedStyle(actions) : null;
-    const previewMinHeight =
-      (previewCard.offsetHeight - (previewBody ? previewBody.offsetHeight : 0)) +
-      (bodyStyle ? parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom) : 0) +
-      (dropzoneStyle ? parseFloat(dropzoneStyle.minHeight) : 80) +
-      (actions ? actions.offsetHeight : 0) +
-      (actionStyle ? parseFloat(actionStyle.marginTop) + parseFloat(actionStyle.marginBottom) : 0);
     const logMinHeight = 80;
-    const totalHeight = previewHeight + handleHeight + logHeight;
+    _stockInPreviewHeight = previewHeight;
 
     _stockInResizeState = {
       startY,
       previewHeight,
-      logHeight,
-      totalHeight,
-      handleHeight,
-      columnGap,
-      previewMinHeight,
+      previewMinHeight: measurePreviewMinimum(previewCard),
       logMinHeight,
       previewCard,
       logCard,
@@ -18897,19 +18908,14 @@ let _stockInResizeState = null;
     e.preventDefault();
 
     const dy = e.clientY - _stockInResizeState.startY;
-    const availablePaneHeight = _stockInResizeState.totalHeight -
-      _stockInResizeState.handleHeight - _stockInResizeState.columnGap * 2;
-    const newPreviewHeight = Math.max(
-      _stockInResizeState.previewMinHeight,
-      Math.min(
-        availablePaneHeight - _stockInResizeState.logMinHeight,
-        _stockInResizeState.previewHeight + dy
-      )
+    const newPreviewHeight = clampPreviewHeight(
+      _stockInResizeState,
+      _stockInResizeState.previewHeight + dy
     );
-    const newLogHeight = availablePaneHeight - newPreviewHeight;
 
     _stockInResizeState.previewCard.style.flex = '0 0 ' + newPreviewHeight + 'px';
-    _stockInResizeState.logCard.style.flex = '0 0 ' + newLogHeight + 'px';
+    _stockInResizeState.logCard.style.flex = '';
+    _stockInPreviewHeight = newPreviewHeight;
   });
 
   window.addEventListener('pointerup', e => {
@@ -18917,6 +18923,28 @@ let _stockInResizeState = null;
 
     document.body.classList.remove('no-select-drag');
     _stockInResizeState = null;
+  });
+
+  window.addEventListener('resize', () => {
+    const leftCol = document.querySelector('.stock-in-left-col');
+    if (!leftCol || _stockInPreviewHeight === null) return;
+
+    const previewCard = leftCol.querySelector('.card:not(.status-log-card)');
+    const logCard = leftCol.querySelector('.status-log-card');
+    if (!previewCard || !logCard) return;
+
+    const state = {
+      leftCol,
+      previewCard,
+      logCard,
+      previewMinHeight: measurePreviewMinimum(previewCard),
+      logMinHeight: 80
+    };
+    const currentPreviewHeight = state.previewCard.offsetHeight;
+    const clampedHeight = clampPreviewHeight(state, _stockInPreviewHeight || currentPreviewHeight);
+    state.previewCard.style.flex = '0 0 ' + clampedHeight + 'px';
+    state.logCard.style.flex = '';
+    _stockInPreviewHeight = clampedHeight;
   });
 })();
 </script>

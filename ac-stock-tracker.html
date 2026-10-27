@@ -2456,6 +2456,63 @@ body.theme-light .scan-serial-badge-dupe {
   gap: 16px;
   height: 100%;
 }
+.stock-in-left-col.is-compact {
+  min-width: 0;
+}
+.stock-in-left-col.is-compact .preview-actions-row {
+  gap: 4px;
+}
+.stock-in-left-col.is-compact .preview-actions-row .btn-preview-action {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+.stock-in-left-col.is-compact .preview-actions-row .preview-action-label,
+.stock-in-left-col.is-compact .recent-dos-label,
+.stock-in-left-col.is-compact #do-photos-badge {
+  display: none;
+}
+.stock-in-left-col.is-compact .recent-dos-btn {
+  width: 30px;
+  min-width: 30px;
+  padding-left: 0;
+  padding-right: 0;
+}
+.stock-in-left-col.is-compact .status-log-head {
+  min-width: 0;
+  gap: 3px;
+  padding-left: 6px;
+  padding-right: 6px;
+  overflow: hidden;
+}
+.stock-in-left-col.is-compact .status-log-head .sl-head-left,
+.stock-in-left-col.is-compact .status-log-head .sl-head-right,
+.stock-in-left-col.is-compact .status-log-head .sl-seg {
+  min-width: 0;
+  gap: 2px;
+}
+.stock-in-left-col.is-compact .status-log-head .sl-head-left .card-title {
+  white-space: nowrap;
+}
+.stock-in-left-col.is-compact .status-log-head .sl-seg-btn {
+  flex: 0 0 auto;
+  padding: 2px 4px;
+  font-size: 0;
+  white-space: nowrap;
+}
+.stock-in-left-col.is-compact .status-log-head .sl-seg-btn[data-filter="all"] {
+  font-size: 10px;
+}
+.stock-in-left-col.is-compact .status-log-head .sl-seg-btn .sl-seg-count {
+  font-size: 9px;
+}
+.stock-in-left-col.is-compact .status-log-head .sl-clear-btn {
+  flex: 0 0 22px;
+  width: 22px;
+  padding: 0;
+}
 .stock-in-left-col > .card:not(.status-log-card) {
   flex: 0 0 auto;
   min-height: 0;
@@ -7766,7 +7823,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
           <div class="card">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
               <span class="card-title">Image Preview</span>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="openDoPhotosModal()" title="View Recent Delivery Order Photos (Last 3 Days)" style="display:inline-flex; align-items:center; gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm recent-dos-btn" onclick="openDoPhotosModal()" title="View Recent Delivery Order Photos (Last 3 Days)" aria-label="View Recent Delivery Order Photos" style="display:inline-flex; align-items:center; gap:6px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
@@ -7774,7 +7831,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                   <line x1="16" y1="17" x2="8" y2="17"></line>
                   <polyline points="10 9 9 9 8 9"></polyline>
                 </svg>
-                <span>Recent DOs</span>
+                <span class="recent-dos-label">Recent DOs</span>
                 <span id="do-photos-badge" class="badge badge-green" style="padding:1px 6px; font-size:10px;">0</span>
               </button>
             </div>
@@ -7832,15 +7889,15 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                 </div>
               </div>
               <div class="preview-actions-row">
-                <button class="btn-preview-action" onclick="triggerLoadImage()" title="Load Photo File">
+                <button class="btn-preview-action" onclick="triggerLoadImage()" title="Load Photo File" aria-label="Load Photo File">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.9;">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
                     <polyline points="21 15 16 10 5 21"></polyline>
                   </svg>
-                  <span>Load Image</span>
+                  <span class="preview-action-label">Load Image</span>
                 </button>
-                <button class="btn-preview-action btn-scan-main" id="btn-scan" onclick="handleScanButtonClick()" title="Extract serials with AI model">
+                <button class="btn-preview-action btn-scan-main" id="btn-scan" onclick="handleScanButtonClick()" title="Extract serials with AI model" aria-label="Scan image">
                   <!-- Idle state -->
                   <span class="scan-btn-state state-idle">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -7850,7 +7907,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                       <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
                       <path d="m12 8 1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z" fill="currentColor"></path>
                     </svg>
-                    <span>SCAN</span>
+                    <span class="preview-action-label">SCAN</span>
                   </span>
                   <!-- Scanning state -->
                   <span class="scan-btn-state state-scanning">
@@ -7874,14 +7931,14 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                     <span>Stop</span>
                   </span>
                 </button>
-                <button class="btn-preview-action btn-clear" onclick="clearPreview(event)" title="Clear Photo Preview">
+                <button class="btn-preview-action btn-clear" onclick="clearPreview(event)" title="Clear Photo Preview" aria-label="Clear Photo Preview">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--red-ink);">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     <line x1="10" y1="11" x2="10" y2="17"></line>
                     <line x1="14" y1="11" x2="14" y2="17"></line>
                   </svg>
-                  <span>Clear</span>
+                  <span class="preview-action-label">Clear</span>
                 </button>
               </div>
             </div>
@@ -9876,6 +9933,36 @@ const apiDel = (p, body) => api(p, {
   body: JSON.stringify(body || {})
 });
 
+let _uiPrefsPromise = null;
+let _uiPrefsFailed = false;
+function getUiPrefsOnce() {
+  if (!_uiPrefsPromise) {
+    _uiPrefsPromise = apiGet('/api/ui-prefs').then(prefs => prefs || {}).catch(() => {
+      _uiPrefsFailed = true;
+      return {};
+    });
+  }
+  return _uiPrefsPromise;
+}
+
+function persistStockInLayoutPref(key, value) {
+  const numeric = Math.round(Number(value));
+  if (!Number.isFinite(numeric)) return;
+  apiPost('/api/ui-prefs', { prefs: { [key]: numeric } }).catch(() => {
+    try { localStorage.setItem('vre_' + key, String(numeric)); } catch (_) {}
+  });
+}
+
+function readStockInLayoutFallback(key) {
+  if (!_uiPrefsFailed) return null;
+  try {
+    const value = parseInt(localStorage.getItem('vre_' + key), 10);
+    return Number.isFinite(value) ? value : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 /* ---------------- License gate (hard lockout) ---------------- */
 let _licState = null;
 
@@ -10077,7 +10164,7 @@ async function refreshData() {
     apiGet('/api/returns'),
     apiGet('/api/customers').catch(() => ({ customers: [] })),
     apiGet('/api/delivery-orders').catch(() => ({ photos: [] })),
-    apiGet('/api/ui-prefs').catch(() => ({}))
+    getUiPrefsOnce()
   ]);
   DB.inventory = inv.inventory;
   DB.brands = inv.brands;
@@ -18897,6 +18984,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 /* Stock In left column resize — drag between Image Preview and Status Log */
 let _stockInResizeState = null;
 let _stockInPreviewHeight = null;
+let _stockInDefaultPreviewHeight = null;
 
 (function initStockInResize() {
   const handle = document.getElementById('stock-in-resize-handle');
@@ -18932,6 +19020,47 @@ let _stockInPreviewHeight = null;
     return Math.max(state.previewMinHeight, Math.min(maxPreviewHeight, height));
   };
 
+  const getCurrentState = () => {
+    const leftCol = document.querySelector('.stock-in-left-col');
+    if (!leftCol) return null;
+    const previewCard = leftCol.querySelector('.card:not(.status-log-card)');
+    const logCard = leftCol.querySelector('.status-log-card');
+    if (!previewCard || !logCard) return null;
+    return {
+      previewCard,
+      logCard,
+      leftCol,
+      previewMinHeight: measurePreviewMinimum(previewCard),
+      logMinHeight: 80
+    };
+  };
+
+  const applyPreviewHeight = (height, persist) => {
+    const state = getCurrentState();
+    if (!state) return;
+    const clampedHeight = clampPreviewHeight(state, height);
+    state.previewCard.style.flex = '0 0 ' + clampedHeight + 'px';
+    state.logCard.style.flex = '';
+    _stockInPreviewHeight = clampedHeight;
+    if (persist) persistStockInLayoutPref('stockInPreviewH', clampedHeight);
+  };
+
+  const restorePreviewHeight = (prefs, attempt = 0) => {
+    const state = getCurrentState();
+    if (!state) return;
+    if ((state.leftCol.clientHeight <= 0 || state.leftCol.clientWidth <= 0) && attempt < 40) {
+      setTimeout(() => restorePreviewHeight(prefs, attempt + 1), 50);
+      return;
+    }
+    if (_stockInDefaultPreviewHeight === null) {
+      _stockInDefaultPreviewHeight = state.previewCard.offsetHeight;
+    }
+    const serverValue = parseInt(prefs && prefs.stockInPreviewH, 10);
+    const savedValue = Number.isFinite(serverValue)
+      ? serverValue : readStockInLayoutFallback('stockInPreviewH');
+    if (Number.isFinite(savedValue)) applyPreviewHeight(savedValue, false);
+  };
+
   handle.addEventListener('pointerdown', e => {
     e.preventDefault();
     const leftCol = document.querySelector('.stock-in-left-col');
@@ -18946,6 +19075,9 @@ let _stockInPreviewHeight = null;
     const startY = e.clientY;
     const previewHeight = previewCard.offsetHeight;
     const logMinHeight = 80;
+    if (_stockInDefaultPreviewHeight === null) {
+      _stockInDefaultPreviewHeight = previewHeight;
+    }
     _stockInPreviewHeight = previewHeight;
 
     _stockInResizeState = {
@@ -18981,32 +19113,27 @@ let _stockInPreviewHeight = null;
   window.addEventListener('pointerup', e => {
     if (!_stockInResizeState) return;
 
+    persistStockInLayoutPref('stockInPreviewH', _stockInPreviewHeight);
     document.body.classList.remove('no-select-drag');
     handle.classList.remove('is-dragging');
     _stockInResizeState = null;
   });
 
   window.addEventListener('resize', () => {
-    const leftCol = document.querySelector('.stock-in-left-col');
-    if (!leftCol || _stockInPreviewHeight === null) return;
-
-    const previewCard = leftCol.querySelector('.card:not(.status-log-card)');
-    const logCard = leftCol.querySelector('.status-log-card');
-    if (!previewCard || !logCard) return;
-
-    const state = {
-      leftCol,
-      previewCard,
-      logCard,
-      previewMinHeight: measurePreviewMinimum(previewCard),
-      logMinHeight: 80
-    };
-    const currentPreviewHeight = state.previewCard.offsetHeight;
-    const clampedHeight = clampPreviewHeight(state, _stockInPreviewHeight || currentPreviewHeight);
-    state.previewCard.style.flex = '0 0 ' + clampedHeight + 'px';
-    state.logCard.style.flex = '';
-    _stockInPreviewHeight = clampedHeight;
+    if (_stockInPreviewHeight !== null) applyPreviewHeight(_stockInPreviewHeight, false);
   });
+
+  handle.addEventListener('dblclick', e => {
+    e.preventDefault();
+    const state = getCurrentState();
+    if (!state) return;
+    if (_stockInDefaultPreviewHeight === null) {
+      _stockInDefaultPreviewHeight = state.previewCard.offsetHeight;
+    }
+    applyPreviewHeight(_stockInDefaultPreviewHeight, true);
+  });
+
+  getUiPrefsOnce().then(prefs => restorePreviewHeight(prefs));
 })();
 
 /* Stock In column resize — drag between the left column and Scan Results */
@@ -19015,8 +19142,8 @@ let _stockInPreviewHeight = null;
   const handle = document.getElementById('stock-in-col-resize-handle');
   if (!layout || !handle) return;
 
-  const storageKey = 'vre_stock_in_left_width';
   const defaultWidth = 410;
+  const minLeftWidth = 260;
   const minScanWidth = 520;
 
   const getElements = () => ({
@@ -19030,6 +19157,8 @@ let _stockInPreviewHeight = null;
   const measureLeftMinimum = () => {
     const { leftCol, previewActions, previewHeader, statusHead } = getElements();
     if (!leftCol) return 0;
+    const wasCompact = leftCol.classList.contains('is-compact');
+    if (wasCompact) leftCol.classList.remove('is-compact');
     const intrinsicWidth = (element) => {
       if (!element) return 0;
       const saved = {
@@ -19056,12 +19185,12 @@ let _stockInPreviewHeight = null;
       intrinsicWidth(previewHeader),
       intrinsicWidth(statusHead)
     );
+    if (wasCompact) leftCol.classList.add('is-compact');
     return Math.ceil(measured);
   };
 
   const getBounds = () => {
     const gap = parseFloat(getComputedStyle(layout).columnGap || getComputedStyle(layout).gap) || 0;
-    const minLeftWidth = measureLeftMinimum();
     const maxLeftWidth = Math.max(minLeftWidth, layout.clientWidth - gap - minScanWidth);
     return { minLeftWidth, maxLeftWidth };
   };
@@ -19074,23 +19203,18 @@ let _stockInPreviewHeight = null;
   const applyWidth = (width, persist) => {
     const clamped = clampWidth(width);
     layout.style.setProperty('--stock-in-left-w', clamped + 'px');
+    const leftCol = layout.querySelector('.stock-in-left-col');
+    if (leftCol) {
+      const naturalWidth = measureLeftMinimum();
+      leftCol.classList.toggle('is-compact', clamped < naturalWidth);
+    }
     if (persist) {
-      try {
-        localStorage.setItem(storageKey, String(clamped));
-      } catch (_) {
-        /* localStorage may be unavailable in private or embedded modes. */
-      }
+      persistStockInLayoutPref('stockInLeftW', clamped);
     }
     return clamped;
   };
 
-  let storedWidth = defaultWidth;
-  try {
-    const parsed = parseFloat(localStorage.getItem(storageKey));
-    if (Number.isFinite(parsed)) storedWidth = parsed;
-  } catch (_) {
-    /* localStorage may be unavailable in private or embedded modes. */
-  }
+  const storedWidth = defaultWidth;
   let restoreAttempts = 0;
   const restoreWidth = () => {
     requestAnimationFrame(() => {
@@ -19102,6 +19226,18 @@ let _stockInPreviewHeight = null;
     });
   };
   restoreWidth();
+
+  const restoreSavedWidth = (prefs, attempt = 0) => {
+    if (layout.clientWidth <= minScanWidth && attempt < 40) {
+      setTimeout(() => restoreSavedWidth(prefs, attempt + 1), 50);
+      return;
+    }
+    const serverValue = parseInt(prefs && prefs.stockInLeftW, 10);
+    const savedValue = Number.isFinite(serverValue)
+      ? serverValue : readStockInLayoutFallback('stockInLeftW');
+    if (Number.isFinite(savedValue)) applyWidth(savedValue, false);
+  };
+  getUiPrefsOnce().then(prefs => restoreSavedWidth(prefs));
 
   let state = null;
   handle.addEventListener('pointerdown', e => {

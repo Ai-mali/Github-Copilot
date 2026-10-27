@@ -8,6 +8,8 @@ backups/
 dist/
 delivery_orders/
 permanent_do/
+do-so-verification-preview.html
+stock-in-do-so-implementation-impact.html
 
 # Devin CLI personal config (contains local permission rules)
 .devin/config.local.json

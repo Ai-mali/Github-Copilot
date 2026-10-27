@@ -794,8 +794,11 @@ body {
 
 /* Frameless Desktop App Shell Overrides */
 body.is-desktop-shell {
-  padding: 5px !important;
-  background: var(--frame-bg) !important;   /* visible outer window-frame ring */
+  padding: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  border-top: 0 !important;
+  background: var(--frame-bg) !important;
   overflow: hidden !important;
   height: 100vh !important;
   width: 100vw !important;
@@ -804,17 +807,65 @@ body.is-desktop-shell {
 body.is-desktop-shell .app-container {
   max-width: 100% !important;
   min-height: 0 !important;
-  height: calc(100vh - 10px) !important;
-  border-radius: 13px !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+  top: 0 !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
   overflow: hidden !important;
   position: relative !important;
 }
 
 body.is-desktop-shell header {
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+  height: 40px !important;
+  padding: 0 10px 0 14px !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+body.is-desktop-shell header .brand,
+body.is-desktop-shell header .header-actions {
+  align-items: center !important;
+}
+
+body.is-desktop-shell header .brand-icon,
+body.is-desktop-shell header .icon-square-btn {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+body.is-desktop-shell header .model-pill-btn,
+body.is-desktop-shell header .theme-toggle-btn {
+  min-height: 30px !important;
+  height: 30px !important;
+  box-sizing: border-box !important;
+}
+
+body.is-desktop-shell header .nav-tab-bar {
+  height: 32px !important;
+  padding: 2px !important;
+  box-sizing: border-box !important;
+}
+
+body.is-desktop-shell header .tab-btn {
+  height: 26px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  box-sizing: border-box !important;
+}
+
+body.is-desktop-shell header .win-control-btn {
+  height: 28px !important;
+  box-sizing: border-box !important;
 }
 
 body.is-desktop-shell main {
@@ -822,6 +873,13 @@ body.is-desktop-shell main {
   min-height: 0 !important;
   height: auto !important;
   overflow-y: auto !important;
+  padding: 2px !important;
+}
+
+body.is-desktop-shell #view-stock-out .tl-sidebar,
+body.is-desktop-shell #view-available .tl-sidebar,
+body.is-desktop-shell #stockout-right-sidebar {
+  max-height: calc(100vh - 44px) !important;
 }
 
 /* Snap preview outline (Windows-style: shown when cursor hits top edge mid-drag) */
@@ -840,7 +898,7 @@ body.is-desktop-shell main {
 .desktop-resize-handle {
   display: none;
   position: fixed;
-  z-index: 2147483647 !important;
+  z-index: 35 !important;
   background: transparent;
   -webkit-app-region: no-drag;
   user-select: none;
@@ -852,69 +910,72 @@ body.is-desktop-shell .desktop-resize-handle {
   display: block !important;
 }
 
-/* Edges (14px grab zone — easy to hit without pixel-perfect aim) */
+/* Desktop header-safe top hit zones; other edge zones remain unchanged. */
 .desktop-resize-handle.edge-top {
   top: 0;
-  left: 34px;
-  right: 34px;
-  height: 14px;
+  left: 18px;
+  right: 18px;
+  height: 4px;
+  z-index: 45 !important;
   cursor: n-resize !important;
 }
 
 .desktop-resize-handle.edge-bottom {
   bottom: 0;
-  left: 34px;
-  right: 34px;
-  height: 14px;
+  left: 18px;
+  right: 18px;
+  height: 8px;
   cursor: s-resize !important;
 }
 
 .desktop-resize-handle.edge-left {
-  top: 34px;
-  bottom: 34px;
+  top: 18px;
+  bottom: 18px;
   left: 0;
-  width: 14px;
+  width: 8px;
   cursor: w-resize !important;
 }
 
 .desktop-resize-handle.edge-right {
-  top: 34px;
-  bottom: 34px;
+  top: 18px;
+  bottom: 18px;
   right: 0;
-  width: 14px;
+  width: 8px;
   cursor: e-resize !important;
 }
 
-/* Corners (Diagonal Cursors with generous 34x34px hit target) */
+/* Top corners stay small so they do not swallow header controls. */
 .desktop-resize-handle.corner-top-left {
   top: 0;
   left: 0;
-  width: 34px;
-  height: 34px;
+  width: 10px;
+  height: 10px;
+  z-index: 45 !important;
   cursor: nwse-resize !important;
 }
 
 .desktop-resize-handle.corner-top-right {
   top: 0;
   right: 0;
-  width: 34px;
-  height: 34px;
+  width: 10px;
+  height: 10px;
+  z-index: 45 !important;
   cursor: nesw-resize !important;
 }
 
 .desktop-resize-handle.corner-bottom-left {
   bottom: 0;
   left: 0;
-  width: 34px;
-  height: 34px;
+  width: 18px;
+  height: 18px;
   cursor: nesw-resize !important;
 }
 
 .desktop-resize-handle.corner-bottom-right {
   bottom: 0;
   right: 0;
-  width: 34px;
-  height: 34px;
+  width: 18px;
+  height: 18px;
   cursor: nwse-resize !important;
 }
 
@@ -1159,6 +1220,19 @@ body.is-desktop-shell .desktop-window-controls {
   .header-actions #header-model-btn { padding: 5px 9px; gap: 6px; }
   .header-actions #header-model-btn > span:last-child { display: none; }
   .tab-btn { padding: 6px 11px; }
+}
+@media (min-width: 1121px) and (max-width: 1320px) {
+  .theme-mode-label { display: none; }
+  .header-actions { gap: 5px; }
+  .header-actions #header-model-btn {
+    padding: 5px 8px;
+    gap: 5px;
+  }
+  .header-actions #header-model-btn > span:last-child { display: none; }
+  #header-model-label .model-text-full { display: none; }
+  #header-model-label .model-text-short { display: inline; }
+  .tab-btn { padding-left: 9px; padding-right: 9px; }
+  header { gap: 8px; padding-left: 14px; padding-right: 10px; }
 }
 @media (max-width: 860px) {
   .brand-text { display: none; }
@@ -7506,7 +7580,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
         <span class="model-dot"></span>
         <span id="header-model-label">
           <span class="model-text-full">Scan Model: Gemini</span>
-          <span class="model-text-short">SMA: Gemini</span>
+          <span class="model-text-short">Gemini</span>
         </span>
         <span style="font-size:13px; opacity:0.7;">&#9881;</span>
       </button>
@@ -10268,9 +10342,9 @@ function updateStickyHeaderOffsets() {
   requestAnimationFrame(() => {
     const navHeader = document.querySelector('header');
     // In the desktop shell, <main> is the scroll container (body is locked)
-    // so sticky offsets are relative to main's content box — the 56px header
-    // must NOT be counted, and main's padding-top must be cancelled with a
-    // negative base or bars float with a visible gap.
+    // so sticky offsets are relative to main's content box — the desktop
+    // header height must not be counted, and main's padding-top must be
+    // cancelled with a negative base or bars float with a visible gap.
     const main = document.querySelector('main');
     const mainPadTop = main ? (parseFloat(getComputedStyle(main).paddingTop) || 0) : 0;
     const stickyBase = document.body.classList.contains('is-desktop-shell')
@@ -16030,7 +16104,7 @@ function updateHeaderModelDisplay(pName, model) {
   if (labelEl) {
     labelEl.innerHTML = `
       <span class="model-text-full">Scan Model: ${escapeHtml(pName)}</span>
-      <span class="model-text-short">SMA: ${escapeHtml(shortName)}</span>
+      <span class="model-text-short">${escapeHtml(shortName)}</span>
     `;
   }
   if (btnEl) {

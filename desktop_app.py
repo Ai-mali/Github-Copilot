@@ -280,6 +280,9 @@ _u32.DrawTextW.restype = ctypes.c_int
 _u32.DrawTextW.argtypes = [wintypes.HDC, ctypes.c_wchar_p, ctypes.c_int,
                            ctypes.POINTER(wintypes.RECT), wintypes.UINT]
 _u32.SetProcessDPIAware.restype = wintypes.BOOL
+_u32.SystemParametersInfoW.restype = wintypes.BOOL
+_u32.SystemParametersInfoW.argtypes = [
+    wintypes.UINT, wintypes.UINT, ctypes.c_void_p, wintypes.UINT]
 _u32.FindWindowW.restype = wintypes.HWND
 _u32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
 _u32.LoadImageW.restype = wintypes.HICON
@@ -461,6 +464,57 @@ try:
     _u32.GetDpiForSystem.argtypes = []
 except AttributeError:
     pass
+
+
+def _desktop_window_geometry():
+    """Return CSS-sized window geometry constrained to the primary work area."""
+    spi_getworkarea = 0x0030
+    work = wintypes.RECT()
+    if not _u32.SystemParametersInfoW(
+            spi_getworkarea, 0, ctypes.byref(work), 0):
+        work.left, work.top, work.right, work.bottom = 0, 0, 1320, 840
+
+    try:
+        dpi = float(_u32.GetDpiForSystem() or 96)
+    except Exception:
+        dpi = 96.0
+    scale = max(dpi / 96.0, 1.0)
+    real_work_w = max(1, work.right - work.left)
+    real_work_h = max(1, work.bottom - work.top)
+    real_css_w = max(1, round(real_work_w / scale))
+    real_css_h = max(1, round(real_work_h / scale))
+
+    preview = os.environ.get("VRE_PREVIEW_WORKAREA", "").strip().lower()
+    preview_match = None
+    if preview:
+        import re
+        preview_match = re.fullmatch(r"(\d+)\s*x\s*(\d+)", preview)
+    if preview_match:
+        work_w, work_h = (int(preview_match.group(1)),
+                          int(preview_match.group(2)))
+    else:
+        work_w, work_h = real_css_w, real_css_h
+
+    width = min(1320, work_w)
+    height = min(840, work_h)
+    min_width = min(1050, width)
+    min_height = min(680, height)
+
+    # pywebview receives CSS dimensions and multiplies x/y by the system scale.
+    # Convert the physical work-area origin and centered offset back to CSS px.
+    physical_width = round(width * scale)
+    physical_height = round(height * scale)
+    physical_x = work.left + max(0, (real_work_w - physical_width) // 2)
+    physical_y = work.top + max(0, (real_work_h - physical_height) // 2)
+    x = round(physical_x / scale)
+    y = round(physical_y / scale)
+    return {
+        "width": max(min_width, width),
+        "height": max(min_height, height),
+        "min_size": (min_width, min_height),
+        "x": x,
+        "y": y,
+    }
 
 
 class _NativeSplash:
@@ -1049,13 +1103,16 @@ class DesktopApi:
                     ctypes.sizeof(val)
                 )
 
-                # 2. Add WS_THICKFRAME for native OS window sizing & aero snap
+                # 2. Add native OS window sizing & Aero Snap unless the
+                # diagnostic launcher explicitly opts out of WS_THICKFRAME.
                 GWL_STYLE = -16
                 WS_THICKFRAME = 0x00040000
                 WS_MINIMIZEBOX = 0x00020000
                 WS_MAXIMIZEBOX = 0x00010000
                 style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
-                style |= WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+                style |= WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+                if os.environ.get("VRE_NO_THICKFRAME", "").strip() != "1":
+                    style |= WS_THICKFRAME
                 ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style)
                 ctypes.windll.user32.SetWindowPos(
                     hwnd, 0, 0, 0, 0, 0,
@@ -1600,6 +1657,11 @@ def main():
     bk.t("webview imported")
 
     api = DesktopApi()
+    try:
+        _u32.SetProcessDPIAware()
+    except Exception:
+        pass
+    window_geometry = _desktop_window_geometry()
 
     # hidden=True + no initial html: the window initializes and loads the app
     # completely invisible — no dark rectangle, no half-painted splash card
@@ -1608,9 +1670,11 @@ def main():
     window = webview.create_window(
         title='VRE AC Stock',
         js_api=api,
-        width=1320,
-        height=840,
-        min_size=(1050, 680),
+        width=window_geometry["width"],
+        height=window_geometry["height"],
+        x=window_geometry["x"],
+        y=window_geometry["y"],
+        min_size=window_geometry["min_size"],
         frameless=True,
         easy_drag=False,
         text_select=True,

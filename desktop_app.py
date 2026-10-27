@@ -630,47 +630,11 @@ def _desktop_window_geometry():
     preview = os.environ.get("VRE_PREVIEW_WORKAREA", "").strip().lower()
     if not preview and getattr(sys, "frozen", False):
         preview = "1280x680"
-    physical_preview = os.environ.get(
-        "VRE_PREVIEW_PHYSICAL_MM", "").strip().lower()
-    physical_match = None
-    physical_work = None
-    if physical_preview:
-        import re
-        physical_match = re.fullmatch(
-            r"(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)",
-            physical_preview)
-    if physical_match:
-        try:
-            target_mm_w = float(physical_match.group(1))
-            target_mm_h = float(physical_match.group(2))
-            hdc = _u32.GetDC(0)
-            screen_px_w = _u32.GetSystemMetrics(0)
-            screen_px_h = _u32.GetSystemMetrics(1)
-            screen_mm_w = _g32.GetDeviceCaps(hdc, 4) if hdc else 0
-            screen_mm_h = _g32.GetDeviceCaps(hdc, 6) if hdc else 0
-            if hdc:
-                _u32.ReleaseDC(0, hdc)
-            if (screen_px_w > 0 and screen_px_h > 0
-                    and screen_mm_w > 0 and screen_mm_h > 0):
-                physical_preview_px_w = round(
-                    screen_px_w * target_mm_w / screen_mm_w)
-                physical_preview_px_h = round(
-                    screen_px_h * target_mm_h / screen_mm_h)
-                physical_work = (
-                    max(1, round(physical_preview_px_w / scale)),
-                    max(1, round(physical_preview_px_h / scale)))
-                preview = ""
-            else:
-                physical_match = None
-        except Exception:
-            physical_match = None
     preview_match = None
     if preview:
         import re
         preview_match = re.fullmatch(r"(\d+)\s*x\s*(\d+)", preview)
-    if physical_work:
-        work_w, work_h = physical_work
-    elif preview_match:
+    if preview_match:
         work_w, work_h = (int(preview_match.group(1)),
                           int(preview_match.group(2)))
     else:

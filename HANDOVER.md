@@ -247,6 +247,13 @@ Copy the prompt below into the next Copilot chat after opening this repository:
 - Browser verification at the available 1280px desktop preview found no right-edge overflow on Sell Record or Return, no Return Print RMA control, and correct disabled/enabled photo states using a temporary provenance fixture. The temporary fixture was restored and remains untracked; no customer data was committed.
 - Validation passed: `node check_frontend_syntax.js`, all 73 Node tests, Python compilation for `backend.py stock_store.py desktop_app.py license_check.py`, and `git diff --check`. No executable rebuild was performed. Published commit is `b228608` on both `origin/main` and `origin/ui-fit-laptop-v2`.
 
+### Latest session update — shared brand peek rows
+
+- Available Stock and Stock Out now share the expanded brand-peek treatment: 28px rows, 18px dashed model chips at 10.5px text, 5px chip gaps, and no right-edge mask. Both renderers prepare up to 10 model chips and attach the total model count for measurement.
+- Added a shared ResizeObserver/requestAnimationFrame fitting routine. It hides trailing chips when the row is narrow, keeps the row on one line, and recalculates `+N more` from the true hidden model count after rendering, window resize, sidebar resize, or Dispatch-panel resize.
+- At the available 1280x720 browser preview, collapsed cards measured 64px high in both screens (previously approximately 57px); peek rows measured 28px. Available Stock showed DAIKIN-AIR CON 10 + 30, DAIKIN-REMOTE 7 with no more label, and NEW-IN 6 with no more label. Stock Out showed 7 + 33, 7, and 6 respectively because its middle column is narrower. A 485px narrow preview also re-fitted correctly without overflow. No console/page errors were observed.
+- Validation passed: `node check_frontend_syntax.js`, all 73 Node tests, Python compilation, and `git diff --check`. No executable rebuild was performed. Changes are uncommitted on `ui-fit-laptop-v2`; runtime `serial_provenance.json` remains untracked.
+
 ## 14. Handover maintenance rule
 
 This file is the persistent cross-account context. **Update it at the end of every future implementation or build session**, including the current working-tree status, latest stable commit/tag, tests, build artifact/checksum when applicable, remaining work, and the next continuation prompt. Keep the continuation prompt aligned with the actual repository state; do not leave stale claims about a build or completed feature.

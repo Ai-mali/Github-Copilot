@@ -3553,20 +3553,22 @@ body.theme-light .brand-accordion-header {
 .brand-peek {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 16px 8px;
+  gap: 5px;
+  padding: 5px 16px 4px;
+  min-height: 28px;
+  box-sizing: border-box;
   overflow: hidden;
   white-space: nowrap;
   cursor: pointer;
-  mask-image: linear-gradient(to right, #000 72%, transparent);
-  -webkit-mask-image: linear-gradient(to right, #000 72%, transparent);
 }
 .brand-peek .bp-chip {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.03em;
-  padding: 1px 7px;
+  height: 18px;
+  line-height: 16px;
+  padding: 0 7px;
   border-radius: 4px;
   border: 1px dashed color-mix(in srgb, var(--brand-c, var(--green)) 40%, transparent);
   color: var(--brand-ink, var(--green-bright));
@@ -3574,7 +3576,7 @@ body.theme-light .brand-accordion-header {
   flex-shrink: 0;
 }
 .brand-peek .bp-more {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--text-sub);
   flex-shrink: 0;
@@ -4356,20 +4358,20 @@ body.theme-light .unit-action-btn {
     font-size: 10px;
   }
   .brand-peek {
-    height: 21px;
-    min-height: 21px;
+    height: 28px;
+    min-height: 28px;
     box-sizing: border-box;
-    gap: 4px;
-    padding: 2px 10px 3px;
+    gap: 5px;
+    padding: 5px 10px 4px;
   }
   .brand-peek .bp-chip {
-    height: 16px;
-    padding: 0 5px;
-    font-size: 10px;
-    line-height: 14px;
+    height: 18px;
+    padding: 0 7px;
+    font-size: 10.5px;
+    line-height: 16px;
   }
   .brand-peek .bp-more {
-    font-size: 10px;
+    font-size: 10.5px;
   }
 }
 
@@ -13388,6 +13390,64 @@ function clearAvailSearch() {
   renderAvailable('');
 }
 
+let __brandPeekFitQueued = false;
+let __brandPeekResizeObserver = null;
+
+function fitBrandPeekRows(root = document) {
+  const rows = root.querySelectorAll ? root.querySelectorAll('.brand-peek') : [];
+  rows.forEach(row => {
+    const chips = [...row.querySelectorAll('.bp-chip')];
+    const more = row.querySelector('.bp-more');
+    if (!chips.length || !more) return;
+
+    const total = Math.max(chips.length, Number(row.dataset.totalModels) || chips.length);
+    chips.forEach(chip => { chip.style.display = 'inline-flex'; });
+    more.style.display = total > chips.length ? 'inline-flex' : 'none';
+    more.textContent = total > chips.length ? `+${total - chips.length} more` : '';
+
+    const fit = () => {
+      const visible = chips.filter(chip => chip.style.display !== 'none').length;
+      const hidden = total - visible;
+      more.textContent = hidden > 0 ? `+${hidden} more` : '';
+      more.style.display = hidden > 0 ? 'inline-flex' : 'none';
+      return row.scrollWidth <= row.clientWidth + 1;
+    };
+
+    while (!fit()) {
+      const lastVisible = chips.slice().reverse().find(chip => chip.style.display !== 'none');
+      if (!lastVisible) break;
+      lastVisible.style.display = 'none';
+    }
+    fit();
+  });
+}
+
+function queueBrandPeekFit(root = document) {
+  if (__brandPeekFitQueued) return;
+  __brandPeekFitQueued = true;
+  requestAnimationFrame(() => {
+    __brandPeekFitQueued = false;
+    fitBrandPeekRows(root);
+  });
+}
+
+function observeBrandPeekRows(root = document) {
+  if (!window.ResizeObserver) {
+    queueBrandPeekFit(root);
+    return;
+  }
+  if (!__brandPeekResizeObserver) {
+    __brandPeekResizeObserver = new ResizeObserver(() => queueBrandPeekFit());
+  }
+  __brandPeekResizeObserver.disconnect();
+  root.querySelectorAll('.brand-peek').forEach(row => {
+    __brandPeekResizeObserver.observe(row);
+  });
+  queueBrandPeekFit(root);
+}
+
+window.addEventListener('resize', () => queueBrandPeekFit());
+
 function renderAvailable(searchTerm) {
   const searchInput = document.getElementById('avail-search');
   const rawSearch = (typeof searchTerm === 'string') 
@@ -13614,9 +13674,9 @@ function renderAvailable(searchTerm) {
     const brandModels = Object.keys(bData.models || {});
     const modelNames = brandModels;
     const peekHtml = (!isBrandOpen && modelNames.length)
-      ? `<div class="brand-peek" onclick="toggleBrandAcc('${escapeHtml(escapeJs(brandKey))}')">` +
-        modelNames.slice(0, 6).map(m => `<span class="bp-chip">${escapeHtml(m)}</span>`).join('') +
-        (modelNames.length > 6 ? `<span class="bp-more">+${modelNames.length - 6} more</span>` : '') +
+      ? `<div class="brand-peek" data-total-models="${modelNames.length}" onclick="toggleBrandAcc('${escapeHtml(escapeJs(brandKey))}')">` +
+        modelNames.slice(0, 10).map(m => `<span class="bp-chip">${escapeHtml(m)}</span>`).join('') +
+        (modelNames.length > 10 ? `<span class="bp-more">+${modelNames.length - 10} more</span>` : '<span class="bp-more" style="display:none;"></span>') +
         `</div>`
       : '';
     const brandSection = document.createElement('div');
@@ -13703,6 +13763,7 @@ function renderAvailable(searchTerm) {
   updateStickyHeaderOffsets();
   applyAvailSelClasses();
   updateAvailSelBar();
+  observeBrandPeekRows(document.getElementById('avail-brand-content') || document);
 }
 
 /* Brand sidebar — same logic as Stock Out, driving DB.availFilter */
@@ -14433,9 +14494,9 @@ function renderStockOut(searchTerm) {
     const brandModels = Object.keys(bData.models || {});
     const modelNames = brandModels;
     const peekHtml = (!isBrandOpen && modelNames.length)
-      ? `<div class="brand-peek" onclick="toggleSOBrandAcc('${escapeHtml(escapeJs(brandKey))}')">` +
-        modelNames.slice(0, 6).map(m => `<span class="bp-chip">${escapeHtml(m)}</span>`).join('') +
-        (modelNames.length > 6 ? `<span class="bp-more">+${modelNames.length - 6} more</span>` : '') +
+      ? `<div class="brand-peek" data-total-models="${modelNames.length}" onclick="toggleSOBrandAcc('${escapeHtml(escapeJs(brandKey))}')">` +
+        modelNames.slice(0, 10).map(m => `<span class="bp-chip">${escapeHtml(m)}</span>`).join('') +
+        (modelNames.length > 10 ? `<span class="bp-more">+${modelNames.length - 10} more</span>` : '<span class="bp-more" style="display:none;"></span>') +
         `</div>`
       : '';
     const brandSection = document.createElement('div');
@@ -14476,6 +14537,7 @@ function renderStockOut(searchTerm) {
   applyFiltersBarState('so');
   renderCartSidebar();
   updateStickyHeaderOffsets();
+  observeBrandPeekRows(document.getElementById('stockout-brand-content') || document);
 }
 
 function toggleSOBrandAcc(brand) {

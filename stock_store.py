@@ -734,6 +734,8 @@ class StockStore:
                 "dateIn": str(r["Date In"]), "dateOut": str(r["Date Out"]),
                 "customer": str(r["Customer"]), "status": str(r["Status"]),
                 "batch": str(r.get("Batch") or ""),
+                "document": dict(self.serial_provenance.get(
+                    _provenance_key(r["Model"], r["Serial"]), {})),
                 "warranty": compute_warranty(str(r["Date Out"]))}
                for r in self.records if str(r["Status"]).strip() == SOLD]
         return out
@@ -750,6 +752,8 @@ class StockStore:
                  "action": str(r["Action"]), "date": str(r["Date"]),
                  "dateIn": date_in_map.get(self._pair_key(r["Model"], r["Serial"]), ""),
                  "dateOut": str(r.get("Date Out", "")),
+                 "document": dict(self.serial_provenance.get(
+                     _provenance_key(r["Model"], r["Serial"]), {})),
                  "warranty": compute_warranty(str(r.get("Date Out", "")))}
                 for r in self.returns]
 

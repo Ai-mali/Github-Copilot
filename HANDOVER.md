@@ -240,6 +240,13 @@ Copy the prompt below into the next Copilot chat after opening this repository:
 >
 > Do not claim completion while any requested change or verification remains unfinished. Use the existing project conventions and keep changes surgical.
 
+### Latest session update — Return/Sell Record photo actions
+
+- Removed the Return-tab Print RMA Tags header control, per-row print action, print-only sheet markup, print-only CSS, and the `printRmaTags()` / `reprintRmaTag()` functions. No other screen used those RMA-only pieces.
+- Added read-only `document` provenance payloads to `track_list()` and `returns_list()`. Sell Record and Return unit rows now place a reusable DO/SO photo action immediately after the eye action; it is enabled only when `document.doPhoto` or `document.soPhoto` exists and otherwise shows `No DO/SO photo`.
+- Browser verification at the available 1280px desktop preview found no right-edge overflow on Sell Record or Return, no Return Print RMA control, and correct disabled/enabled photo states using a temporary provenance fixture. The temporary fixture was restored and remains untracked; no customer data was committed.
+- Validation passed: `node check_frontend_syntax.js`, all 73 Node tests, Python compilation for `backend.py stock_store.py desktop_app.py license_check.py`, and `git diff --check`. No executable rebuild was performed. Changes are currently uncommitted on `main`; `origin/main` and `origin/ui-fit-laptop-v2` remain at `aedb3a7`.
+
 ## 14. Handover maintenance rule
 
 This file is the persistent cross-account context. **Update it at the end of every future implementation or build session**, including the current working-tree status, latest stable commit/tag, tests, build artifact/checksum when applicable, remaining work, and the next continuation prompt. Keep the continuation prompt aligned with the actual repository state; do not leave stale claims about a build or completed feature.

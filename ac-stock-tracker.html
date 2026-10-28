@@ -4418,9 +4418,11 @@ body.theme-light .unit-action-btn {
   }
   #view-available .model-cards-grid-4,
   #view-available .model-cards-grid-3 {
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(max(150px, calc((100% - 4 * 6px) / 5)), 1fr));
     gap: 6px;
-    padding: 8px;
+    padding: 6px;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable both-edges;
   }
   #view-available .brand-accordion > div[style*="padding:12px"] {
     padding: 7px !important;
@@ -4429,9 +4431,11 @@ body.theme-light .unit-action-btn {
     padding: 7px !important;
   }
   #view-stock-out .stockout-chips-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(max(150px, calc((100% - 3 * 6px) / 4)), 1fr));
     gap: 6px;
-    padding: 8px;
+    padding: 6px;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable both-edges;
   }
   #view-available .avail-unit-card,
   #view-stock-out .so-serial-card {

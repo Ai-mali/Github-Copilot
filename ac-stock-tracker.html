@@ -10836,6 +10836,9 @@ function switchTab(tab) {
   });
 
   renderScreenIfDirty(tab);
+  if (tab === 'stock-out' && typeof window.__applyStockoutRightResizer === 'function') {
+    requestAnimationFrame(() => window.__applyStockoutRightResizer());
+  }
 
   updateGlobalBadges();
   updateStickyHeaderOffsets();
@@ -13696,85 +13699,6 @@ function initSideResizer(handleId, sidebarId, prefKey, miniKey, applyMini) {
         });
       }
 
-      function initStockoutRightResizer() {
-        const layout = document.querySelector('#view-stock-out .stockout-layout');
-        const panel = document.getElementById('stockout-right-sidebar');
-        const handle = document.getElementById('stockout-right-resizer');
-        if (!layout || !panel || !handle) return;
-
-        const DEFAULT_W = 340;
-        const MIN_W = 260;
-        const MAX_W = 560;
-        const MIN_MIDDLE_W = 480;
-        let currentW = DEFAULT_W;
-        let drag = null;
-
-        const getBounds = () => {
-          const gap = parseFloat(getComputedStyle(layout).columnGap || getComputedStyle(layout).gap) || 0;
-          const sidebar = layout.querySelector('.tl-sidebar');
-          const sidebarW = sidebar ? sidebar.getBoundingClientRect().width : 0;
-          const maxByMiddle = layout.clientWidth - sidebarW - (gap * 2) - MIN_MIDDLE_W;
-          return {
-            min: MIN_W,
-            max: Math.max(MIN_W, Math.min(MAX_W, maxByMiddle))
-          };
-        };
-
-        const clamp = width => {
-          const bounds = getBounds();
-          return Math.max(bounds.min, Math.min(bounds.max, Number(width)));
-        };
-
-        const apply = (width, persist) => {
-          const numeric = Number(width);
-          if (!Number.isFinite(numeric)) return currentW;
-          currentW = clamp(numeric);
-          layout.style.setProperty('--so-right-w', currentW + 'px');
-          if (persist) apiPost('/api/ui-prefs', { prefs: { soRightW: Math.round(currentW) } }).catch(() => {});
-          return currentW;
-        };
-
-        apply(Number.isFinite(Number(DB.soRightW)) ? Number(DB.soRightW) : DEFAULT_W, false);
-
-        handle.addEventListener('pointerdown', e => {
-          if (window.matchMedia('(max-width: 1120px)').matches) return;
-          e.preventDefault();
-          drag = { startX: e.clientX, startW: currentW, pointerId: e.pointerId };
-          document.body.classList.add('tl-resizing');
-          handle.classList.add('dragging');
-          try { handle.setPointerCapture(e.pointerId); } catch (_) {}
-        });
-
-        handle.addEventListener('pointermove', e => {
-          if (!drag || e.pointerId !== drag.pointerId) return;
-          e.preventDefault();
-          apply(drag.startW - (e.clientX - drag.startX), false);
-        });
-
-        handle.addEventListener('pointerup', e => {
-          if (!drag || e.pointerId !== drag.pointerId) return;
-          e.preventDefault();
-          apply(currentW, true);
-          try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
-          drag = null;
-          document.body.classList.remove('tl-resizing');
-          handle.classList.remove('dragging');
-        });
-        handle.addEventListener('pointercancel', e => {
-          if (!drag || e.pointerId !== drag.pointerId) return;
-          try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
-          drag = null;
-          document.body.classList.remove('tl-resizing');
-          handle.classList.remove('dragging');
-        });
-
-        handle.addEventListener('dblclick', e => {
-          e.preventDefault();
-          apply(DEFAULT_W, true);
-        });
-
-        window.addEventListener('resize', () => apply(currentW, false));
-      }
     };
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
@@ -13792,6 +13716,93 @@ function initSideResizer(handleId, sidebarId, prefKey, miniKey, applyMini) {
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
   });
+}
+
+function initStockoutRightResizer() {
+  const layout = document.querySelector('#view-stock-out .stockout-layout');
+  const panel = document.getElementById('stockout-right-sidebar');
+  const handle = document.getElementById('stockout-right-resizer');
+  if (!layout || !panel || !handle) return;
+
+  const DEFAULT_W = 340;
+  const MIN_W = 260;
+  const MAX_W = 560;
+  const MIN_MIDDLE_W = 480;
+  let currentW = DEFAULT_W;
+  let drag = null;
+
+  const getBounds = () => {
+    const gap = parseFloat(getComputedStyle(layout).columnGap || getComputedStyle(layout).gap) || 0;
+    const sidebar = layout.querySelector('.tl-sidebar');
+    const sidebarW = sidebar ? sidebar.getBoundingClientRect().width : 0;
+    const maxByMiddle = layout.clientWidth - sidebarW - (gap * 2) - MIN_MIDDLE_W;
+    return {
+      min: MIN_W,
+      max: Math.max(MIN_W, Math.min(MAX_W, maxByMiddle))
+    };
+  };
+
+  const clamp = width => {
+    const bounds = getBounds();
+    return Math.max(bounds.min, Math.min(bounds.max, Number(width)));
+  };
+
+  const apply = (width, persist) => {
+    const numeric = Number(width);
+    if (!Number.isFinite(numeric)) return currentW;
+    currentW = clamp(numeric);
+    layout.style.setProperty('--so-right-w', currentW + 'px');
+    if (persist) apiPost('/api/ui-prefs', { prefs: { soRightW: Math.round(currentW) } }).catch(() => {});
+    return currentW;
+  };
+
+  const savedW = Number.isFinite(Number(DB.soRightW)) ? Number(DB.soRightW) : DEFAULT_W;
+  if (layout.clientWidth > 0) {
+    apply(savedW, false);
+  } else {
+    currentW = savedW;
+    layout.style.setProperty('--so-right-w', currentW + 'px');
+  }
+
+  handle.addEventListener('pointerdown', e => {
+    if (window.matchMedia('(max-width: 1120px)').matches) return;
+    e.preventDefault();
+    drag = { startX: e.clientX, startW: currentW, pointerId: e.pointerId };
+    document.body.classList.add('tl-resizing');
+    handle.classList.add('dragging');
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  handle.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    e.preventDefault();
+    apply(drag.startW - (e.clientX - drag.startX), false);
+  });
+
+  handle.addEventListener('pointerup', e => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    e.preventDefault();
+    apply(currentW, true);
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+    drag = null;
+    document.body.classList.remove('tl-resizing');
+    handle.classList.remove('dragging');
+  });
+  handle.addEventListener('pointercancel', e => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+    drag = null;
+    document.body.classList.remove('tl-resizing');
+    handle.classList.remove('dragging');
+  });
+
+  handle.addEventListener('dblclick', e => {
+    e.preventDefault();
+    apply(DEFAULT_W, true);
+  });
+
+  window.addEventListener('resize', () => apply(currentW, false));
+  window.__applyStockoutRightResizer = () => apply(currentW, false);
 }
 
 function applyAvailSidebarMini() {

@@ -6011,6 +6011,7 @@ body.theme-light .rs-time-pop {
   border-radius: 12px;
   overflow: hidden;
 }
+#view-track-list .tl-sidebar { width: 260px; }
 /* Drag-resize handle on the sidebar's right edge (Telegram-style) */
 .tl-side-resizer {
   position: absolute;
@@ -6633,14 +6634,29 @@ body.theme-light .tl-side-mini .tl-cust-item.active {
 
 /* Return Screen Layout */
 .return-screen-layout {
+  --return-left-w: 320px;
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: var(--return-left-w) 1fr;
   gap: 16px;
   flex: 1 1 0;
   min-height: 0;
   align-items: stretch;
 }
-.rma-inspect-card { display: flex; flex-direction: column; min-height: 0; }
+.rma-inspect-card { display: flex; flex-direction: column; min-height: 0; position: relative; container: return-left / inline-size; }
+.return-left-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 30;
+  border-radius: 0 12px 12px 0;
+}
+.return-left-resizer:hover,
+.return-left-resizer.dragging {
+  background: rgba(38, 208, 124, 0.35);
+}
 .rma-panel-head { border-bottom: 1px solid var(--border); background: var(--surface2); }
 .rma-panel-body {
   display: flex; flex-direction: column; gap: 14px;
@@ -6725,6 +6741,28 @@ body.theme-light .tl-side-mini .tl-cust-item.active {
 .rma-meta-strip b { font-size: 11.5px; color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; padding: 0 6px; }
 .rma-registry-card { display: flex; flex-direction: column; min-height: 0; }
 .rma-registry-card .table-container { overflow-y: auto; }
+.rma-registry-table {
+  table-layout: fixed;
+  min-width: 0;
+}
+.rma-registry-table th,
+.rma-registry-table td {
+  padding-left: 7px;
+  padding-right: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rma-registry-table th:nth-child(1) { width: 12%; }
+.rma-registry-table th:nth-child(2) { width: 11%; }
+.rma-registry-table th:nth-child(3) { width: 13%; }
+.rma-registry-table th:nth-child(4),
+.rma-registry-table th:nth-child(5),
+.rma-registry-table th:nth-child(6) { width: 9%; }
+.rma-registry-table th:nth-child(7) { width: 12%; }
+.rma-registry-table th:nth-child(8) { width: 13%; }
+.rma-registry-table th:nth-child(9) { width: 11%; }
+.rma-registry-table th:nth-child(10) { width: 10%; }
 .rma-note-cell {
   max-width: 200px;
   white-space: nowrap;
@@ -7308,6 +7346,139 @@ body.light .act-code { background: var(--surface3); }
   gap: 10px; padding: 10px 16px;
   border-top: 1px solid var(--border); background: var(--surface2);
   font-size: 11px; color: var(--text-sub); flex-shrink: 0; flex-wrap: wrap;
+}
+
+@media (min-width: 1121px) {
+  .tl-layout {
+    gap: 2px;
+  }
+  .tl-main {
+    gap: 2px;
+  }
+  .tl-main > .tl-header {
+    flex-wrap: nowrap;
+    row-gap: 0;
+    align-items: center;
+  }
+  .tl-header-left {
+    flex: 0 0 auto;
+  }
+  #view-track-list .view-title {
+    font-size: 20px;
+    white-space: nowrap;
+  }
+  #view-track-list .view-subtitle {
+    display: none;
+  }
+  #view-track-list .tl-live-badge {
+    padding: 1px 6px;
+    gap: 4px;
+    font-size: 9px;
+  }
+  #view-track-list .tl-live-dot {
+    width: 5px;
+    height: 5px;
+  }
+  .tl-header-actions {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+  #view-track-list .tl-search-group {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+  #view-track-list .tl-search-group .custom-datepicker.dp-filter {
+    flex: 0 1 128px;
+    min-width: 108px;
+  }
+  #view-track-list .tl-search-group .tl-search {
+    min-width: 110px;
+    max-width: none;
+  }
+  #view-track-list #track-export-btn {
+    width: 30px;
+    min-width: 30px;
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: center;
+  }
+  #view-track-list #track-export-label {
+    display: none;
+  }
+  #view-return .return-screen-layout {
+    gap: 2px;
+  }
+  #view-return .rma-toolbar {
+    flex-wrap: nowrap;
+    gap: 5px;
+    padding: 8px 10px 5px;
+  }
+  #view-return .rma-toolbar > .search-box-wrap:first-child {
+    min-width: 110px !important;
+  }
+  #view-return .rma-dateout-wrap {
+    min-width: 150px;
+    flex: 0 1 190px;
+  }
+  #view-return .rma-reset-btn {
+    width: 30px;
+    height: 30px;
+  }
+  #view-return .rma-reg-head {
+    padding: 8px 10px;
+    flex-wrap: nowrap;
+  }
+  #view-return .rma-reg-head > div:first-child > div:first-child .card-title {
+    font-size: 12px;
+  }
+  #view-return .rma-reg-head > div:first-child > div:last-child {
+    display: none;
+  }
+  #view-return .rma-reg-head .btn {
+    width: 30px;
+    min-width: 30px;
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: center;
+  }
+  #view-return .rma-reg-head .btn {
+    font-size: 0;
+  }
+  #view-return .rma-registry-table thead th {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    font-size: 9px;
+  }
+  #view-return .rma-registry-table tbody td {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+}
+
+@container return-left (max-width: 300px) {
+  .rma-panel-foot {
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+  }
+  .rma-panel-foot .btn {
+    min-height: 32px;
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 1121px) {
+  #view-return .rma-inspect-card {
+    min-width: 0;
+  }
+  #view-return .rma-panel-body {
+    min-width: 0;
+  }
 }
 .rma-cust-pill {
   display: inline-flex; align-items: center; padding: 1px 8px;
@@ -8816,7 +8987,8 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     <section id="view-return" class="view-section">
       <div class="return-screen-layout">
         <!-- LEFT: Return & RMA Inspection panel -->
-        <div class="card rma-inspect-card">
+        <div class="card rma-inspect-card" id="return-left-panel">
+          <div class="return-left-resizer" id="return-left-resizer" title="Drag to resize Return inspection panel"></div>
           <div class="card-header rma-panel-head">
             <div style="display:flex; align-items:flex-start; gap:10px;">
               <div class="tl-header-icon" style="width:34px; height:34px; margin-top:2px;">
@@ -8908,11 +9080,11 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Audit trail of equipment returns, inspection dispositions, and restock logs</div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <button class="btn btn-ghost btn-sm" onclick="exportReturnsCsv()" title="Export CSV">
+              <button class="btn btn-ghost btn-sm" onclick="exportReturnsCsv()" title="Export CSV" aria-label="Export CSV">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 Export CSV
               </button>
-              <button class="btn btn-ghost btn-sm" onclick="printRmaTags()" title="Print RMA tags">
+              <button class="btn btn-ghost btn-sm" onclick="printRmaTags()" title="Print RMA tags" aria-label="Print RMA tags">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                 Print RMA Tags
               </button>
@@ -8936,7 +9108,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
           </div>
           <div class="rma-chip-row" id="rma-chip-row"></div>
           <div class="table-container" style="flex:1 1 auto; min-height:0;">
-            <table class="data-table">
+            <table class="data-table rma-registry-table">
               <thead>
                 <tr>
                   <th>Serial/Desc</th>
@@ -10438,6 +10610,7 @@ async function refreshData() {
   DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
   DB.trackSidebarW = (uiPrefs && uiPrefs.tlW) || 0;
   DB.soRightW = (uiPrefs && uiPrefs.soRightW) || 340;
+  DB.returnLeftW = (uiPrefs && uiPrefs.returnLeftW) || 320;
   DB.availBarHidden = (uiPrefs && uiPrefs.availBar !== undefined) ? uiPrefs.availBar : true;
   DB.soBarHidden = (uiPrefs && uiPrefs.soBar !== undefined) ? uiPrefs.soBar : true;
   DB.soRecentHidden = (uiPrefs && uiPrefs.soRecent !== undefined) ? uiPrefs.soRecent : true;
@@ -10838,6 +11011,9 @@ function switchTab(tab) {
   renderScreenIfDirty(tab);
   if (tab === 'stock-out' && typeof window.__applyStockoutRightResizer === 'function') {
     requestAnimationFrame(() => window.__applyStockoutRightResizer());
+  }
+  if (tab === 'return' && typeof window.__applyReturnLeftResizer === 'function') {
+    requestAnimationFrame(() => window.__applyReturnLeftResizer());
   }
 
   updateGlobalBadges();
@@ -13805,6 +13981,73 @@ function initStockoutRightResizer() {
   window.__applyStockoutRightResizer = () => apply(currentW, false);
 }
 
+function initReturnLeftResizer() {
+  const layout = document.querySelector('#view-return .return-screen-layout');
+  const panel = document.getElementById('return-left-panel');
+  const handle = document.getElementById('return-left-resizer');
+  if (!layout || !panel || !handle) return;
+
+  const DEFAULT_W = 320;
+  const MIN_W = 280;
+  const MAX_W = 520;
+  const MIN_RIGHT_W = 560;
+  let currentW = Number(DB.returnLeftW) || DEFAULT_W;
+  let drag = null;
+
+  const getBounds = () => {
+    const gap = parseFloat(getComputedStyle(layout).columnGap || getComputedStyle(layout).gap) || 0;
+    return {
+      min: MIN_W,
+      max: Math.max(MIN_W, Math.min(MAX_W, layout.clientWidth - gap - MIN_RIGHT_W))
+    };
+  };
+  const clamp = width => {
+    const bounds = getBounds();
+    return Math.max(bounds.min, Math.min(bounds.max, Number(width)));
+  };
+  const apply = (width, persist) => {
+    const n = Number(width);
+    if (!Number.isFinite(n)) return currentW;
+    currentW = layout.clientWidth > 0 ? clamp(n) : n;
+    layout.style.setProperty('--return-left-w', currentW + 'px');
+    if (persist) {
+      apiPost('/api/ui-prefs', { prefs: { returnLeftW: Math.round(currentW) } }).catch(() => {});
+    }
+    return currentW;
+  };
+
+  apply(currentW, false);
+  handle.addEventListener('pointerdown', e => {
+    if (window.matchMedia('(max-width: 1120px)').matches) return;
+    e.preventDefault();
+    drag = { startX: e.clientX, startW: currentW, pointerId: e.pointerId };
+    document.body.classList.add('tl-resizing');
+    handle.classList.add('dragging');
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  handle.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    e.preventDefault();
+    apply(drag.startW + (e.clientX - drag.startX), false);
+  });
+  const finish = (e, persist) => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    if (persist) apply(currentW, true);
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+    drag = null;
+    document.body.classList.remove('tl-resizing');
+    handle.classList.remove('dragging');
+  };
+  handle.addEventListener('pointerup', e => finish(e, true));
+  handle.addEventListener('pointercancel', e => finish(e, false));
+  handle.addEventListener('dblclick', e => {
+    e.preventDefault();
+    apply(DEFAULT_W, true);
+  });
+  window.addEventListener('resize', () => apply(currentW, false));
+  window.__applyReturnLeftResizer = () => apply(currentW, false);
+}
+
 function applyAvailSidebarMini() {
   const sb = document.getElementById('avail-sidebar');
   if (sb) sb.classList.toggle('tl-side-mini', !!DB.availSidebarMini);
@@ -16134,11 +16377,11 @@ function renderReturnTable() {
     tr.innerHTML = `
       <td class="mono" style="font-weight:700; color:var(--green-bright);"><span class="tl-copy" title="Click to copy serial" onclick="copySerial('${escapeHtml(escapeJs(r.serial))}')">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
       <td style="font-weight:600;"><span class="tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(r.model))}')">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></td>
-      <td><span class="rma-cust-pill"><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${cHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
+      <td title="${escapeHtml(r.customer || '')}"><span class="rma-cust-pill"><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${cHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
       <td class="mono" style="color:var(--text-sub);">${escapeHtml(fmtDMY(r.dateIn) || '—')}</td>
       <td class="mono" style="color:var(--text-sub);">${escapeHtml(fmtDMY(r.dateOut) || '—')}</td>
       <td class="mono">${escapeHtml(fmtDMY(r.date))}</td>
-      <td style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>
+      <td title="${escapeHtml(r.reason || '')}" style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>
       <td class="rma-note-cell" title="${escapeHtml(r.notes || '')}">${r.notes ? `<span class="rma-note-link" onclick="openReturnDetail(${rIdx})">${escapeHtml(r.notes)}</span>` : '<span style="opacity:.35;">—</span>'}</td>
       <td style="text-align:center;">${badge}</td>
       <td style="text-align:right; white-space:nowrap;">
@@ -19307,6 +19550,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
   initSideResizer('tl-side-resizer', 'tl-sidebar', 'tlW', 'trackSidebarMini', applyTrackSidebarMini);
   initStockoutRightResizer();
+  initReturnLeftResizer();
   
   // Initialize Custom Datepickers with today's date
   const todayStr = formatDateISO(new Date());

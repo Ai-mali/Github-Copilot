@@ -4373,6 +4373,114 @@ body.theme-light .unit-action-btn {
   .brand-peek .bp-more {
     font-size: 10.5px;
   }
+
+  .model-accordion {
+    margin-bottom: 6px;
+  }
+  .model-accordion-header {
+    min-height: 30px;
+    height: 30px;
+    padding: 4px 8px;
+  }
+  .model-header-main {
+    gap: 6px;
+  }
+  .model-index-pill {
+    font-size: 10px;
+    padding: 1px 5px;
+    margin-right: 2px;
+  }
+  .model-accordion-header .tl-copy {
+    font-size: 12px !important;
+  }
+  .model-accordion-header .badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .model-accordion-header > div:last-child {
+    gap: 5px !important;
+  }
+  .model-accordion-header > div:last-child > span:last-child {
+    font-size: 10px;
+  }
+  .go-stockout-btn {
+    height: 22px;
+    padding-right: 7px;
+    gap: 4px;
+    border-radius: 6px;
+    font-size: 10.5px;
+  }
+  .go-stockout-btn-icon {
+    width: 17px;
+    height: 17px;
+    flex-basis: 17px;
+    border-radius: 4px;
+  }
+  #view-available .model-cards-grid-4,
+  #view-available .model-cards-grid-3 {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 6px;
+    padding: 8px;
+  }
+  #view-available .brand-accordion > div[style*="padding:12px"] {
+    padding: 7px !important;
+  }
+  #view-stock-out .brand-accordion > div[style*="padding:12px"] {
+    padding: 7px !important;
+  }
+  #view-stock-out .stockout-chips-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 6px;
+    padding: 8px;
+  }
+  #view-available .avail-unit-card,
+  #view-stock-out .so-serial-card {
+    min-height: 44px;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 6px 9px;
+  }
+  #view-available .avail-unit-card:hover,
+  #view-stock-out .so-serial-card:hover {
+    transform: none;
+  }
+  #view-available .avail-unit-card .serial-text,
+  #view-stock-out .so-card-top .serial-val {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  #view-available .avail-card-header,
+  #view-stock-out .so-card-top {
+    min-width: 0;
+    gap: 4px;
+  }
+  #view-available .avail-card-actions,
+  #view-stock-out .so-card-actions {
+    gap: 3px;
+  }
+  #view-available .unit-action-btn,
+  #view-stock-out .so-photo-btn {
+    width: 21px;
+    height: 21px;
+    border-radius: 5px;
+  }
+  #view-available .avail-unit-card .meta-text,
+  #view-stock-out .so-card-bottom {
+    margin-top: 2px;
+    font-size: 10.5px;
+    line-height: 14px;
+  }
+  #view-available .avail-card-tag,
+  #view-stock-out .so-card-bottom > span:last-child {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  #view-stock-out .model-accordion > div:not(.model-accordion-header) {
+    padding: 0 !important;
+  }
 }
 
 @media (min-width: 1121px) {
@@ -10942,7 +11050,9 @@ function updateStickyHeaderOffsets() {
       const barHeight = availSearchBar.offsetHeight;
       const brandTop = stickyBase + availHdrH + barHeight;
       document.documentElement.style.setProperty('--avail-brand-sticky-top', `${brandTop}px`);
-      document.documentElement.style.setProperty('--avail-model-sticky-top', `${brandTop + 43}px`);
+      const availBrandHeader = document.querySelector('#view-available .brand-accordion-header');
+      const availBrandHeaderH = availBrandHeader ? availBrandHeader.offsetHeight : 34;
+      document.documentElement.style.setProperty('--avail-model-sticky-top', `${brandTop + availBrandHeaderH}px`);
     }
 
     const soHdr = document.querySelector('#view-stock-out .view-header');
@@ -10953,7 +11063,9 @@ function updateStickyHeaderOffsets() {
       const barHeight = soSearchBar.offsetHeight;
       const brandTop = stickyBase + soHdrH + barHeight;
       document.documentElement.style.setProperty('--stockout-brand-sticky-top', `${brandTop}px`);
-      document.documentElement.style.setProperty('--stockout-model-sticky-top', `${brandTop + 43}px`);
+      const soBrandHeader = document.querySelector('#view-stock-out .brand-accordion-header');
+      const soBrandHeaderH = soBrandHeader ? soBrandHeader.offsetHeight : 34;
+      document.documentElement.style.setProperty('--stockout-model-sticky-top', `${brandTop + soBrandHeaderH}px`);
     }
 
     // Cap each sidebar to the space actually visible below its resting
@@ -14462,7 +14574,7 @@ function renderStockOut(searchTerm) {
 
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}" data-stockout-brand="${escapeHtml(brandKey)}" data-stockout-model="${escapeHtml(mKey)}">
-          <div class="model-accordion-header" onclick="toggleSOModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
+          <div class="model-accordion-header" title="Click any serial to quickly toggle in Dispatch Staging Cart" onclick="toggleSOModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
               <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeHtml(escapeJs(mKey))}')" title="Click to copy model">${modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey)}</span>
@@ -14474,9 +14586,6 @@ function renderStockOut(searchTerm) {
             </div>
           </div>
           <div style="display:${isModelOpen ? 'block' : 'none'};">
-            <div style="padding:8px 14px 0 14px; font-size:11px; color:var(--text-sub);">
-              Click any serial to quickly toggle in Dispatch Staging Cart:
-            </div>
             <div class="stockout-chips-grid">
               ${chipsHtml}
             </div>

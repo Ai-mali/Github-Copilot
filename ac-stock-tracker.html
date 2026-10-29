@@ -4324,7 +4324,7 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
 @media (min-width: 1121px) {
   #view-available .view-header,
   #view-stock-out .view-header {
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: nowrap;
     gap: 10px;
   }
@@ -4337,6 +4337,7 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
   #view-stock-out .view-title {
     font-size: 20px;
     white-space: nowrap;
+    height: 30px;
   }
   #view-available .view-subtitle,
   #view-stock-out .view-subtitle {
@@ -4359,12 +4360,16 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
     flex-wrap: nowrap;
     gap: 6px;
     min-width: 0;
+    height: 30px;
+    align-items: center;
   }
   #view-stock-out .hdr-search-side {
     flex: 1 1 auto;
     flex-wrap: nowrap;
     gap: 6px;
     min-width: 0;
+    height: 30px;
+    align-items: center;
   }
   #view-available .hdr-search-side > .btn,
   #view-available .hdr-search-side > .filters-toggle-btn {
@@ -9002,7 +9007,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
 
         <!-- Middle: header + search + model accordions -->
         <div class="stockout-left-col">
-          <div class="view-header" style="align-items:center;">
+          <div class="view-header">
             <div>
               <div class="view-title" style="display:flex; align-items:center; gap:8px;">
                 Stock Out &amp; Dispatch

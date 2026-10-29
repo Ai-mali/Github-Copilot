@@ -277,6 +277,13 @@ Copy the prompt below into the next Copilot chat after opening this repository:
 - Browser verification used the available 1280x720 canvas (the requested 1280x680 and a separate large-window canvas were unavailable). `INTERFACE ADAPTER #1/#2` endings remained visible, card height was 44px, Available Stock measured five cards/row with 16.00/16.02px gutters, and Stock Out used four equal columns with no horizontal overflow. Tooltip visibility, search highlighting, staged `In Cart ✓`, photo action presence, and no console/page errors were observed. The live data contained no second-hand units, so the 2nd-hand state was verified structurally rather than with a real populated card.
 - Validation passed: `node check_frontend_syntax.js`, all 73 Node tests, Python compilation for `backend.py stock_store.py desktop_app.py license_check.py`, and `git diff --check`. No executable rebuild was performed. Changes are pending commit on `ui-fit-laptop-v2`; runtime `serial_provenance.json` remains untracked.
 
+### Latest session update — Available Stock action-button clearance
+
+- Available Stock desktop unit cards now use 48px height/min-height with 5px vertical and 9px horizontal padding. Their photo/edit/delete buttons are 19px square with 11px SVG icons; Stock Out card sizing and the completed 5/4-column grid rules were left unchanged.
+- At the available 1280x720 browser canvas, Available Stock DAIKIN-ADAPTER cards measured 48px high. Every visible action button measured 19px and ended 6px above the card bottom; right edges were at least 6px inside the card, and serial bounds stayed inside every card. The staged `K000387` and second-hand `K000590` cards also measured 48px and passed the same bounds checks. No console/page errors or horizontal overflow were observed.
+- The browser canvas available for this session was 1280x720 rather than the requested 1280x680; no large-window canvas or Playwright package was available for an additional viewport run. No executable rebuild was performed.
+- Validation passed: `node check_frontend_syntax.js`, all 73 Node tests, Python compilation for `backend.py stock_store.py desktop_app.py license_check.py`, and `git diff --check`. Changes are pending commit on `ui-fit-laptop-v2`; runtime `serial_provenance.json` remains untracked.
+
 ## 14. Handover maintenance rule
 
 This file is the persistent cross-account context. **Update it at the end of every future implementation or build session**, including the current working-tree status, latest stable commit/tag, tests, build artifact/checksum when applicable, remaining work, and the next continuation prompt. Keep the continuation prompt aligned with the actual repository state; do not leave stale claims about a build or completed feature.

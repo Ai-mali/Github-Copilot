@@ -4529,7 +4529,12 @@ body.theme-light .unit-action-btn {
     scrollbar-width: thin;
     scrollbar-gutter: stable both-edges;
   }
-  #view-available .avail-unit-card,
+  #view-available .avail-unit-card {
+    min-height: 44px;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 6px 9px;
+  }
   #view-stock-out .so-serial-card {
     min-height: 44px;
     height: 44px;
@@ -4599,11 +4604,32 @@ body.theme-light .unit-action-btn {
   #view-stock-out .so-card-actions {
     gap: 3px;
   }
-  #view-available .unit-action-btn,
+  #view-available .unit-action-btn {
+    width: 21px;
+    height: 21px;
+    border-radius: 5px;
+  }
   #view-stock-out .so-photo-btn {
     width: 21px;
     height: 21px;
     border-radius: 5px;
+  }
+  #view-available .avail-unit-card {
+    min-height: 48px;
+    height: 48px;
+    padding: 5px 9px;
+  }
+  #view-available .unit-action-btn {
+    width: 19px;
+    height: 19px;
+    border-radius: 5px;
+  }
+  #view-available .unit-action-btn svg {
+    width: 11px;
+    height: 11px;
+  }
+  #view-available .avail-card-bottom {
+    min-height: 19px;
   }
   #view-available .avail-unit-card .meta-text,
   #view-stock-out .so-card-bottom {

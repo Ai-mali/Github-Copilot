@@ -4183,6 +4183,44 @@ body.theme-light .unit-action-btn {
   border-left: 3px solid #f59e0b;
 }
 
+/* Keep the second-hand marker visible through theme, hover, staged, and
+   search-highlight border overrides. */
+body .avail-unit-card.second-hand,
+body .so-serial-card.second-hand {
+  border-left-color: #f59e0b;
+}
+body.theme-light .avail-unit-card.second-hand,
+body.theme-light .so-serial-card.second-hand {
+  border-left-color: #d97706;
+}
+body .avail-unit-card.second-hand:hover,
+body .avail-unit-card.second-hand.staged,
+body .avail-unit-card.second-hand.avail-unit-card-highlighted,
+body .so-serial-card.second-hand:hover,
+body .so-serial-card.second-hand.staged,
+body .so-serial-card.second-hand.so-highlighted {
+  border-left-color: #f59e0b !important;
+}
+body.theme-light .avail-unit-card.second-hand:hover,
+body.theme-light .avail-unit-card.second-hand.staged,
+body.theme-light .avail-unit-card.second-hand.avail-unit-card-highlighted,
+body.theme-light .so-serial-card.second-hand:hover,
+body.theme-light .so-serial-card.second-hand.staged,
+body.theme-light .so-serial-card.second-hand.so-highlighted {
+  border-left-color: #d97706 !important;
+}
+
+.avail-unit-card:focus,
+.so-serial-card:focus {
+  outline: none;
+}
+
+.avail-unit-card:focus-visible,
+.so-serial-card:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 1px;
+}
+
 .serial-middle {
   display: flex;
   align-items: baseline;

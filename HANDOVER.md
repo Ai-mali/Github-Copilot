@@ -138,6 +138,7 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 
 ## 12. Latest session update
 
+- Fixed second-hand card styling on `ui-fit-laptop-v2`: amber left edges now win over Day-theme, hover, staged, and highlighted border rules for Available Stock and Stock Out; mouse clicks no longer leave the browser's black focus ring, while keyboard focus uses the app's teal `:focus-visible` ring. Validation and browser measurements are recorded with this change.
 - Corrected the DO/SO strip markup so only the two date fields use centered alignment.
 - Delivery Order and Sales Order number fields, tags, and boxes remain left-aligned.
 - On the Stock In screen only, pressing Enter after loading/pasting an image triggers the Scan action; inputs, buttons, dialogs, and other tabs retain normal Enter behavior.

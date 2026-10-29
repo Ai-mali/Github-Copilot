@@ -289,6 +289,13 @@ Copy the prompt below into the next Copilot chat after opening this repository:
 - The browser canvas available for this session was 1280x720 rather than the requested 1280x680; no large-window canvas or Playwright package was available for an additional viewport run. No executable rebuild was performed.
 - Validation passed: `node check_frontend_syntax.js`, all 73 Node tests, Python compilation for `backend.py stock_store.py desktop_app.py license_check.py`, and `git diff --check`. Changes are pending commit on `ui-fit-laptop-v2`; runtime `serial_provenance.json` remains untracked.
 
+### Latest session update — restore compact-search source and executable build
+
+- Restored `ui-fit-laptop-v2` to source commit `37c0c02` (`Shorten desktop search groups`) and published that exact source state to `origin/main` as requested.
+- Rebuilt `dist\VRE AC Stock.exe` from `37c0c02` with `build-exe.bat`; the executable was rebuilt successfully in this session. The generated artifact remains local and is not committed to the source branch.
+- Runtime `serial_provenance.json` remains untracked and was not included. The source branch is clean except for that runtime sidecar.
+- Validation for this build session: source state verified at `37c0c02`; executable build completed successfully. No additional UI changes were made.
+
 ## 14. Handover maintenance rule
 
 This file is the persistent cross-account context. **Update it at the end of every future implementation or build session**, including the current working-tree status, latest stable commit/tag, tests, build artifact/checksum when applicable, remaining work, and the next continuation prompt. Keep the continuation prompt aligned with the actual repository state; do not leave stale claims about a build or completed feature.

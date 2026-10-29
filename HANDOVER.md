@@ -138,6 +138,7 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 
 ## 12. Latest session update
 
+- Fixed Day-theme unit-card hover contrast on Available Stock and Stock Out: serials now use `rgb(11,79,67)` without glow, dates use `rgb(63,90,87)`, and status tags use `rgb(15,118,110)` while dark-theme glow remains unchanged. CSS/browser checks measured at least 8.59:1 for highlighted serials, 6.76:1 for dates, and 4.96:1 for status tags; the available browser viewport was 339x956 rather than 1280x680.
 - Fixed second-hand card styling on `ui-fit-laptop-v2`: amber left edges now win over Day-theme, hover, staged, and highlighted border rules for Available Stock and Stock Out; mouse clicks no longer leave the browser's black focus ring, while keyboard focus uses the app's teal `:focus-visible` ring. Validation and browser measurements are recorded with this change.
 - Corrected the DO/SO strip markup so only the two date fields use centered alignment.
 - Delivery Order and Sales Order number fields, tags, and boxes remain left-aligned.

@@ -4022,6 +4022,7 @@ body.avail-marquee-active, body.avail-marquee-active * {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .avail-unit-card .serial-text {
@@ -4147,6 +4148,97 @@ body.theme-light .unit-action-btn {
   font-weight: 600;
   color: var(--text-sub);
 }
+
+.avail-card-top,
+.avail-card-bottom {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.avail-card-top {
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.avail-card-bottom {
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.avail-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.avail-card-bottom .meta-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.avail-unit-card.second-hand {
+  border-left: 3px solid #f59e0b;
+}
+
+.serial-middle {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.serial-head {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.serial-tail {
+  flex: 0 0 auto;
+  white-space: pre;
+}
+
+.avail-unit-card:hover .serial-middle {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(38, 208, 124, 0.95), 0 0 22px rgba(38, 208, 124, 0.6);
+  letter-spacing: 0.04em;
+}
+
+.unit-hover-tooltip {
+  position: fixed;
+  display: none;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--green-bright) 45%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface2) 96%, #000);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  z-index: 10050;
+  overflow-wrap: anywhere;
+}
+
+.unit-hover-tooltip.is-visible { display: block; }
+.unit-hover-tooltip .uht-serial {
+  margin-bottom: 3px;
+  color: var(--green-bright);
+  font: 700 11.5px 'JetBrains Mono', monospace;
+}
+.unit-hover-tooltip .uht-row { display: block; }
+.unit-hover-tooltip .uht-label { color: var(--text-sub); }
 
 .avail-unit-card:hover .avail-card-tag {
   color: var(--green-bright);
@@ -4460,6 +4552,48 @@ body.theme-light .unit-action-btn {
   #view-stock-out .so-card-top {
     min-width: 0;
     gap: 4px;
+  }
+  #view-available .avail-card-header {
+    display: block;
+  }
+  #view-available .avail-card-top,
+  #view-stock-out .so-card-top {
+    min-height: 17px;
+  }
+  #view-available .avail-card-bottom {
+    min-height: 17px;
+  }
+  #view-available .avail-card-bottom .meta-text {
+    margin-top: 0;
+  }
+  #view-available .avail-card-status {
+    font-size: 10px;
+  }
+  #view-available .avail-card-status .avail-card-dot {
+    display: none;
+  }
+  #view-available .serial-middle,
+  #view-stock-out .serial-middle {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+  }
+  #view-stock-out .so-card-bottom {
+    min-height: 14px;
+    margin-top: 2px;
+  }
+  #view-stock-out .so-card-bottom > span {
+    min-width: 0;
+  }
+  #view-stock-out .so-card-bottom > span:last-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3px;
+    flex: 0 0 auto;
+  }
+  #view-stock-out .so-card-top .indicator-dot {
+    display: none;
   }
   #view-available .avail-card-actions,
   #view-stock-out .so-card-actions {
@@ -4821,6 +4955,15 @@ body.theme-light .unit-action-btn {
   font-weight: 700;
   color: var(--text);
   transition: color .2s ease;
+}
+
+.so-serial-card.second-hand {
+  border-left: 3px solid #f59e0b;
+}
+
+.so-serial-card:hover .serial-middle {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(38, 208, 124, 0.8);
 }
 
 .so-card-top .indicator-dot {
@@ -13102,6 +13245,114 @@ function copySerial(s) {
   }
 }
 
+function renderSerialMiddle(text, query) {
+  const serial = String(text || '');
+  const tailLength = serial.length > 6 ? 6 : 0;
+  const head = tailLength ? serial.slice(0, -tailLength) : '';
+  const tail = tailLength ? serial.slice(-tailLength) : serial;
+  return `<span class="serial-middle" aria-label="${escapeHtml(serial)}">` +
+    (head ? `<span class="serial-head">${markMatchedText(head, query || '')}</span>` : '') +
+    `<span class="serial-tail">${markMatchedText(tail, query || '')}</span>` +
+    `</span>`;
+}
+
+let __unitTooltipTimer = null;
+let __unitTooltipCard = null;
+
+function unitTooltipElement() {
+  let tip = document.getElementById('unit-hover-tooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'unit-hover-tooltip';
+    tip.className = 'unit-hover-tooltip';
+    document.body.appendChild(tip);
+  }
+  return tip;
+}
+
+function hideUnitCardTooltip() {
+  if (__unitTooltipTimer) {
+    clearTimeout(__unitTooltipTimer);
+    __unitTooltipTimer = null;
+  }
+  __unitTooltipCard = null;
+  const tip = document.getElementById('unit-hover-tooltip');
+  if (tip) tip.classList.remove('is-visible');
+}
+
+function positionUnitCardTooltip(card, tip) {
+  const rect = card.getBoundingClientRect();
+  const margin = 8;
+  const width = Math.min(280, Math.max(160, tip.offsetWidth));
+  const height = tip.offsetHeight;
+  const left = Math.min(Math.max(margin, rect.left), window.innerWidth - width - margin);
+  let top = rect.bottom + margin;
+  if (top + height > window.innerHeight - margin) top = rect.top - height - margin;
+  if (top < margin) top = margin;
+  tip.style.left = `${Math.round(left)}px`;
+  tip.style.top = `${Math.round(top)}px`;
+}
+
+function showUnitCardTooltip(card) {
+  if (!card) return;
+  hideUnitCardTooltip();
+  __unitTooltipCard = card;
+  __unitTooltipTimer = setTimeout(() => {
+    if (__unitTooltipCard !== card) return;
+    const tip = unitTooltipElement();
+    const serial = card.dataset.tooltipSerial || '';
+    const model = card.dataset.tooltipModel || '';
+    const dateIn = card.dataset.tooltipDateIn || '';
+    const doNo = card.dataset.tooltipDo || '';
+    const soNo = card.dataset.tooltipSo || '';
+    const secondHand = card.dataset.tooltipSecond === '1';
+    tip.innerHTML =
+      `<div class="uht-serial">${escapeHtml(serial)}</div>` +
+      `<span class="uht-row"><span class="uht-label">Model:</span> ${escapeHtml(model)}</span>` +
+      `<span class="uht-row"><span class="uht-label">Date In:</span> ${escapeHtml(dateIn)}</span>` +
+      (doNo ? `<span class="uht-row"><span class="uht-label">DO no.:</span> ${escapeHtml(doNo)}</span>` : '') +
+      (soNo ? `<span class="uht-row"><span class="uht-label">SO no.:</span> ${escapeHtml(soNo)}</span>` : '') +
+      (secondHand ? '<span class="uht-row">2nd-hand</span>' : '');
+    tip.classList.add('is-visible');
+    positionUnitCardTooltip(card, tip);
+    __unitTooltipTimer = null;
+  }, 300);
+}
+
+function initUnitCardTooltips() {
+  ['avail-accordion-container', 'stockout-brands-container'].forEach(id => {
+    const root = document.getElementById(id);
+    if (!root || root.dataset.unitTooltipReady) return;
+    root.dataset.unitTooltipReady = '1';
+    root.addEventListener('mouseover', event => {
+      const card = event.target.closest('.avail-unit-card, .so-serial-card');
+      if (card && root.contains(card)) showUnitCardTooltip(card);
+    });
+    root.addEventListener('mouseout', event => {
+      const card = event.target.closest('.avail-unit-card, .so-serial-card');
+      const next = event.relatedTarget && event.relatedTarget.closest
+        ? event.relatedTarget.closest('.avail-unit-card, .so-serial-card') : null;
+      if (card && card !== next) hideUnitCardTooltip();
+    });
+    root.addEventListener('focusin', event => {
+      const card = event.target.closest('.avail-unit-card, .so-serial-card');
+      if (card && root.contains(card)) showUnitCardTooltip(card);
+    });
+    root.addEventListener('focusout', event => {
+      const card = event.target.closest('.avail-unit-card, .so-serial-card');
+      if (card) hideUnitCardTooltip();
+    });
+    root.addEventListener('click', hideUnitCardTooltip, true);
+    root.addEventListener('scroll', hideUnitCardTooltip, true);
+  });
+  window.addEventListener('resize', () => {
+    const tip = document.getElementById('unit-hover-tooltip');
+    if (__unitTooltipCard && tip && tip.classList.contains('is-visible')) {
+      positionUnitCardTooltip(__unitTooltipCard, tip);
+    }
+  });
+}
+
 /* ---- Generic clear (✕) button for any .search-box-wrap input ---- */
 function clearSearchBox(btn) {
   const inp = btn.parentElement.querySelector('input, textarea');
@@ -13692,16 +13943,23 @@ function renderAvailable(searchTerm) {
         const isSerialMatch = q && s.toLowerCase().includes(q);
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
         const highlightClass = (isSerialMatch || isDateMatch) ? 'avail-unit-card-highlighted' : '';
-        const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const unitDisp = fmtDMY(unitDateIn);
         const dateDisplay = isDateMatch ? markMatchedText(unitDisp, dq) : escapeHtml(unitDisp);
         return `
-          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" data-serial="${escapeHtml(s)}" data-model="${escapeHtml(mKey)}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" title="Click to copy serial">
+          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${secondHand ? 'second-hand' : ''} ${highlightClass}" data-serial="${escapeHtml(s)}" data-model="${escapeHtml(mKey)}" data-tooltip-serial="${escapeHtml(s)}" data-tooltip-model="${escapeHtml(mKey)}" data-tooltip-date-in="${escapeHtml(unitDisp)}" data-tooltip-do="${escapeHtml(documentLink.doNo || '')}" data-tooltip-so="${escapeHtml(documentLink.soNo || '')}" data-tooltip-second="${secondHand ? '1' : '0'}" tabindex="0" aria-label="Serial ${escapeHtml(s)}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();copySerial('${escapeHtml(escapeJs(s))}')}">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="avail-card-header">
-              <span class="serial-text">${serialDisplay}</span>
-              <div class="avail-card-actions" onclick="event.stopPropagation()">
+              <div class="avail-card-top">
+                ${renderSerialMiddle(s, isSerialMatch ? q : '')}
+                <span class="avail-card-status">
+                  ${staged ? '<span class="avail-card-tag">In Cart &#10003;</span>' : ''}
+                  ${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}
+                </span>
+              </div>
+              <div class="avail-card-bottom">
+                <span class="meta-text">IN: ${dateDisplay}</span>
+                <div class="avail-card-actions" onclick="event.stopPropagation()">
                 <button type="button" class="unit-action-btn btn-photo-unit" ${hasPhoto ? `onclick="event.stopPropagation(); openSerialPhotoViewer('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(JSON.stringify(documentLink)))}')"` : 'disabled'} aria-label="${hasPhoto ? `View DO/SO photo for ${escapeHtml(s)}` : 'No DO/SO photo'}" title="${hasPhoto ? 'View DO/SO photo' : 'No DO/SO photo'}">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect x="3" y="4" width="18" height="16" rx="2.5"></rect><circle cx="9" cy="10" r="1.8"></circle><path d="M21 16l-5-5-8 8"></path>
@@ -13719,14 +13977,8 @@ function renderAvailable(searchTerm) {
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
                 </button>
+                </div>
               </div>
-            </div>
-            <div class="meta-text">
-              <span>IN: ${dateDisplay}</span>
-              <span style="display:flex; align-items:center; gap:5px;">
-                <span class="avail-card-dot" style="${staged ? 'background:var(--brand-c);box-shadow:0 0 8px var(--brand-c);' : ''}"></span>
-                <span class="avail-card-tag">${staged ? 'In Cart &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
-              </span>
             </div>
           </div>
         `;
@@ -14534,22 +14786,20 @@ function renderStockOut(searchTerm) {
         const secondHand = !!unitData.secondHand;
         const isSerialMatch = q && s.toLowerCase().includes(q);
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
-        const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const unitDisp = fmtDMY(unitDateIn);
         const dateDisplay = isDateMatch ? markMatchedText(unitDisp, dq) : escapeHtml(unitDisp);
         return `
-          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}', this)">
+          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${secondHand ? 'second-hand' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" data-tooltip-serial="${escapeHtml(s)}" data-tooltip-model="${escapeHtml(mKey)}" data-tooltip-date-in="${escapeHtml(unitDisp)}" data-tooltip-do="${escapeHtml(documentLink.doNo || '')}" data-tooltip-so="${escapeHtml(documentLink.soNo || '')}" data-tooltip-second="${secondHand ? '1' : '0'}" tabindex="0" aria-label="Serial ${escapeHtml(s)}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}', this)}">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
-              <span class="serial-val">${serialDisplay}</span>
+              ${renderSerialMiddle(s, isSerialMatch ? q : '')}
               <span class="so-card-actions">
                 <button type="button" class="so-photo-btn" ${hasPhoto ? `onclick="event.stopPropagation(); openSerialPhotoViewer('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(JSON.stringify(documentLink)))}')"` : 'disabled'} aria-label="${hasPhoto ? `View DO/SO photo for ${escapeHtml(s)}` : 'No DO/SO photo'}" title="${hasPhoto ? 'View DO/SO photo' : 'No DO/SO photo'}">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect x="3" y="4" width="18" height="16" rx="2.5"></rect><circle cx="9" cy="10" r="1.8"></circle><path d="M21 16l-5-5-8 8"></path>
                   </svg>
                 </button>
-                <span class="indicator-dot"></span>
               </span>
             </div>
             <div class="so-card-bottom">
@@ -19672,6 +19922,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!(await licenseGateCheck())) return;
 
   await refreshData();
+  initUnitCardTooltips();
   initSearchHistoryInputs();
   await loadConfig();
   logEntry('info', { text: 'App initialized. Scan Engine ready.' });

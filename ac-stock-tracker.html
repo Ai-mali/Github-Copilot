@@ -8469,6 +8469,37 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     color: #a86a00;
   }
 }
+
+/* ===== Same height (28px) and same corner radius (8px) for every header control ===== */
+@media (min-width: 1121px) {
+  :is(
+    #view-available .hdr-search-side > .btn,
+    #view-available .hdr-search-side .search-group,
+    #view-stock-out .hdr-search-side .search-group,
+    #view-track-list .tl-search-group,
+    #view-track-list #track-export-btn,
+    #view-track-list #tl-breakdown-toggle
+  ) {
+    height: 28px;
+    min-height: 28px;
+    box-sizing: border-box;
+    border-radius: 8px;
+  }
+  #view-track-list #track-export-btn,
+  #view-track-list #tl-breakdown-toggle {
+    align-self: center;
+  }
+  /* Sell Record: Date In / Date Out chips keep their full "Date Out" label while idle */
+  #view-track-list .tl-search-group .custom-datepicker.dp-filter:not(.picked) {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+  }
+  #view-track-list .tl-search-group .tl-search {
+    flex: 0 1 210px;
+    min-width: 110px;
+  }
+}
 </style>
 </head>
 <body class="free-scroll-mode">

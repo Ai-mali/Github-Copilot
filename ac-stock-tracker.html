@@ -8388,6 +8388,87 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
   cursor: pointer; line-height: 1; padding: 0 2px; opacity: .7;
 }
 #lic-banner button:hover { opacity: 1; }
+
+/* ===== Active date chip = one compact line (Available Stock, Stock Out, Sell Record) ===== */
+@media (min-width: 1121px) {
+  /* group shrinks to its content while a date filter is active */
+  #view-available .hdr-search-side .search-group:has(.dp-filter.picked),
+  #view-stock-out .hdr-search-side .search-group:has(.dp-filter.picked) {
+    width: auto;
+    min-width: 0;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .custom-datepicker.dp-filter.picked {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    gap: 3px;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .datepicker-trigger {
+    flex: 0 0 auto;
+    height: 22px;
+    min-height: 0;
+    padding: 0 7px;
+    gap: 5px;
+    flex-direction: row;
+    align-items: center;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-date-stack {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-date-caption {
+    display: none !important;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-date-line {
+    gap: 5px;
+    align-items: center;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-date-text {
+    flex: 0 0 auto;
+    font-size: 11px;
+    line-height: 1;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-badge-relative {
+    position: static;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 1px 5px;
+    font-size: 9px;
+    line-height: 1.2;
+  }
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-icon-chevron {
+    display: none;
+  }
+  /* Sell Record: no caption any more, so label the two chips with a short prefix */
+  #view-track-list #track-datein-picker.picked .dp-date-text::before  { content: "In ";  opacity: .65; font-weight: 600; }
+  #view-track-list #track-dateout-picker.picked .dp-date-text::before { content: "Out "; opacity: .65; font-weight: 600; }
+}
+/* narrow header: drop the relative badge first (the date itself is never hidden) */
+@media (min-width: 1121px) and (max-width: 1400px) {
+  :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-badge-relative {
+    display: none !important;
+  }
+}
+
+/* Day theme: readable amber chip instead of dark-brown gradient with white text */
+@media (min-width: 1121px) {
+  body.theme-light :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .datepicker-trigger {
+    background: #fdf1d6;
+    border-color: #e0b560 !important;
+  }
+  body.theme-light :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-date-text {
+    color: #5a3a00;
+  }
+  body.theme-light :is(#view-available .hdr-search-side, #view-stock-out .hdr-search-side, #view-track-list .tl-search-group) .dp-filter.picked .dp-icon-cal {
+    color: #a86a00;
+  }
+}
 </style>
 </head>
 <body class="free-scroll-mode">

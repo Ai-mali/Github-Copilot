@@ -4832,6 +4832,23 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
   display: block;
 }
 
+/* Cart count shown next to the Stock Out title */
+.so-title-count {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--green-bright);
+  white-space: nowrap;
+  align-self: center;
+}
+@media (min-width: 1121px) {
+  /* The title is longer now, so the Stock Out search group may shrink (never
+     below 260px) instead of overlapping it when it widens on focus. */
+  #view-stock-out .hdr-search-side { flex: 0 1 auto; min-width: 0; }
+  #view-stock-out .hdr-search-side .search-group { flex: 0 1 auto; min-width: 260px; }
+  #view-stock-out .hdr-search-side .search-group .search-box-wrap { flex-shrink: 1; min-width: 110px; }
+}
+
 .stockout-chips-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -9102,6 +9119,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
             <div>
               <div class="view-title" style="display:flex; align-items:center; gap:8px;">
                 Stock Out &amp; Dispatch
+                <span class="so-title-count" id="so-title-cart-count">(0 units in the Cart)</span>
                 <span class="arrival-badge" id="so-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
               </div>
             </div>
@@ -9133,12 +9151,6 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
             </div>
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 8px; flex-shrink:0;">
-            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-sub);">
-              AVAILABLE MODELS BY BRAND <span style="font-weight:400; text-transform:none; margin-left:6px; color:var(--text-muted);">Click serial chip to toggle in cart</span>
-            </div>
-            <div style="font-size:11.5px; color:var(--green-bright);" id="so-staged-count-label">3 staged in active batch</div>
-          </div>
           <div id="stockout-brands-container"></div>
         </div>
 
@@ -11308,7 +11320,8 @@ function updateGlobalBadges() {
   }
   setTxt('badge-cart', DB.stagedCart.length);
   setTxt('cart-pill-count', DB.stagedCart.length + ' items');
-  setTxt('so-staged-count-label', DB.stagedCart.length + ' staged in active batch');
+  setTxt('so-title-cart-count', '(' + DB.stagedCart.length + ' unit' +
+    (DB.stagedCart.length === 1 ? '' : 's') + ' in the Cart)');
   setTxt('badge-track', DB.trackList.length);
   setTxt('badge-return', DB.returns.length);
 }

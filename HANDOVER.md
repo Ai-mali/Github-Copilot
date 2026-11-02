@@ -138,6 +138,7 @@ Test suite `eval`s extracted functions — when a render helper gains a dependen
 
 ## 12. Latest session update
 
+- 2026-11-02: restored saved Stock In column width by preventing the default width from overwriting a saved value; 73 tests and syntax checks passed, no EXE rebuild.
 - 2026-10-30 build: branch `ui-fit-laptop-v3`, source commit `c143378`.
 - `dist\VRE AC Stock.exe` rebuilt successfully; smoke-launched for 12 seconds and closed cleanly.
 - Executable SHA-256: `A34AB726A43BB64D7648783380A91075B05E4C08A2EFD5369F873D0679F1A18A` (86,609,141 bytes).

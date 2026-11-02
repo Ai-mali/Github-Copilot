@@ -20459,15 +20459,18 @@ let _stockInDefaultPreviewHeight = null;
     return clamped;
   };
 
-  const storedWidth = defaultWidth;
+  // Default width first, but never after a saved width has been applied
+  // (the saved-width restore below used to be overwritten by this default).
+  let savedWidthApplied = false;
   let restoreAttempts = 0;
   const restoreWidth = () => {
     requestAnimationFrame(() => {
+      if (savedWidthApplied) return;
       if (layout.clientWidth <= minScanWidth && restoreAttempts++ < 20) {
         setTimeout(restoreWidth, 50);
         return;
       }
-      applyWidth(storedWidth, false);
+      applyWidth(defaultWidth, false);
     });
   };
   restoreWidth();
@@ -20480,7 +20483,7 @@ let _stockInDefaultPreviewHeight = null;
     const serverValue = parseInt(prefs && prefs.stockInLeftW, 10);
     const savedValue = Number.isFinite(serverValue)
       ? serverValue : readStockInLayoutFallback('stockInLeftW');
-    if (Number.isFinite(savedValue)) applyWidth(savedValue, false);
+    if (Number.isFinite(savedValue)) { savedWidthApplied = true; applyWidth(savedValue, false); }
   };
   getUiPrefsOnce().then(prefs => restoreSavedWidth(prefs));
 

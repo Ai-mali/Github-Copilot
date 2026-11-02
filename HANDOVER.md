@@ -313,3 +313,8 @@ This file is the persistent cross-account context. **Update it at the end of eve
 2026-11-02: Applied the 10px header-to-content gap diff for Available Stock, Stock Out, and Sell Record; validation passed and Playwright was unavailable.
 2026-11-02: Removed the Available Stock and Stock Out view subtitles; validation passed and Playwright was unavailable.
 2026-11-02: Updated Stock Out to show the cart count beside the title and removed the redundant staged-model labels; validation passed and Playwright was unavailable.
+### Latest session update - equal-size staged cart cards
+
+- On `ui-fit-laptop-v3`, updated the shared Stock Out staged-card renderer and desktop-only CSS. Every staged cart card now targets a fixed 48px height, with one-line ellipsis for serial/title and model text, non-wrapping ellipsized brand tags, fixed centered number/remove controls, and native hover titles for full text.
+- Static target height is 48px for all desktop staged cards; live 1280x680 measurements at 260/340/560px and both themes remain unfinished because Playwright is unavailable and the VBS preview launch was blocked by UI automation safety.
+- Validation passed: `node check_frontend_syntax.js`, all 73 Node tests, `python -m py_compile backend.py stock_store.py desktop_app.py license_check.py`, and `git diff --check`. No EXE rebuild; `serial_provenance.json` remains untracked.

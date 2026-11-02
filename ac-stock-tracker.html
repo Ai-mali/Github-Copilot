@@ -2701,6 +2701,27 @@ body.theme-light .scan-serial-badge-dupe {
   overflow: hidden;
 }
 
+/* Centre the icon + title in the free area under the Paste button. The empty
+   state fills the whole dropzone, so a long title wrapping to two lines (narrow
+   column) can no longer push the icon up into the Paste button's row. */
+#dropzone-empty-state {
+  position: absolute;
+  inset: 0;
+  padding: 38px 14px 12px;
+  gap: 8px;
+}
+#dropzone-empty-state .dropzone-title {
+  text-wrap: balance;
+  line-height: 1.25;
+}
+/* The (usually empty) paste-error line must not take invisible space. */
+#dropzone-empty-state .dropzone-paste-message:empty { display: none; }
+#dropzone-empty-state .dropzone-paste-message:not(:empty) {
+  position: absolute;
+  left: 10px; right: 10px; bottom: 8px;
+  min-height: 0;
+}
+
 .dropzone-icon-circle {
   width: 52px;
   height: 52px;

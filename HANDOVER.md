@@ -313,6 +313,7 @@ This file is the persistent cross-account context. **Update it at the end of eve
 2026-11-02: Applied the 10px header-to-content gap diff for Available Stock, Stock Out, and Sell Record; validation passed and Playwright was unavailable.
 2026-11-02: Removed the Available Stock and Stock Out view subtitles; validation passed and Playwright was unavailable.
 2026-11-02: Updated Stock Out to show the cart count beside the title and removed the redundant staged-model labels; validation passed and Playwright was unavailable.
+2026-11-02: Built and smoke-tested `dist\VRE AC Stock.exe` from `ui-fit-laptop-v3` commit `7ef11f1`; 86,611,722 bytes; SHA-256 `E757A9B58058A426242A86AA00AC56DD4FFAF07E3AFCBF7E50C5E1C038EADA6A`; visible window confirmed for 12 seconds and closed cleanly.
 ### Latest session update - equal-size staged cart cards
 
 - On `ui-fit-laptop-v3`, updated the shared Stock Out staged-card renderer and desktop-only CSS. Every staged cart card now targets a fixed 48px height, with one-line ellipsis for serial/title and model text, non-wrapping ellipsized brand tags, fixed centered number/remove controls, and native hover titles for full text.

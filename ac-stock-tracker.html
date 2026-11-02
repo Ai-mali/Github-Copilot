@@ -1853,6 +1853,36 @@ main > .view-section.active {
   background: rgba(239, 68, 68, 0.12);
 }
 
+/* Paste-from-clipboard button inside the main search boxes */
+.search-box-wrap.has-paste input { padding-right: 32px; }
+.search-box-wrap.has-paste .search-clear-btn { right: 32px !important; }
+.search-box-wrap.has-paste input:not(:placeholder-shown) { padding-right: 56px; }
+.search-paste-btn {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.search-paste-btn:hover:not(:disabled) {
+  color: var(--green-bright);
+  background: rgba(38, 208, 124, 0.14);
+}
+.search-paste-btn:focus-visible { outline: 2px solid var(--green-bright); outline-offset: 1px; }
+.search-paste-btn:disabled { opacity: .5; cursor: progress; }
+.search-box-wrap.has-paste .rma-status-pill { right: 58px; }
+
 .search-history-dropdown {
   position: absolute;
   top: calc(100% + 4px);
@@ -5720,16 +5750,6 @@ body.theme-light .track-breakdown-chip:hover {
 .tl-collapse-btn svg {
   transition: transform .2s ease;
 }
-#tl-breakdown-card.tl-breakdown-collapsed {
-  display: none;
-}
-.tl-breakdown-collapsed .tl-collapse-btn svg {
-  transform: rotate(-90deg);
-}
-.tl-breakdown-collapsed .tl-legend,
-.tl-breakdown-collapsed .tl-view-switch {
-  display: none;
-}
 .tl-group-block {
   width: 100%;
   margin-bottom: 8px;
@@ -6673,29 +6693,6 @@ body.theme-light .tl-side-mini .tl-cust-item.active {
   flex-shrink: 0;
 }
 .tl-side-menu-btn:hover { color: var(--text); background: var(--surface2); }
-/* Breakdown cloud is the flexible element: it can shrink below its 240px
-   cap (scrolls internally) so the records table keeps a usable height;
-   the records card grows to fill whatever space remains. */
-#tl-breakdown-card {
-  flex: 0 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-#tl-breakdown-card .tl-card-header {
-  flex-shrink: 0;
-}
-#tl-breakdown-card .tl-tags-body {
-  flex: 0 1 auto;
-  min-height: 0;
-  max-height: 240px;
-  overflow: hidden;
-  display: flex;
-}
-#tl-breakdown-card .tl-tags-body .track-pills-wrap {
-  max-height: none;
-  flex: 1 1 auto;
-}
 #tl-records-card {
   flex: 1 1 0;
   min-height: 240px;
@@ -8549,16 +8546,14 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     #view-available .hdr-search-side .search-group,
     #view-stock-out .hdr-search-side .search-group,
     #view-track-list .tl-search-group,
-    #view-track-list #track-export-btn,
-    #view-track-list #tl-breakdown-toggle
+    #view-track-list #track-export-btn
   ) {
     height: 28px;
     min-height: 28px;
     box-sizing: border-box;
     border-radius: 8px;
   }
-  #view-track-list #track-export-btn,
-  #view-track-list #tl-breakdown-toggle {
+  #view-track-list #track-export-btn {
     align-self: center;
   }
   /* Sell Record: Date In / Date Out chips keep their full "Date Out" label while idle */
@@ -9357,9 +9352,6 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
-          <button type="button" class="filters-toggle-btn" id="tl-breakdown-toggle" onclick="toggleTrackBreakdown()" title="Show / hide Sold Serial Breakdown">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-            <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
           </button>
           <span class="tl-sel-pill" id="track-sel-pill" style="display:none;" title="These sales are ticked for export">
             <span id="track-sel-count">0 selected</span>
@@ -9369,32 +9361,6 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             <span id="track-export-label">Export Excel</span>
           </button>
-        </div>
-      </div>
-
-      <!-- Sold Serial Breakdown & Equipment Tags -->
-      <div class="card tl-card" id="tl-breakdown-card">
-        <div class="tl-card-header">
-          <div class="tl-card-title-group">
-            <span class="tl-dot"></span>
-            <span class="tl-card-title">Sold Serial Breakdown &amp; Equipment Tags</span>
-            <span class="tl-count-badge" id="track-banner-badge">0 Serials Total</span>
-            <span class="tl-cust-chip" id="track-banner-title">All Customers</span>
-          </div>
-          <div class="tl-card-tools">
-            <div class="tl-legend" id="tl-breakdown-legend">
-              <span class="tl-legend-item"><i class="tl-lg tl-lg-mint"></i>In Stock Deducted</span>
-              <span class="tl-legend-item"><i class="tl-lg tl-lg-sky"></i>Dispatch Verified</span>
-            </div>
-            <div class="tl-view-switch" id="tl-breakdown-switch">
-              <button type="button" id="tl-view-cloud" class="active" onclick="setTrackViewMode('cloud')">Dense Cloud</button>
-              <button type="button" id="tl-view-grouped" onclick="setTrackViewMode('grouped')">Grouped by Model</button>
-            </div>
-
-          </div>
-        </div>
-        <div class="tl-tags-body">
-          <div class="track-pills-wrap" id="track-breakdown-tags"></div>
         </div>
       </div>
 
@@ -10747,8 +10713,6 @@ const DB = {
   trackOpenGroups: new Set(), // expanded fulfillment groups (group keys)
   trackSelBatches: new Set(), // sale batch keys ticked for scoped export
   trackBookedOnly: false, // BOOKED pill: show only future-dated dispatches
-  trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
-  trackBreakdownCollapsed: true, // hydrated from /api/ui-prefs
 
   trackCols: { customer: true, dateIn: true, dateOut: true, warranty: true, qty: true, status: true },
   searchHistory: [],
@@ -11051,7 +11015,6 @@ async function refreshData() {
     if (Array.isArray(localSearchHistory)) storedSearchHistory = [...storedSearchHistory, ...localSearchHistory];
   } catch (e) {}
   DB.searchHistory = [...new Set(storedSearchHistory.map(v => String(v).trim()).filter(Boolean))].slice(0, 30);
-  DB.trackBreakdownCollapsed = (uiPrefs && uiPrefs.tlCollapsed !== undefined) ? uiPrefs.tlCollapsed : true;
   DB.trackSidebarMini = !!(uiPrefs && uiPrefs.tlMini);
   DB.soSidebarMini = !!(uiPrefs && uiPrefs.soMini);
   DB.availSidebarMini = !!(uiPrefs && uiPrefs.availMini);
@@ -13540,6 +13503,69 @@ function clearSearchBox(btn) {
   inp.focus();
 }
 
+/* ---- Paste button inside the main search boxes (one per screen) ---- */
+const SEARCH_PASTE_INPUT_IDS = [
+  'avail-search', 'stockout-search', 'track-search', 'rma-search', 'rma-serial-input'
+];
+
+async function readClipboardText() {
+  const desktopApi = window.pywebview && window.pywebview.api;
+  if (desktopApi && typeof desktopApi.read_clipboard_text === 'function') {
+    return String((await desktopApi.read_clipboard_text()) || '');
+  }
+  if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+    return String((await navigator.clipboard.readText()) || '');
+  }
+  throw new Error('clipboard-unsupported');
+}
+
+async function pasteIntoSearch(input, button) {
+  if (!input) return;
+  if (button) button.disabled = true;
+  try {
+    // One line only: collapse tabs/newlines (copied from Excel or a DO) to spaces.
+    const text = (await readClipboardText()).replace(/\s+/g, ' ').trim();
+    if (!text) {
+      showToast('Clipboard has no text to paste.');
+      return;
+    }
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  } catch (error) {
+    input.focus();
+    showToast(error && error.name === 'NotAllowedError'
+      ? 'Clipboard access was blocked. Press Ctrl+V instead.'
+      : 'Paste button is not supported here. Press Ctrl+V instead.');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function initSearchPasteButtons() {
+  SEARCH_PASTE_INPUT_IDS.forEach(id => {
+    const input = document.getElementById(id);
+    if (!input || input.dataset.pasteReady) return;
+    const wrap = input.closest('.search-box-wrap');
+    if (!wrap) return;
+    input.dataset.pasteReady = '1';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'search-paste-btn';
+    btn.title = 'Paste from clipboard';
+    btn.setAttribute('aria-label', 'Paste from clipboard');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="8" y="3" width="8" height="4" rx="1"></rect>' +
+      '<path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path></svg>';
+    // Keep the click from stealing focus first (and from closing history/suggest lists early)
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); pasteIntoSearch(input, btn); });
+    input.insertAdjacentElement('afterend', btn);
+    wrap.classList.add('has-paste');
+  });
+}
+
 const SEARCH_HISTORY_INPUT_IDS = [
   'avail-search-side', 'avail-search', 'stockout-search-side', 'stockout-search',
   'track-search-side', 'track-search', 'rma-search', 'act-search'
@@ -15559,71 +15585,10 @@ function renderTrackList(searchTerm, keepPage) {
   const list = getFilteredTrackList();
   const modelColors = trackModelColorMap();
 
-  // Breakdown card header
-  const badge = document.getElementById('track-banner-badge');
-  if (badge) badge.textContent = `${list.length} Serial${list.length === 1 ? '' : 's'} Total`;
-  const custChip = document.getElementById('track-banner-title');
-  if (custChip) custChip.textContent = DB.trackFilter === 'ALL' ? 'All Customers' : DB.trackFilter;
-
-  renderTrackBreakdown(list, modelColors);
-  applyTrackBreakdownState();
   applyTrackSidebarMini();
   renderTrackTable(list, modelColors);
 }
 
-/* ---- Sold serial breakdown (dense cloud / grouped by model) ---- */
-function trackChipSearch(serial) {
-  handleTrackSearchInput(serial);
-}
-
-function renderTrackBreakdown(list, modelColors) {
-  const box = document.getElementById('track-breakdown-tags');
-  if (!box) return;
-  if (!list.length) {
-    box.innerHTML = '<div style="color:var(--text-sub); font-size:11.5px; padding:4px 2px;">No serials match the current filters.</div>';
-    return;
-  }
-  const chipHtml = r => {
-    const c = modelColors[r.model] || 'var(--green-bright)';
-    return `<span class="track-breakdown-chip" title="${escapeHtml(r.model)} \u2014 ${escapeHtml(r.customer)} \u00b7 dispatched ${escapeHtml(fmtDMY(r.dateOut))}" onclick="trackChipSearch('${escapeHtml(escapeJs(r.serial))}')" style="cursor:pointer;"><span class="chip-serial" style="--brand-c:${c};">${escapeHtml(r.serial)}</span> <span class="chip-model">(${escapeHtml(r.model)})</span></span>`;
-  };
-  if (DB.trackViewMode === 'grouped') {
-    const groups = {};
-    list.forEach(r => {
-      const m = r.model || '\u2014';
-      (groups[m] = groups[m] || []).push(r);
-    });
-    box.innerHTML = Object.keys(groups).sort().map(m => `
-      <div class="tl-group-block">
-        <div class="tl-group-title"><i class="tl-wdot" style="background:${modelColors[m] || 'var(--green-bright)'}"></i>${escapeHtml(m)}<span class="tl-group-count">${groups[m].length} units</span></div>
-        <div class="filter-pills-row">${groups[m].map(chipHtml).join('')}</div>
-      </div>`).join('');
-  } else {
-    box.innerHTML = list.map(chipHtml).join('');
-  }
-}
-
-function setTrackViewMode(mode) {
-  DB.trackViewMode = mode;
-  const c = document.getElementById('tl-view-cloud');
-  const g = document.getElementById('tl-view-grouped');
-  if (c) c.classList.toggle('active', mode === 'cloud');
-  if (g) g.classList.toggle('active', mode === 'grouped');
-  renderTrackList(undefined, true);
-}
-
-function applyTrackBreakdownState() {
-  const card = document.getElementById('tl-breakdown-card');
-  if (card) card.classList.toggle('tl-breakdown-collapsed', DB.trackBreakdownCollapsed);
-  const btn = document.getElementById('tl-breakdown-toggle');
-  if (btn) btn.classList.toggle('on', !DB.trackBreakdownCollapsed);
-}
-
-function toggleTrackBreakdown() {
-  DB.trackBreakdownCollapsed = !DB.trackBreakdownCollapsed;
-  applyTrackBreakdownState();
-  apiPost('/api/ui-prefs', { prefs: { tlCollapsed: DB.trackBreakdownCollapsed } }).catch(() => {});
-}
 
 /* ---- Fulfillment Records Log table (grouped rows on ONE shared grid) ----
    Columns: Model | Destination | Date in | Dispatched | Warranty | Quantity | Status.
@@ -20222,6 +20187,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   await refreshData();
   initUnitCardTooltips();
   initSearchHistoryInputs();
+  initSearchPasteButtons();
   await loadConfig();
   logEntry('info', { text: 'App initialized. Scan Engine ready.' });
   logEntry('info', { text: 'Ready: Drag & drop or load an aircon invoice photo to begin scanning.' });

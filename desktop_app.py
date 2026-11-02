@@ -1443,6 +1443,44 @@ class DesktopApi:
         if u.startswith(("http://", "https://", "tg://")):
             webbrowser.open(u)
 
+    def read_clipboard_text(self):
+        """Read plain text from the Windows clipboard (no WebView permission prompt)."""
+        try:
+            user32 = ctypes.WinDLL("user32", use_last_error=True)
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            user32.OpenClipboard.argtypes = [wintypes.HWND]
+            user32.OpenClipboard.restype = wintypes.BOOL
+            user32.GetClipboardData.argtypes = [wintypes.UINT]
+            user32.GetClipboardData.restype = wintypes.HANDLE
+            user32.CloseClipboard.restype = wintypes.BOOL
+            kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
+            kernel32.GlobalLock.restype = wintypes.LPVOID
+            kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
+            CF_UNICODETEXT = 13
+            opened = False
+            for _ in range(10):
+                if user32.OpenClipboard(None):
+                    opened = True
+                    break
+                time.sleep(0.02)
+            if not opened:
+                return ""
+            try:
+                handle = user32.GetClipboardData(CF_UNICODETEXT)
+                if not handle:
+                    return ""
+                ptr = kernel32.GlobalLock(handle)
+                if not ptr:
+                    return ""
+                try:
+                    return ctypes.wstring_at(ptr)
+                finally:
+                    kernel32.GlobalUnlock(handle)
+            finally:
+                user32.CloseClipboard()
+        except Exception:
+            return ""
+
     def read_clipboard_image(self):
         """Read an image from the local Windows clipboard without WebView permission prompts."""
         try:

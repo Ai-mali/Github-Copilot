@@ -304,3 +304,4 @@ This file is the persistent cross-account context. **Update it at the end of eve
 
 2026-11-02: Applied search paste buttons and removed the Sell Record breakdown toggle/card; 73 tests, Python compilation, and JS syntax checks passed; Playwright unavailable.
 2026-11-02: Applied the 10px header-to-content gap diff for Available Stock, Stock Out, and Sell Record; validation passed and Playwright was unavailable.
+2026-11-02: Removed the Available Stock and Stock Out view subtitles; validation passed and Playwright was unavailable.

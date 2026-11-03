@@ -245,6 +245,7 @@ class StockStore:
         self.path = Path(path or DB_PATH)
         self.wb = None
         self.recs = self.brands_sheet = self.map_sheet = self.ret_sheet = None
+        self.brand_created: dict[str, str] = {}   # brand -> ISO date it was created
         self.act_sheet = None
         self.records: list[dict] = []            # parsed MasterRecord rows
         self.brands: list[str] = []              # ordered Brand names
@@ -266,7 +267,7 @@ class StockStore:
             self.wb.active.title = "MasterRecord"
         self._migrate_schema()
         self.recs = self._sheet("MasterRecord", RECORD_HEADER)
-        self.brands_sheet = self._sheet("Brands", ["Brand"])
+        self.brands_sheet = self._sheet("Brands", ["Brand", "Created"])
         self.map_sheet = self._sheet("ModelBrands", ["Model", "Brand"])
         self.ret_sheet = self._sheet("Returns", RETURN_HEADER)
         self.act_sheet = self._sheet("ActivityLog", ACTIVITY_HEADER)
@@ -288,9 +289,15 @@ class StockStore:
             self._pair_set.add(self._pair_key(rec["Model"], rec["Serial"]))
             self._model_canon.setdefault(str(rec["Model"]).strip().upper(),
                                          str(rec["Model"]).strip())
+        self.brand_created = {}
         for row in self.brands_sheet.iter_rows(min_row=2, values_only=True):
             if row and row[0] and row[0] not in self.brands:
                 self.brands.append(str(row[0]))
+                made = row[1] if len(row) > 1 else None
+                if isinstance(made, (datetime.datetime, datetime.date)):
+                    made = made.strftime("%Y-%m-%d")
+                if made not in (None, ""):
+                    self.brand_created[str(row[0])] = str(made).strip()[:10]
         for row in self.map_sheet.iter_rows(min_row=2, values_only=True):
             if row and row[0] and row[1]:
                 self.model_to_brand[str(row[0]).upper()] = str(row[1])
@@ -309,6 +316,7 @@ class StockStore:
                 continue
             self.activities.append(dict(
                 zip(ACTIVITY_HEADER, ("" if v is None else v for v in row))))
+        self._backfill_brand_created()
         if self._schema_dirty:
             # Migrated a legacy/older-schema file: keep the original on
             # disk as a premigration snapshot before we overwrite it.
@@ -317,6 +325,36 @@ class StockStore:
             except Exception:
                 pass
             self.save(backup=False)
+
+    def _backfill_brand_created(self):
+        """One-time: brands created before the Created column existed get the
+        date their first unit was received (earliest Date In of any record).
+        Brands with no records stay blank. Written to the sheet so it sticks."""
+        missing = [b for b in self.brands if b not in self.brand_created]
+        if not missing:
+            return
+        first: dict[str, datetime.date] = {}
+        for rec in self.records:
+            b = str(rec.get("Brand") or "").strip()
+            d = rec.get("Date In")
+            if isinstance(d, datetime.datetime):
+                d = d.date()
+            elif isinstance(d, str):
+                d = parse_date_safe(d)
+            elif not isinstance(d, datetime.date):
+                d = None
+            if b and d and (b not in first or d < first[b]):
+                first[b] = d
+        changed = False
+        for r, row in enumerate(self.brands_sheet.iter_rows(min_row=2), start=2):
+            name = str(row[0].value or "").strip()
+            if name in missing and name in first:
+                iso = first[name].strftime("%Y-%m-%d")
+                self.brands_sheet.cell(row=r, column=2, value=iso)
+                self.brand_created[name] = iso
+                changed = True
+        if changed:
+            self._schema_dirty = True
 
     def _migrate_schema(self):
         """Rename the Type-era sheets/column to Brand, and remove Supplier column if present."""
@@ -722,7 +760,8 @@ class StockStore:
         for brand in self.brands:
             inv.setdefault(brand, {"color": self._brand_color(brand),
                                    "models": {}})
-        for b in inv.values():
+        for name, b in inv.items():
+            b["created"] = self.brand_created.get(name, "")
             for i, m in enumerate(sorted(b["models"]), start=1):
                 b["models"][m]["idx"] = f"{i:02d}"
         return dict(sorted(inv.items()))
@@ -873,11 +912,12 @@ class StockStore:
         self.wb = Workbook()
         self.wb.active.title = "MasterRecord"
         self.recs = self._sheet("MasterRecord", RECORD_HEADER)
-        self.brands_sheet = self._sheet("Brands", ["Brand"])
+        self.brands_sheet = self._sheet("Brands", ["Brand", "Created"])
         self.map_sheet = self._sheet("ModelBrands", ["Model", "Brand"])
         self.ret_sheet = self._sheet("Returns", RETURN_HEADER)
         self.act_sheet = self._sheet("ActivityLog", ACTIVITY_HEADER)
         self.records, self.brands, self.model_to_brand = [], [], {}
+        self.brand_created = {}
         self.returns, self.activities, self._pair_set = [], [], set()
         self._model_canon = {}
         self._schema_dirty = False
@@ -998,8 +1038,7 @@ class StockStore:
                 self.model_to_brand[key] = brand
                 self.map_sheet.append([model, brand])
             if brand not in self.brands:
-                self.brands.append(brand)
-                self.brands_sheet.append([brand])
+                self._register_brand(brand)
             dupes, new_serials = self._split_dupes(serials, model, auto_ids)
             if new_serials:
                 self._write_rows(self._canon_model(model), brand,
@@ -1452,12 +1491,20 @@ class StockStore:
             if str(self.map_sheet.cell(row=i, column=1).value or "").strip().upper() == key:
                 self.map_sheet.delete_rows(i)
 
+    def _register_brand(self, brand: str):
+        """Add a brand to the Brands sheet, stamped with today's date as the
+        day it was created. Brands that already existed before the Created
+        column was added stay blank (the real date was never recorded)."""
+        today = datetime.date.today().strftime("%Y-%m-%d")
+        self.brands.append(brand)
+        self.brands_sheet.append([brand, today])
+        self.brand_created[brand] = today
+
     def assign_brand(self, model: str, brand: str):
         """Remember Model -> Brand permanently (exact full string match)."""
         brand = self._canon_brand(brand)
         if brand not in self.brands:
-            self.brands.append(brand)
-            self.brands_sheet.append([brand])
+            self._register_brand(brand)
         key = model.strip().upper()
         self._model_canon.setdefault(key, model.strip())
         if self.model_to_brand.get(key) != brand:
@@ -1471,8 +1518,7 @@ class StockStore:
         brand = self._canon_brand(brand)
         if not brand or brand in self.brands:
             return False
-        self.brands.append(brand)
-        self.brands_sheet.append([brand])
+        self._register_brand(brand)
         self.save(backup=False)
         return True
 
@@ -1489,6 +1535,7 @@ class StockStore:
         if held:
             return False, f"{name} still has {held} unit(s) in stock/quarantine"
         self.brands.remove(name)
+        self.brand_created.pop(name, None)
         for i in range(self.brands_sheet.max_row, 1, -1):
             if str(self.brands_sheet.cell(row=i, column=1).value or "").strip() == name:
                 self.brands_sheet.delete_rows(i)
@@ -1511,8 +1558,7 @@ class StockStore:
         never overwrites a deliberate re-assignment made meanwhile."""
         brand = str(brand).strip()
         if brand and brand not in self.brands:
-            self.brands.append(brand)
-            self.brands_sheet.append([brand])
+            self._register_brand(brand)
 
     def rename_brand(self, old: str, new: str) -> tuple[bool, str]:
         """Rename a brand in the Brands sheet, every ModelBrands mapping,
@@ -1535,6 +1581,8 @@ class StockStore:
             return False, f"'{clash}' already exists — pick a different name"
         old_l = actual.lower()
         self.brands[self.brands.index(actual)] = new
+        if actual in self.brand_created:
+            self.brand_created[new] = self.brand_created.pop(actual)
         for i in range(2, self.brands_sheet.max_row + 1):
             if str(self.brands_sheet.cell(row=i, column=1).value
                    or "").strip().lower() == old_l:

@@ -14734,11 +14734,12 @@ function soBrandStats(b) {
   const bData = DB.inventory[b] || { models: {} };
   const models = Object.keys(bData.models || {});
   const units = countBrandUnits(b);
-  let last = '';
+  // The date shown on a brand card is the day the brand was CREATED (stored in
+  // the Brands sheet); each serial chip already carries its own Date In.
+  const last = bData.created || '';
   const top = models
-    .map(m => ({ m, n: (bData.models[m].serials || []).length, d: bData.models[m].dateIn || '' }))
+    .map(m => ({ m, n: (bData.models[m].serials || []).length }))
     .sort((x, y) => y.n - x.n);
-  top.forEach(t => { if (t.d > last) last = t.d; });
   return { models, units, last, top: top.slice(0, 2) };
 }
 

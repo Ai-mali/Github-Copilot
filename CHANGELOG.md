@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.0.1 - 2026-11-04
+- Fixed: Stock In left column dragged to its narrowest - the Status Log title and the All / Iss / OK filters (plus the clear button) now stay on one line instead of wrapping; smaller title/filter text and tighter padding in compact mode only.
+
 ## 1.0.0 - 2026-11-04
 First versioned release. Everything below is included.
 - Added: version label under the app name; `VERSION` + `CHANGELOG.md`; exe is built as `VRE AC Stock v<version>.exe`.

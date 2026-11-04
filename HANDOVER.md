@@ -307,6 +307,8 @@ Copy the prompt below into the next Copilot chat after opening this repository:
 
 ## 14. Handover maintenance rule
 
+**Change log + version (mandatory):** `CHANGELOG.md` is the running list of every update and `VERSION` holds the current version (shown under the app name in the title bar; `build-exe.bat` names the exe `VRE AC Stock v<VERSION>.exe`). A new AI/account must read `CHANGELOG.md` first, and every change must add a changelog entry and bump `VERSION` in the same commit. When asked for a handover prompt, point the next AI at `HANDOVER.md` + `CHANGELOG.md`.
+
 This file is the persistent cross-account context. **Update it at the end of every future implementation or build session**, including the current working-tree status, latest stable commit/tag, tests, build artifact/checksum when applicable, remaining work, and the next continuation prompt. Keep the continuation prompt aligned with the actual repository state; do not leave stale claims about a build or completed feature.
 
 2026-11-02: Applied search paste buttons and removed the Sell Record breakdown toggle/card; 73 tests, Python compilation, and JS syntax checks passed; Playwright unavailable.

@@ -227,6 +227,23 @@ def get_delivery_order_photo(filename: str):
 
 
 # ------------------------------------------------------------------ license
+def _read_version() -> str:
+    for base in (BASE, Path(__file__).parent):
+        try:
+            return (base / "VERSION").read_text(encoding="utf-8").strip() or "?"
+        except Exception:
+            continue
+    return "?"
+
+
+APP_VERSION = _read_version()
+
+
+@app.get("/app-version")   # outside /api/ so it also works before license activation
+def api_version():
+    return {"version": APP_VERSION}
+
+
 @app.get("/api/license/status")
 def license_status():
     return license_check.status(force=True)

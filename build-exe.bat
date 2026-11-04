@@ -7,6 +7,10 @@ REM  Output lands in dist\VRE AC Stock.exe
 REM ============================================================
 cd /d "%~dp0"
 
+set /p APPVER=<VERSION
+if "%APPVER%"=="" set APPVER=0.0.0
+echo Building version %APPVER%
+
 set "ICON=D:\AI-Project\Devin\Icon\VRE_Zoomed_Flat.ico"
 if not exist "%ICON%" set "ICON=%~dp0VRE_Zoomed_Flat.ico"
 if not exist "%ICON%" (
@@ -17,9 +21,10 @@ if not exist "%ICON%" (
 echo Using icon: %ICON%
 
 pyinstaller --noconfirm --clean --onefile --windowed ^
-  --name "VRE AC Stock" ^
+  --name "VRE AC Stock v%APPVER%" ^
   --icon "%ICON%" ^
   --add-data "ac-stock-tracker.html;." ^
+  --add-data "VERSION;." ^
   --add-data "%ICON%;." ^
   --add-data "VRE.ico;." ^
   --hidden-import backend ^
@@ -48,7 +53,7 @@ if errorlevel 1 (
     echo [FAILED] Build failed — see output above.
 ) else (
     echo.
-    echo [OK] dist\VRE AC Stock.exe ready.
+    echo [OK] dist\VRE AC Stock v%APPVER%.exe ready.
     echo NOTE: data lives NEXT TO the exe — drop a customer's .xlsx beside it
     echo       (any filename is adopted), plus license.lic, backups\,
     echo       delivery_orders\ and ui_prefs.json all live in that folder.

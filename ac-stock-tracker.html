@@ -1141,6 +1141,16 @@ body.is-desktop-shell .desktop-window-controls {
   line-height: 1.2;
 }
 
+.brand-version {
+  font-size: 9px;
+  line-height: 1;
+  margin-top: 2px;
+  color: var(--text-muted, #8a96a3);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.brand-version:empty { display: none; }
+
 .brand-glow {
   color: var(--green-bright);
   text-shadow: 0 0 10px rgba(38, 208, 124, 0.45);
@@ -8672,6 +8682,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
           <span class="brand-title-full">VRE <span class="brand-glow">AC Stock</span></span>
           <span class="brand-title-short">VRE</span>
         </h1>
+        <div class="brand-version" id="app-version" title="App version"></div>
       </div>
     </div>
 
@@ -20239,6 +20250,10 @@ window.addEventListener('pywebviewready', () => {
 
 /* Initialization */
 window.addEventListener('DOMContentLoaded', async () => {
+  fetch('/app-version').then(r => r.json()).then(v => {
+    const el = document.getElementById('app-version');
+    if (el && v && v.version && v.version !== '?') el.textContent = 'v' + v.version;
+  }).catch(() => {});
   try {
     const saved = localStorage.getItem('ac_stock_theme');
     if (saved === 'light') {

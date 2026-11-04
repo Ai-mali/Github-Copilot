@@ -4,7 +4,7 @@ Paste everything below into the other AI session.
 
 ---
 
-You are taking over **VRE AC Stock**, a Windows desktop stock-management app for air-conditioner parts. Repo: `D:\AI-Project\Devin\Stock-App` (GitHub: Ai-mali/Antigravity-Stock). **Read `HANDOVER.md` and `FLOWCHART.md` first** — they are the project bible. Then do this analysis pass before touching anything:
+You are taking over **VRE AC Stock**, a Windows desktop stock-management app for air-conditioner parts. Repo: `D:\AI-Project\Devin\Stock-App` (GitHub: Ai-mali/Antigravity-Stock). **Read `HANDOVER.md`, `CHANGELOG.md` and `FLOWCHART.md` first** — they are the project bible. `CHANGELOG.md` + `VERSION` say exactly what version the app is at and what was changed in each update. Then do this analysis pass before touching anything:
 
 ## Analyze, in this order
 
@@ -19,6 +19,8 @@ You are taking over **VRE AC Stock**, a Windows desktop stock-management app for
 5. **`ac-stock-tracker.html`** — the ENTIRE frontend (~17k lines). Learn: `api()`/`apiGet`/`apiPost` helpers + `license_required` sentinel handling; `fmtDMY`/`fmtDMYTime`/`parseDateDMY` (display DD/MM/YYYY, pickers ISO, workbook MM/DD/YYYY — three zones, never mix); theme via `body.theme-light` + CSS vars (`--brand-ink` for day-mode text); license gate `#license-gate` and admin modal `#license-modal` (`.licm-card`, label spans inside icon buttons); custom date/time pickers (`initDatePicker`, `rs-time` 24h); local re-render patterns (delete ops update state without full `refreshData`).
 
 ## Critical rules — never break these
+
+- **Every change = new `CHANGELOG.md` entry (newest first) + bump `VERSION`** (PATCH = fix/polish, MINOR = feature or Excel schema change). The version appears under the app name in the title bar and in the exe name (`VRE AC Stock v<version>.exe`).
 
 - Duplicate serial = same **model+serial** only.
 - Date zones: workbook `MM/DD/YYYY` ↔ picker/API ISO ↔ display `DD/MM/YYYY`. Never `new Date("MM/DD/YYYY")`-style ambiguous parsing.
@@ -36,7 +38,7 @@ python -m py_compile backend.py stock_store.py desktop_app.py license_check.py
 # embedded JS syntax — see HANDOVER.md §9 for the one-liner
 ```
 
-Run the app: `python backend.py` (browser) or `pythonw desktop_app.py` (desktop shell). Build: `build-exe.bat` → `dist\VRE AC Stock.exe`.
+Run the app: `python backend.py` (browser) or `pythonw desktop_app.py` (desktop shell). Build: `build-exe.bat` → `dist\VRE AC Stock v<VERSION>.exe`.
 
 Report back: your understanding of the request flow, the license flow, and any risks you noticed — before making changes.
 

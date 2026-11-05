@@ -11146,7 +11146,6 @@ async function refreshData() {
   DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
   DB.trackSidebarW = (uiPrefs && uiPrefs.tlW) || 0;
   DB.soRightW = (uiPrefs && uiPrefs.soRightW) || 340;
-  DB.soCheckoutH = (uiPrefs && uiPrefs.soCheckoutH) || 0;
   DB.returnLeftW = (uiPrefs && uiPrefs.returnLeftW) || 320;
   DB.soRecentHidden = (uiPrefs && uiPrefs.soRecent !== undefined) ? uiPrefs.soRecent : true;
   DB.bgCustom = (uiPrefs && uiPrefs.bgCustom) || '';
@@ -14657,7 +14656,7 @@ function initStockoutVSplit() {
 
   const MIN_H = 96;
   let drag = null;
-  let current = 0; // 0 = automatic (card sized by its content)
+  let current = 0; // 0 = automatic (card sized by its content); session only
 
   const naturalHeight = () => {
     const had = sidebar.classList.contains('so-split-custom');
@@ -14682,12 +14681,10 @@ function initStockoutVSplit() {
       sidebar.classList.remove('so-split-custom');
       sidebar.style.removeProperty('--so-checkout-h');
     }
-    if (persist) apiPost('/api/ui-prefs', { prefs: { soCheckoutH: v } }).catch(() => {});
     return v;
   };
 
-  const saved = Number(DB.soCheckoutH);
-  if (Number.isFinite(saved) && saved > 0) apply(saved, false);
+  // Not remembered on purpose: every start begins at the default (automatic) size.
 
   handle.addEventListener('pointerdown', e => {
     if (window.matchMedia('(max-width: 1120px)').matches) return;

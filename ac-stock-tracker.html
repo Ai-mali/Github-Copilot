@@ -6528,6 +6528,27 @@ body.theme-light .rs-time-pop {
 .tl-side-resizer.dragging {
   background: rgba(38, 208, 124, 0.35);
 }
+/* Dispatch & Checkout / Staging Cart splitter: a 4px gap (~1mm) with a taller
+   invisible grab area. Dragging it sets the checkout card height; the staging
+   cart takes the rest of the column. */
+.so-vsplit { flex: 0 0 4px; height: 4px; position: relative; z-index: 30; cursor: row-resize; touch-action: none; }
+.so-vsplit::before { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+.so-vsplit::after { content: ""; position: absolute; left: 30%; right: 30%; top: 1px; height: 2px; border-radius: 2px; background: transparent; transition: background .15s; }
+.so-vsplit:hover::after, .so-vsplit.dragging::after { background: rgba(38, 208, 124, 0.55); }
+@media (min-width: 1121px) {
+  #stockout-right-sidebar.so-split-custom { height: calc(100vh - 60px); }
+  body.is-desktop-shell #stockout-right-sidebar.so-split-custom { height: calc(100vh - 44px); }
+  #stockout-right-sidebar.so-split-custom #dispatch-checkout-card {
+    height: var(--so-checkout-h); overflow: hidden !important;
+    display: flex; flex-direction: column;
+  }
+  #stockout-right-sidebar.so-split-custom #dispatch-checkout-card > .card-body {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto !important; overflow-x: hidden;
+  }
+}
+@media (max-width: 1120px) { .so-vsplit { cursor: default; } }
+body.so-vresizing { user-select: none; cursor: row-resize; }
+body.so-vresizing * { cursor: row-resize !important; }
 body.tl-resizing { user-select: none; cursor: col-resize; }
 body.tl-resizing * { cursor: col-resize !important; }
 /* Drag-resize repaints hundreds of serial cards — pause the pulsing
@@ -9244,7 +9265,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
         </div>
 
         <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
-        <div id="stockout-right-sidebar" style="flex-shrink:0; position:sticky; top:var(--searchbar-sticky-top, 0); max-height:calc(100vh - 60px); display:flex; flex-direction:column; gap:10px;">
+        <div id="stockout-right-sidebar" style="flex-shrink:0; position:sticky; top:var(--searchbar-sticky-top, 0); max-height:calc(100vh - 60px); display:flex; flex-direction:column; gap:0;">
           <div class="stockout-right-resizer" id="stockout-right-resizer" title="Drag to resize Dispatch &amp; Checkout panel"></div>
           
           <!-- Card 1: Dispatch & Checkout (Own Closed Border, Frozen at Top) -->
@@ -9317,6 +9338,9 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               </div>
             </div>
           </div>
+
+          <!-- Drag up/down to split the column between the two cards (double-click = auto) -->
+          <div class="so-vsplit" id="so-vsplit" title="Drag up / down to resize the Dispatch &amp; Checkout panel (double-click to reset)"></div>
 
           <!-- Card 2: Dispatch Staging Cart (Own Closed Border, Below Card 1) -->
           <div class="card" id="dispatch-staging-card" style="flex:1 1 auto; min-height:0; position:relative; z-index:10; display:flex; flex-direction:column; overflow:hidden;">
@@ -11122,6 +11146,7 @@ async function refreshData() {
   DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
   DB.trackSidebarW = (uiPrefs && uiPrefs.tlW) || 0;
   DB.soRightW = (uiPrefs && uiPrefs.soRightW) || 340;
+  DB.soCheckoutH = (uiPrefs && uiPrefs.soCheckoutH) || 0;
   DB.returnLeftW = (uiPrefs && uiPrefs.returnLeftW) || 320;
   DB.soRecentHidden = (uiPrefs && uiPrefs.soRecent !== undefined) ? uiPrefs.soRecent : true;
   DB.bgCustom = (uiPrefs && uiPrefs.bgCustom) || '';
@@ -11495,6 +11520,7 @@ function switchTab(tab) {
   renderScreenIfDirty(tab);
   if (tab === 'stock-out' && typeof window.__applyStockoutRightResizer === 'function') {
     requestAnimationFrame(() => window.__applyStockoutRightResizer());
+    if (typeof window.__applyStockoutVSplit === 'function') requestAnimationFrame(() => window.__applyStockoutVSplit());
   }
   if (tab === 'return' && typeof window.__applyReturnLeftResizer === 'function') {
     requestAnimationFrame(() => window.__applyReturnLeftResizer());
@@ -14621,6 +14647,74 @@ function initStockoutRightResizer() {
 
   window.addEventListener('resize', () => apply(currentW, false));
   window.__applyStockoutRightResizer = () => apply(currentW, false);
+}
+
+function initStockoutVSplit() {
+  const sidebar = document.getElementById('stockout-right-sidebar');
+  const card = document.getElementById('dispatch-checkout-card');
+  const handle = document.getElementById('so-vsplit');
+  if (!sidebar || !card || !handle) return;
+
+  const MIN_H = 96;
+  let drag = null;
+  let current = 0; // 0 = automatic (card sized by its content)
+
+  const naturalHeight = () => {
+    const had = sidebar.classList.contains('so-split-custom');
+    if (had) sidebar.classList.remove('so-split-custom');
+    const h = card.getBoundingClientRect().height;
+    if (had) sidebar.classList.add('so-split-custom');
+    return h;
+  };
+
+  const apply = (h, persist) => {
+    const narrow = window.matchMedia('(max-width: 1120px)').matches;
+    const nat = naturalHeight();
+    let v = Math.round(Number(h) || 0);
+    if (Number(h) !== 0 && Number.isFinite(Number(h))) v = Math.max(MIN_H, v); // dragged very high: stop at the minimum
+    // nat is 0 while the tab is hidden (startup) - keep the saved value then.
+    if (narrow || v <= 0 || (nat > 0 && v >= nat - 2)) v = 0;
+    current = v;
+    if (v) {
+      sidebar.style.setProperty('--so-checkout-h', v + 'px');
+      sidebar.classList.add('so-split-custom');
+    } else {
+      sidebar.classList.remove('so-split-custom');
+      sidebar.style.removeProperty('--so-checkout-h');
+    }
+    if (persist) apiPost('/api/ui-prefs', { prefs: { soCheckoutH: v } }).catch(() => {});
+    return v;
+  };
+
+  const saved = Number(DB.soCheckoutH);
+  if (Number.isFinite(saved) && saved > 0) apply(saved, false);
+
+  handle.addEventListener('pointerdown', e => {
+    if (window.matchMedia('(max-width: 1120px)').matches) return;
+    e.preventDefault();
+    drag = { startY: e.clientY, startH: card.getBoundingClientRect().height, pointerId: e.pointerId };
+    document.body.classList.add('so-vresizing');
+    handle.classList.add('dragging');
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  handle.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    e.preventDefault();
+    apply(drag.startH + (e.clientY - drag.startY), false);
+  });
+  const end = (e, save) => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+    drag = null;
+    document.body.classList.remove('so-vresizing');
+    handle.classList.remove('dragging');
+    if (save) apply(current, true);
+  };
+  handle.addEventListener('pointerup', e => end(e, true));
+  handle.addEventListener('pointercancel', e => end(e, false));
+  handle.addEventListener('dblclick', e => { e.preventDefault(); apply(0, true); });
+  window.addEventListener('resize', () => apply(current, false));
+  window.__applyStockoutVSplit = () => apply(current, false);
 }
 
 function initReturnLeftResizer() {
@@ -20302,6 +20396,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
   initSideResizer('tl-side-resizer', 'tl-sidebar', 'tlW', 'trackSidebarMini', applyTrackSidebarMini);
   initStockoutRightResizer();
+  initStockoutVSplit();
   initReturnLeftResizer();
   
   // Initialize Custom Datepickers with today's date

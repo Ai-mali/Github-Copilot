@@ -4,6 +4,10 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.0.2 - 2026-11-05
+- Changed: Stock Out right column - the gap between Dispatch & Checkout and Dispatch Staging Cart is now 4px (about 1mm).
+- Added: drag that gap up/down to resize the Dispatch & Checkout card (the Staging Cart takes the rest; the checkout form scrolls inside when squeezed, minimum 96px). Double-click the gap to reset to automatic. The size is remembered (`soCheckoutH` in ui_prefs.json). Not active in the narrow stacked layout (<=1120px).
+
 ## 1.0.1 - 2026-11-04
 - Fixed: Stock In left column dragged to its narrowest - the Status Log title and the All / Iss / OK filters (plus the clear button) now stay on one line instead of wrapping; smaller title/filter text and tighter padding in compact mode only.
 

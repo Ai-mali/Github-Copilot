@@ -11527,6 +11527,7 @@ window.addEventListener('resize', updateStickyHeaderOffsets);
    TAB SWITCHING
    ========================================================= */
 function switchTab(tab) {
+  if (typeof endMarquee === 'function') endMarquee(true);   // never carry a selection box to another tab
   DB.activeTab = tab;
   ['stock-in', 'available', 'stock-out', 'track-list', 'return'].forEach(t => {
     const view = document.getElementById('view-' + t);
@@ -18646,7 +18647,29 @@ function pruneAvailSelection() {
   if (changed) { applyAvailSelClasses(); updateAvailSelBar(); }
 }
 
+/* The selection box must never outlive the drag. A browser/WebView can drop
+   the mouseup (button released outside the window, over the draggable title
+   bar, after alt-tab, during a native drag...) - so besides mouseup we end
+   the drag on: any mouse move with no button held, window blur, tab hidden,
+   dragstart, Esc and tab switches, and always sweep stray #marquee-box. */
+function endMarquee(lostMouseup) {
+  const m = _marquee;
+  _marquee = null;
+  document.querySelectorAll('#marquee-box').forEach(b => b.remove());
+  document.body.classList.remove('avail-marquee-active');
+  // No mouseup means no click will follow, so don't let the stale flag
+  // swallow the next real click.
+  if (lostMouseup) _marqueeDragged = false;
+  return m;
+}
+window.endMarquee = endMarquee;
+window.addEventListener('blur', () => { if (_marquee) { endMarquee(true); updateAvailSelBar(); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden && _marquee) { endMarquee(true); updateAvailSelBar(); } });
+document.addEventListener('dragstart', () => { if (_marquee) { endMarquee(true); updateAvailSelBar(); } }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && _marquee) { endMarquee(true); updateAvailSelBar(); } }, true);
+
 document.addEventListener('mousedown', e => {
+  if (_marquee || document.getElementById('marquee-box')) endMarquee(true); // stale state from a lost mouseup
   if (e.button !== 0 || DB.activeTab !== 'available') return;
   const cont = document.getElementById('avail-accordion-container');
   if (!cont || !cont.contains(e.target)) return;
@@ -18660,6 +18683,7 @@ document.addEventListener('mousedown', e => {
 
 document.addEventListener('mousemove', e => {
   if (!_marquee) return;
+  if ((e.buttons & 1) === 0) { endMarquee(true); updateAvailSelBar(); return; } // button already released
   if (!_marquee.box) {
     if (Math.abs(e.clientX - _marquee.x0) + Math.abs(e.clientY - _marquee.y0) < 6) return;
     _marqueeDragged = true;
@@ -18686,7 +18710,7 @@ document.addEventListener('mousemove', e => {
 });
 
 document.addEventListener('mouseup', () => {
-  if (!_marquee) return;
+  if (!_marquee) { endMarquee(false); return; }
   if (_marquee.box) {
     _marquee.box.remove();
     document.body.classList.remove('avail-marquee-active');

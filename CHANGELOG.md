@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.0.6 - 2026-11-05
+- Fixed: the green drag-selection box (Available Stock marquee) could get stuck on screen - even across tabs - until the app was restarted, when the mouse button was released outside the window or over the title bar. The box now always ends: on any mouse move with no button held, window blur, tab hidden, drag start, Esc, and when switching tabs.
+
 ## 1.0.5 - 2026-11-05
 - Fixed: Return tab search box - the ACTIVE / EXPIRING / EXPIRED warranty tag no longer covers the serial/description text; room is reserved for it and long text ends with "...".
 - Fixed: Processed Returns Registry - Date In / Date Out / Returned now use the same font, size and colour and are no longer cut off (wider date columns, table scrolls sideways if the panel is very narrow); headers "Serial" and "Returned" fit instead of being truncated.

@@ -4,6 +4,10 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.0.5 - 2026-11-05
+- Fixed: Return tab search box - the ACTIVE / EXPIRING / EXPIRED warranty tag no longer covers the serial/description text; room is reserved for it and long text ends with "...".
+- Fixed: Processed Returns Registry - Date In / Date Out / Returned now use the same font, size and colour and are no longer cut off (wider date columns, table scrolls sideways if the panel is very narrow); headers "Serial" and "Returned" fit instead of being truncated.
+
 ## 1.0.4 - 2026-11-05
 - Changed: Sell Record tab compact spacing - records-log header 50->42px, column header 44->34px, gap between sale blocks 10->6px, sale header strip 32->26px, rows 62->50px, expanded unit rows 44->38px (head 38->32), pagination bar 49->41px. About 20% more sales visible without scrolling.
 

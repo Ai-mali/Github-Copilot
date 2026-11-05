@@ -6835,6 +6835,19 @@ body.theme-light .tl-side-mini .tl-cust-item.active {
   max-height: none;
 }
 
+/* Sell Record: compact spacing (header, column row, sale blocks, rows,
+   expanded unit lists, pagination) so more sales fit on a laptop screen. */
+#tl-records-card .tl-card-header { padding: 8px 14px; }
+#tl-records-card .tl-g-head { min-height: 34px; }
+#tl-records-card .tl-batch-block { margin: 6px 0; }
+#tl-records-card .tl-batch-head { padding: 4px 20px; }
+#tl-records-card .tl-g-row { min-height: 50px; }
+#tl-records-card .tl-children,
+#tl-records-card .tl-batch-block .tl-children { margin-bottom: 8px; }
+#tl-records-card .tl-u-head { min-height: 32px; }
+#tl-records-card .tl-u-row { min-height: 38px; }
+#tl-records-card .tl-pagination { padding: 7px 14px; }
+
 /* Filter Columns hides columns by re-rendering the grid with a smaller
    track template — no hide-classes needed. */
 

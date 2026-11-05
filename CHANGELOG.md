@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.0.4 - 2026-11-05
+- Changed: Sell Record tab compact spacing - records-log header 50->42px, column header 44->34px, gap between sale blocks 10->6px, sale header strip 32->26px, rows 62->50px, expanded unit rows 44->38px (head 38->32), pagination bar 49->41px. About 20% more sales visible without scrolling.
+
 ## 1.0.3 - 2026-11-05
 - Changed: the Dispatch & Checkout / Staging Cart split is no longer remembered - it resets to the default (automatic) size every time the app starts. Dragging and double-click reset still work during the session; the 4px gap stays.
 

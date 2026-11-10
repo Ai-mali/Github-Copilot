@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))  # embeddable Python lacks script dir
 
-from fastapi import FastAPI, UploadFile, HTTPException, Response
+from fastapi import FastAPI, UploadFile, HTTPException, Response, Query
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Literal
@@ -347,16 +347,30 @@ def download_backup(filename: str = ""):
 
 
 @app.get("/api/export/available")
-def export_available_workbook():
+def export_available_workbook(brand: list[str] = Query(default=[])):
     """Per-model summary workbook in the user's manual 'Available Stock'
-    layout — same builder as the automatic backups/ready_exports copies."""
+    layout — same builder as the automatic backups/ready_exports copies.
+    ?brand=A&brand=B limits it to those brands (one sheet per brand)."""
+    import re
     import excel_exports
 
     _fresh()
     now = datetime.datetime.now()
-    fname = "VRE-Air Conditioner Stock-" + now.strftime("%d-%m-%y") + ".xlsx"
+    stamp = now.strftime("%d-%m-%y")
+    chosen = [b for b in (x.strip() for x in brand) if b]
+    if chosen:
+        data = excel_exports.build_available_workbook(store.records, now, brands=chosen)
+        if not data:
+            return JSONResponse({"ok": False, "error": "No units in the selected brand(s)"},
+                                status_code=404)
+        label = chosen[0] if len(chosen) == 1 else f"{len(chosen)} brands"
+        label = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", label).strip() or "brands"
+        fname = f"VRE-{label}-Stock-{stamp}.xlsx"
+    else:
+        data = excel_exports.build_available_workbook(store.records, now)
+        fname = "VRE-Air Conditioner Stock-" + stamp + ".xlsx"
     return Response(
-        content=excel_exports.build_available_workbook(store.records, now),
+        content=data,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 

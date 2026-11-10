@@ -4492,6 +4492,88 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
   }
 }
 
+/* Export button while brands are ticked: always show the label ("Export 3 brands") */
+#view-available .avail-export-btn.has-ticks {
+  width: auto; min-width: 0; padding-left: 10px; padding-right: 10px;
+  background: var(--green-bright); border-color: var(--green-bright); color: #04130b; font-weight: 700;
+}
+#view-available .avail-export-btn.has-ticks .avail-export-label { display: inline; }
+body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
+#view-available .avail-ticks-clear { width: 26px; min-width: 26px; padding: 0; justify-content: center; font-size: 16px; line-height: 1; }
+
+/* Brand sidebar: tick (Ctrl+click or click the round icon) */
+#view-available .tl-cust-item .tl-cust-avatar { cursor: pointer; }
+.tl-cust-avatar .av-tick {
+  position: absolute; inset: 0; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--green-bright); color: #fff; font-size: 17px; font-weight: 800;
+  opacity: 0; transform: scale(.6); transition: opacity .14s, transform .14s; pointer-events: none;
+}
+.tl-cust-item.brand-ticked { background: rgba(38, 208, 124, 0.12); }
+.tl-cust-item.brand-ticked .tl-cust-avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--green-bright); }
+.tl-cust-item.brand-ticked .tl-cust-avatar .av-tick { opacity: 1; transform: none; }
+
+/* Hint that appears when the mouse rests on a brand's round icon */
+#brand-hint {
+  position: fixed; z-index: 10000; pointer-events: none; white-space: nowrap;
+  background: #1b262e; color: #e6edf2; border: 1px solid #2c3c46; border-radius: 7px;
+  padding: 4px 9px; font-size: 11.5px; box-shadow: 0 8px 22px rgba(0,0,0,.45);
+  opacity: 0; transform: translateY(3px); transition: opacity .12s, transform .12s;
+}
+#brand-hint.show { opacity: 1; transform: none; }
+#brand-hint b { color: #26d07c; font-weight: 700; }
+body.theme-light #brand-hint { background: #fff; color: #17212a; border-color: #bccbd6; box-shadow: 0 8px 22px rgba(20,40,60,.2); }
+body.theme-light #brand-hint b { color: #0f766e; }
+
+/* Right-click export menu for a brand (compact, everything centered) */
+#brand-ctx {
+  position: fixed; z-index: 10001; display: none; width: 206px; text-align: center;
+  background: #141c22; color: #e6edf2; border: 1px solid #2c3c46; border-radius: 12px;
+  box-shadow: 0 16px 38px rgba(0,0,0,.55); overflow: hidden; --ac: #26d07c;
+}
+#brand-ctx.show { display: block; animation: brandCtxPop .12s ease-out; }
+@keyframes brandCtxPop { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
+body.theme-light #brand-ctx { background: #fff; color: #17212a; border-color: #bccbd6; box-shadow: 0 14px 34px rgba(20,40,60,.22); }
+#brand-ctx .bcx-head {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 10px 8px; border-bottom: 1px solid rgba(128,148,160,.22);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ac) 24%, transparent), transparent);
+}
+#brand-ctx .bcx-av {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: 11px; margin-bottom: 3px;
+  box-shadow: 0 0 0 2px #141c22, 0 0 0 3.5px var(--ac);
+}
+body.theme-light #brand-ctx .bcx-av { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--ac); }
+#brand-ctx .bcx-stack { display: flex; justify-content: center; margin-bottom: 3px; }
+#brand-ctx .bcx-stack i {
+  width: 26px; height: 26px; border-radius: 50%; margin-left: -7px; border: 2px solid #141c22;
+  display: grid; place-items: center; color: #fff; font: 700 9px system-ui, sans-serif; font-style: normal;
+}
+body.theme-light #brand-ctx .bcx-stack i { border-color: #fff; }
+#brand-ctx .bcx-stack i:first-child { margin-left: 0; }
+#brand-ctx .bcx-name { font-size: 14px; font-weight: 800; letter-spacing: .01em; line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#brand-ctx .bcx-sub { font-size: 10.5px; color: #8495a1; }
+body.theme-light #brand-ctx .bcx-sub { color: #5b6b78; }
+#brand-ctx .bcx-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 8px 9px 0; }
+#brand-ctx .bcx-stats div { background: rgba(128,148,160,.10); border: 1px solid rgba(128,148,160,.22); border-radius: 7px; padding: 4px 6px; }
+#brand-ctx .bcx-stats b { display: block; font-size: 14px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+#brand-ctx .bcx-stats span { font-size: 9px; letter-spacing: .06em; text-transform: uppercase; color: #8495a1; }
+body.theme-light #brand-ctx .bcx-stats span { color: #5b6b78; }
+#brand-ctx .bcx-cta {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: calc(100% - 18px); margin: 8px 9px 0; padding: 7px 8px; border: none; border-radius: 8px; cursor: pointer;
+  font: 700 12.5px system-ui, sans-serif; color: #04130b; text-align: center;
+  background: linear-gradient(180deg, #34dc8a, #1fbf70); box-shadow: 0 5px 14px rgba(38,208,124,.25);
+}
+body.theme-light #brand-ctx .bcx-cta { color: #fff; background: linear-gradient(180deg, #14b374, #0c9660); }
+#brand-ctx .bcx-cta:hover:not(:disabled) { filter: brightness(1.08); }
+#brand-ctx .bcx-cta:disabled { background: rgba(128,148,160,.18); color: #8495a1; box-shadow: none; cursor: not-allowed; }
+#brand-ctx .bcx-cta span { line-height: 1.2; }
+#brand-ctx .bcx-cta small { display: block; font-size: 10px; font-weight: 600; opacity: .8; }
+#brand-ctx .bcx-note { padding: 5px 8px 8px; font-size: 9.5px; color: #8495a1; }
+body.theme-light #brand-ctx .bcx-note { color: #5b6b78; }
+
 @media (min-width: 1121px) {
   .brand-accordion {
     margin-bottom: 6px;
@@ -9206,9 +9288,10 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                   <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
               </div>
-              <button class="btn btn-ghost btn-sm avail-export-btn" onclick="exportAvailCsv()" title="Export Excel" aria-label="Export Excel">
+              <button type="button" class="btn btn-ghost btn-sm avail-ticks-clear" id="avail-ticks-clear" onclick="clearAvailBrandTicks()" title="Clear ticked brands (Esc)" aria-label="Clear ticked brands" style="display:none;">&times;</button>
+              <button class="btn btn-ghost btn-sm avail-export-btn" id="avail-export-btn" onclick="exportAvailCsv()" title="Export Excel" aria-label="Export Excel">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                <span class="avail-export-label">Export Excel</span>
+                <span class="avail-export-label" id="avail-export-label">Export Excel</span>
               </button>
             </div>
           </div>
@@ -10835,6 +10918,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
 const DB = {
   activeTab: 'stock-in',
   availFilter: 'ALL',
+  availTicked: new Set(), // brands ticked in the Available Stock sidebar (Ctrl+click / avatar click) for export
   soFilter: 'ALL',
   trackFilter: 'ALL',
   trackWarrantyFilter: 'ALL', // 'ALL' | 'active' | 'expiring' | 'expired'
@@ -11528,6 +11612,7 @@ window.addEventListener('resize', updateStickyHeaderOffsets);
    ========================================================= */
 function switchTab(tab) {
   if (typeof endMarquee === 'function') endMarquee(true);   // never carry a selection box to another tab
+  if (typeof hideBrandCtx === 'function') { hideBrandCtx(); hideBrandHint(); }
   DB.activeTab = tab;
   ['stock-in', 'available', 'stock-out', 'track-list', 'return'].forEach(t => {
     const view = document.getElementById('view-' + t);
@@ -14148,7 +14233,9 @@ function renderAvailable(searchTerm) {
   const container = document.getElementById('avail-accordion-container');
   container.innerHTML = '';
 
-  const brands = DB.availFilter === 'ALL' ? Object.keys(DB.inventory) : [DB.availFilter].filter(b => DB.inventory[b]);
+  const brands = DB.availTicked.size
+    ? Object.keys(DB.inventory).filter(b => DB.availTicked.has(b))   // ticked brands only
+    : DB.availFilter === 'ALL' ? Object.keys(DB.inventory) : [DB.availFilter].filter(b => DB.inventory[b]);
 
   // Check low-stock models + second-hand units across entire inventory
   let lowStockModels = [], secondHandCount = 0;
@@ -14434,6 +14521,8 @@ function markSearchHit(text, q) {
 function renderAvailBrandSidebar() {
   const listEl = document.getElementById('avail-brand-list');
   if (!listEl) return;
+  // Ticks for brands that no longer exist (deleted / renamed) must not linger.
+  [...DB.availTicked].forEach(k => { if (!DB.inventory[k]) DB.availTicked.delete(k); });
   const brandKeys = Object.keys(DB.inventory);
   const stats = {};
   brandKeys.forEach(b => { stats[b] = soBrandStats(b); });
@@ -14462,7 +14551,8 @@ function renderAvailBrandSidebar() {
       }) : brands;
 
   const mkRow = (key, o) => {
-    const active = DB.availFilter === key;
+    const ticked = key !== 'ALL' && DB.availTicked.has(key);
+    const active = !DB.availTicked.size && DB.availFilter === key;
     const empty = o.units === 0 && key !== 'ALL';
     const hitQ = sideQ || mainQ;
     const nameHit = !!(hitQ && String(o.name).toLowerCase().includes(hitQ));
@@ -14474,12 +14564,13 @@ function renderAvailBrandSidebar() {
         ? `<span class="brand-del on" title="Delete empty brand" onclick="event.stopPropagation(); confirmDeleteBrand('${escapeJs(key)}')">&#128465;</span>`
         : `<span class="brand-del off" title="Brand has units — empty it first" onclick="event.stopPropagation(); showToast('${escapeJs(key)} still has ${o.units} unit(s) in stock — empty it before deleting.')">&#128465;</span>`;
     const dblAttr = (key === 'ALL' || key === 'UNBRANDED') ? ''
-      : ` ondblclick="event.stopPropagation(); openRenameModal('brand','${escapeJs(key)}')"`;
+      : ` ondblclick="if (event.ctrlKey || event.metaKey || event.target.closest('.tl-cust-avatar')) return; event.stopPropagation(); openRenameModal('brand','${escapeJs(key)}')"`;
     const dblHint = dblAttr ? ' · double-click to rename' : '';
     return `
-    <button type="button" class="tl-cust-item${active ? ' active' : ''}${empty ? ' brand-empty' : ''}${nameHit ? ' search-hit' : ''}" style="align-items:flex-start;"
-            onclick="selectAvailBrand('${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
-      <span class="tl-cust-avatar tl-cust-avatar-solid" style="--brand-c:${o.color}; width:36px; height:36px; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
+    <button type="button" class="tl-cust-item${active ? ' active' : ''}${ticked ? ' brand-ticked' : ''}${empty ? ' brand-empty' : ''}${nameHit ? ' search-hit' : ''}" style="align-items:flex-start;"
+            data-brand="${escapeHtml(key)}"
+            onclick="availBrandClick(event, '${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
+      <span class="tl-cust-avatar tl-cust-avatar-solid" style="--brand-c:${o.color}; width:36px; height:36px; border:none; font-size:11px;">${escapeHtml(o.initials)}${key === 'ALL' ? '' : '<span class="av-tick">&#10003;</span>'}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(fmtDMY(o.date))}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
@@ -14513,7 +14604,175 @@ function renderAvailBrandSidebar() {
 
   const bc = document.getElementById('avail-side-brand-count');
   if (bc) bc.textContent = brands.length;
+  updateAvailExportUI();
 }
+
+/* ---------------------------------------------------------
+   Available Stock: tick brands + export just those
+   Ctrl+click a brand (or click its round icon) ticks it; the list then
+   shows only ticked brands and the Export button exports only them.
+   Right-click a brand for a one-click "Export this Brand".
+   --------------------------------------------------------- */
+function availBrandClick(ev, key) {
+  const onAvatar = !!(ev.target.closest && ev.target.closest('.tl-cust-avatar'));
+  if (key !== 'ALL' && (ev.ctrlKey || ev.metaKey || onAvatar)) {
+    ev.preventDefault();
+    toggleAvailBrandTick(key);
+    return;
+  }
+  hideBrandHint();
+  DB.availTicked.clear();
+  selectAvailBrand(key);
+}
+
+function toggleAvailBrandTick(key) {
+  if (!DB.inventory[key]) return;
+  if (DB.availTicked.has(key)) DB.availTicked.delete(key); else DB.availTicked.add(key);
+  DB.availFilter = 'ALL';
+  updateGlobalBadges();
+  renderAvailable();
+}
+
+function clearAvailBrandTicks() {
+  if (!DB.availTicked.size) return;
+  DB.availTicked.clear();
+  renderAvailable();
+}
+
+function updateAvailExportUI() {
+  const btn = document.getElementById('avail-export-btn');
+  if (!btn) return;
+  const n = DB.availTicked.size;
+  btn.classList.toggle('has-ticks', n > 0);
+  const label = document.getElementById('avail-export-label');
+  if (label) label.textContent = n ? `Export ${n} brand${n > 1 ? 's' : ''}` : 'Export Excel';
+  const tip = n ? `Export ${n} ticked brand${n > 1 ? 's' : ''}` : 'Export Excel';
+  btn.title = tip;
+  btn.setAttribute('aria-label', tip);
+  const clr = document.getElementById('avail-ticks-clear');
+  if (clr) clr.style.display = n ? 'inline-flex' : 'none';
+}
+
+function exportAvailBrands(names, clearAfter) {
+  const withUnits = names.filter(n => countBrandUnits(n) > 0);
+  if (!withUnits.length) {
+    showToast('Nothing to export \u2014 the selected brand(s) have no units.', '&#9888;');
+    return;
+  }
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  const stamp = `${p(d.getDate())}-${p(d.getMonth() + 1)}-${String(d.getFullYear()).slice(-2)}`;
+  const label = (withUnits.length === 1 ? withUnits[0] : `${withUnits.length} brands`).replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim() || 'brands';
+  const url = '/api/export/available?' + withUnits.map(n => 'brand=' + encodeURIComponent(n)).join('&');
+  downloadServerFile(url, `VRE-${label}-Stock-${stamp}.xlsx`);
+  if (clearAfter) clearAvailBrandTicks();
+}
+
+/* Hint after the mouse rests ~0.3s on a brand's round icon */
+let _brandHintTimer = null, _brandHintBtn = null;
+function hideBrandHint() {
+  clearTimeout(_brandHintTimer);
+  const tip = document.getElementById('brand-hint');
+  if (tip) tip.classList.remove('show');
+  if (_brandHintBtn) {
+    if (_brandHintBtn.dataset.t) _brandHintBtn.title = _brandHintBtn.dataset.t;  // give the native tooltip back
+    _brandHintBtn = null;
+  }
+}
+
+function initAvailBrandInteractions() {
+  const listEl = document.getElementById('avail-brand-list');
+  if (!listEl || listEl._brandInit) return;
+  listEl._brandInit = true;
+  listEl.addEventListener('mousemove', e => {
+    const av = e.target.closest && e.target.closest('.tl-cust-avatar');
+    const btn = av && av.closest('.tl-cust-item[data-brand]');
+    if (!btn || btn.dataset.brand === 'ALL') { hideBrandHint(); return; }
+    let tip = document.getElementById('brand-hint');
+    if (!tip) { tip = document.createElement('div'); tip.id = 'brand-hint'; document.body.appendChild(tip); }
+    tip.classList.remove('show');
+    clearTimeout(_brandHintTimer);
+    if (_brandHintBtn && _brandHintBtn !== btn && _brandHintBtn.dataset.t) _brandHintBtn.title = _brandHintBtn.dataset.t;
+    if (btn.title) { btn.dataset.t = btn.title; btn.removeAttribute('title'); }  // no native tooltip on top of ours
+    _brandHintBtn = btn;
+    const x = e.clientX, y = e.clientY;
+    _brandHintTimer = setTimeout(() => {
+      const on = DB.availTicked.has(btn.dataset.brand);
+      tip.innerHTML = '<b>Ctrl+Click</b> to ' + (on ? 'Unselect' : 'Select');
+      tip.style.left = Math.min(x + 12, window.innerWidth - tip.offsetWidth - 8) + 'px';
+      tip.style.top = (y + 18) + 'px';
+      tip.classList.add('show');
+    }, 300);
+  });
+  ['mouseleave', 'mousedown', 'scroll', 'contextmenu'].forEach(ev => listEl.addEventListener(ev, hideBrandHint, ev === 'scroll'));
+
+  listEl.addEventListener('contextmenu', e => {
+    const btn = e.target.closest && e.target.closest('.tl-cust-item[data-brand]');
+    if (!btn || btn.dataset.brand === 'ALL') return;
+    e.preventDefault();
+    showBrandCtx(btn.dataset.brand, e.clientX, e.clientY);
+  });
+}
+
+function hideBrandCtx() {
+  const m = document.getElementById('brand-ctx');
+  if (m) m.classList.remove('show');
+}
+
+function showBrandCtx(key, x, y) {
+  let m = document.getElementById('brand-ctx');
+  if (!m) { m = document.createElement('div'); m.id = 'brand-ctx'; document.body.appendChild(m); }
+  const dl = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>';
+  const initialsOf = b => escapeHtml(String(b).slice(0, 2));
+  const multi = DB.availTicked.size >= 2 && DB.availTicked.has(key);
+  if (multi) {
+    const sel = [...DB.availTicked].filter(b => DB.inventory[b]).sort((a, b) => a.localeCompare(b));
+    const units = sel.reduce((s, b) => s + countBrandUnits(b), 0);
+    const models = sel.reduce((s, b) => s + Object.keys(DB.inventory[b].models || {}).length, 0);
+    const shown = sel.slice(0, 4), more = sel.length - shown.length;
+    m.style.setProperty('--ac', '#26d07c');
+    m.innerHTML =
+      `<div class="bcx-head">
+         <div class="bcx-stack">${shown.map(b => `<i style="background:${getBrandColor(b)}">${initialsOf(b)}</i>`).join('')}${more ? `<i style="background:#3a4852">+${more}</i>` : ''}</div>
+         <div class="bcx-name">${sel.length} brands</div>
+         <div class="bcx-sub">selected for export</div>
+       </div>
+       <div class="bcx-stats"><div><b>${units}</b><span>Units</span></div><div><b>${models}</b><span>Models</span></div></div>
+       <button type="button" class="bcx-cta" id="bcx-export">${dl}<span>Export Selected<small>${sel.length} brands &middot; ${units} units</small></span></button>
+       <div class="bcx-note">One Excel file &middot; one sheet per brand</div>`;
+    m.querySelector('#bcx-export').onclick = () => { hideBrandCtx(); exportAvailBrands(sel, true); };
+  } else {
+    const units = countBrandUnits(key);
+    const models = Object.keys((DB.inventory[key] || {}).models || {}).length;
+    m.style.setProperty('--ac', getBrandColor(key));
+    m.innerHTML =
+      `<div class="bcx-head">
+         <div class="bcx-av" style="background:${getBrandColor(key)}">${initialsOf(key)}</div>
+         <div class="bcx-name" title="${escapeHtml(key)}">${escapeHtml(key)}</div>
+         <div class="bcx-sub">${units === 0 ? 'No units' : units <= SO_LOW_STOCK_MAX ? 'Low stock' : 'In stock'}</div>
+       </div>
+       <div class="bcx-stats"><div><b>${units}</b><span>Units</span></div><div><b>${models}</b><span>Models</span></div></div>
+       <button type="button" class="bcx-cta" id="bcx-export" ${units ? '' : 'disabled'}>${dl}<span>Export this Brand<small>${units} unit${units === 1 ? '' : 's'}</small></span></button>
+       <div class="bcx-note">${units ? 'Excel file &middot; 1 sheet' : 'Nothing to export'}</div>`;
+    m.querySelector('#bcx-export').onclick = () => { hideBrandCtx(); exportAvailBrands([key], false); };
+  }
+  m.classList.add('show');
+  m.style.left = Math.max(6, Math.min(x, window.innerWidth - m.offsetWidth - 8)) + 'px';
+  m.style.top = Math.max(6, Math.min(y, window.innerHeight - m.offsetHeight - 8)) + 'px';
+}
+
+document.addEventListener('mousedown', e => {
+  const m = document.getElementById('brand-ctx');
+  if (m && m.classList.contains('show') && !m.contains(e.target)) hideBrandCtx();
+}, true);
+window.addEventListener('blur', hideBrandCtx);
+window.addEventListener('resize', hideBrandCtx);
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const m = document.getElementById('brand-ctx');
+  if (m && m.classList.contains('show')) { hideBrandCtx(); return; }
+  if (DB.activeTab === 'available' && DB.availTicked.size && !document.querySelector('.modal-overlay.open')) clearAvailBrandTicks();
+});
 
 /* Telegram-style drag-to-resize for the brand sidebars. Dragging past the
    collapse threshold snaps into the 60px mini rail; dragging out of mini
@@ -16708,6 +16967,8 @@ function selectTrackWarranty(key) {
 }
 
 function exportAvailCsv() {
+  // Brands ticked in the sidebar -> export only those (one sheet per brand)
+  if (DB.availTicked.size) { exportAvailBrands([...DB.availTicked], true); return; }
   // Per-model summary workbook in the manual 'Available Stock' layout
   // (NO | Model | Brand | TOTAL | Booking | Balance) — built server-side.
   const d = new Date();
@@ -20437,6 +20698,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initSideResizer('avail-side-resizer', 'avail-sidebar', 'availW', 'availSidebarMini', applyAvailSidebarMini);
   initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
   initSideResizer('tl-side-resizer', 'tl-sidebar', 'tlW', 'trackSidebarMini', applyTrackSidebarMini);
+  initAvailBrandInteractions();
   initStockoutRightResizer();
   initStockoutVSplit();
   initReturnLeftResizer();

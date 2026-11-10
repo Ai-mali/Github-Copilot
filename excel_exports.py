@@ -16,37 +16,25 @@ _THIN = Side(style="thin", color="9E9E9E")
 _BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
 
 
-def build_available_workbook(records, now=None) -> bytes:
-    """Per-model summary in the user's manual 'Available Stock' layout:
-    NO | Model | Brand | TOTAL | Booking | Balance.
-    TOTAL = physical units (in stock + booked for future dispatch);
-    Balance = TOTAL - Booking = what can still be dispatched today."""
-    from stock_store import IN_STOCK, SOLD, parse_datetime_safe
+def _sheet_title(name: str, used: set) -> str:
+    """Excel sheet names: max 31 chars, none of []:*?/\\, unique."""
+    base = re.sub(r"[\[\]:*?/\\]", " ", str(name)).strip()[:31] or "Sheet"
+    title, n = base, 2
+    while title.lower() in used:
+        suffix = f" ({n})"
+        title = base[:31 - len(suffix)] + suffix
+        n += 1
+    used.add(title.lower())
+    return title
 
-    now = now or datetime.datetime.now()
-    stock, booked = {}, {}
-    for rec in records:
-        status = str(rec.get("Status") or "").strip()
-        key = (str(rec.get("Brand") or "").strip() or "UNBRANDED",
-               str(rec.get("Model") or "").strip())
-        if status == IN_STOCK:
-            stock[key] = stock.get(key, 0) + 1
-        elif status == SOLD:
-            dt = parse_datetime_safe(str(rec.get("Date Out") or ""))
-            if dt and dt > now:
-                booked[key] = booked.get(key, 0) + 1
 
-    keys = sorted(set(stock) | set(booked),
-                  key=lambda k: (k[0].upper(), k[1].upper()))
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Available"
+def _fill_available_sheet(ws, keys, stock, booked, title="Available Stock"):
+    """One sheet in the manual layout: NO | Model | Brand | TOTAL | Booking | Balance."""
     ws.sheet_view.zoomScale = 85
 
     ws.merge_cells("A1:F1")
     t = ws["A1"]
-    t.value = "Available Stock"
+    t.value = title
     t.font = Font(bold=True, size=14)
     t.fill = _TITLE_FILL
     t.alignment = Alignment(horizontal="center", vertical="center")
@@ -84,6 +72,59 @@ def build_available_workbook(records, now=None) -> bytes:
 
     for col, w in zip("ABCDEF", (10.3, 29.0, 11.9, 13.4, 13.9, 13.6)):
         ws.column_dimensions[col].width = w
+
+
+def build_available_workbook(records, now=None, brands=None) -> bytes:
+    """Per-model summary in the user's manual 'Available Stock' layout:
+    NO | Model | Brand | TOTAL | Booking | Balance.
+    TOTAL = physical units (in stock + booked for future dispatch);
+    Balance = TOTAL - Booking = what can still be dispatched today.
+
+    brands=None  -> one 'Available' sheet with every brand (the default export).
+    brands=[...] -> one sheet per chosen brand (brands with no units are
+                    skipped); returns b"" when nothing is left to export."""
+    from stock_store import IN_STOCK, SOLD, parse_datetime_safe
+
+    now = now or datetime.datetime.now()
+    stock, booked = {}, {}
+    for rec in records:
+        status = str(rec.get("Status") or "").strip()
+        key = (str(rec.get("Brand") or "").strip() or "UNBRANDED",
+               str(rec.get("Model") or "").strip())
+        if status == IN_STOCK:
+            stock[key] = stock.get(key, 0) + 1
+        elif status == SOLD:
+            dt = parse_datetime_safe(str(rec.get("Date Out") or ""))
+            if dt and dt > now:
+                booked[key] = booked.get(key, 0) + 1
+
+    keys = sorted(set(stock) | set(booked),
+                  key=lambda k: (k[0].upper(), k[1].upper()))
+
+    wb = Workbook()
+    if brands is None:
+        ws = wb.active
+        ws.title = "Available"
+        _fill_available_sheet(ws, keys, stock, booked)
+    else:
+        wanted = []
+        for b in brands:
+            b = str(b).strip().upper()
+            if b and b not in wanted:
+                wanted.append(b)
+        used, first = set(), True
+        for b in sorted(wanted):
+            bkeys = [k for k in keys if k[0].upper() == b]
+            if not bkeys:
+                continue                      # brand with no units: no sheet
+            ws = wb.active if first else wb.create_sheet()
+            first = False
+            brand_name = bkeys[0][0]
+            ws.title = _sheet_title(brand_name, used)
+            _fill_available_sheet(ws, bkeys, stock, booked,
+                                  title=f"Available Stock - {brand_name}")
+        if first:
+            return b""
 
     buf = io.BytesIO()
     wb.save(buf)

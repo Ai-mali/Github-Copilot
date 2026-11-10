@@ -4502,6 +4502,7 @@ body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 #view-available .avail-ticks-clear { width: 26px; min-width: 26px; padding: 0; justify-content: center; font-size: 16px; line-height: 1; }
 
 /* Brand sidebar: tick (Ctrl+click or click the round icon) */
+#view-available .tl-cust-item { user-select: none; }
 #view-available .tl-cust-item .tl-cust-avatar { cursor: pointer; }
 .tl-cust-avatar .av-tick {
   position: absolute; inset: 0; border-radius: 50%;
@@ -10919,6 +10920,7 @@ const DB = {
   activeTab: 'stock-in',
   availFilter: 'ALL',
   availTicked: new Set(), // brands ticked in the Available Stock sidebar (Ctrl+click / avatar click) for export
+  availAnchor: null, // last Available Stock brand clicked for Shift+click range selection
   soFilter: 'ALL',
   trackFilter: 'ALL',
   trackWarrantyFilter: 'ALL', // 'ALL' | 'active' | 'expiring' | 'expired'
@@ -14523,6 +14525,7 @@ function renderAvailBrandSidebar() {
   if (!listEl) return;
   // Ticks for brands that no longer exist (deleted / renamed) must not linger.
   [...DB.availTicked].forEach(k => { if (!DB.inventory[k]) DB.availTicked.delete(k); });
+  if (DB.availAnchor && !DB.inventory[DB.availAnchor]) DB.availAnchor = null;
   const brandKeys = Object.keys(DB.inventory);
   const stats = {};
   brandKeys.forEach(b => { stats[b] = soBrandStats(b); });
@@ -14615,13 +14618,36 @@ function renderAvailBrandSidebar() {
    --------------------------------------------------------- */
 function availBrandClick(ev, key) {
   const onAvatar = !!(ev.target.closest && ev.target.closest('.tl-cust-avatar'));
+  if (key !== 'ALL' && ev.shiftKey) {
+    ev.preventDefault();
+    const visible = [...document.querySelectorAll('#avail-brand-list .tl-cust-item[data-brand]')]
+      .map(btn => btn.dataset.brand)
+      .filter(b => b !== 'ALL' && DB.inventory[b]);
+    if (!visible.length) return;
+    const clickedIndex = visible.indexOf(key);
+    if (clickedIndex < 0) return;
+    let anchor = DB.availAnchor;
+    if (!anchor || !visible.includes(anchor)) anchor = visible[0];
+    const anchorIndex = visible.indexOf(anchor);
+    const start = Math.min(anchorIndex, clickedIndex);
+    const end = Math.max(anchorIndex, clickedIndex);
+    const range = visible.slice(start, end + 1);
+    if (!(ev.ctrlKey || ev.metaKey)) DB.availTicked.clear();
+    range.forEach(b => DB.availTicked.add(b));
+    DB.availFilter = 'ALL';
+    updateGlobalBadges();
+    renderAvailable();
+    return;
+  }
   if (key !== 'ALL' && (ev.ctrlKey || ev.metaKey || onAvatar)) {
     ev.preventDefault();
+    DB.availAnchor = key;
     toggleAvailBrandTick(key);
     return;
   }
   hideBrandHint();
   DB.availTicked.clear();
+  DB.availAnchor = key === 'ALL' ? null : key;
   selectAvailBrand(key);
 }
 
@@ -14634,8 +14660,8 @@ function toggleAvailBrandTick(key) {
 }
 
 function clearAvailBrandTicks() {
-  if (!DB.availTicked.size) return;
   DB.availTicked.clear();
+  DB.availAnchor = null;
   renderAvailable();
 }
 
@@ -14698,11 +14724,14 @@ function initAvailBrandInteractions() {
     const x = e.clientX, y = e.clientY;
     _brandHintTimer = setTimeout(() => {
       const on = DB.availTicked.has(btn.dataset.brand);
-      tip.innerHTML = '<b>Ctrl+Click</b> to ' + (on ? 'Unselect' : 'Select');
+      tip.innerHTML = '<b>Ctrl+Click or Shift+Click</b> to ' + (on ? 'Unselect' : 'Select');
       tip.style.left = Math.min(x + 12, window.innerWidth - tip.offsetWidth - 8) + 'px';
       tip.style.top = (y + 18) + 'px';
       tip.classList.add('show');
     }, 300);
+  });
+  listEl.addEventListener('mousedown', e => {
+    if (e.shiftKey && e.target.closest && e.target.closest('.tl-cust-item[data-brand]')) e.preventDefault();
   });
   ['mouseleave', 'mousedown', 'scroll', 'contextmenu'].forEach(ev => listEl.addEventListener(ev, hideBrandHint, ev === 'scroll'));
 
@@ -14771,7 +14800,7 @@ document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   const m = document.getElementById('brand-ctx');
   if (m && m.classList.contains('show')) { hideBrandCtx(); return; }
-  if (DB.activeTab === 'available' && DB.availTicked.size && !document.querySelector('.modal-overlay.open')) clearAvailBrandTicks();
+  if (DB.activeTab === 'available' && (DB.availTicked.size || DB.availAnchor) && !document.querySelector('.modal-overlay.open')) clearAvailBrandTicks();
 });
 
 /* Telegram-style drag-to-resize for the brand sidebars. Dragging past the

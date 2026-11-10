@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.1.1 - 2026-11-10
+- Available Stock: Shift+click selects a range of brands (Ctrl+Shift+click adds a range).
+
 ## 1.1.0 - 2026-11-10
 - Added: Available Stock - export only the brands you pick. Ctrl+click a brand in the left list (or click its round icon) to tick it: a green check replaces the initials, the right-hand list shows only ticked brands, and the top button becomes "Export N brands" (a small x next to it, or Esc, clears the ticks). With nothing ticked it still exports everything, exactly as before.
 - Added: right-click a brand for a compact export menu - one brand: "Export this Brand (N units)"; several ticked brands: "Export Selected (N brands - N units)". Resting the mouse on a round icon for 0.3s shows "Ctrl+Click to Select".

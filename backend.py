@@ -367,7 +367,8 @@ def export_available_workbook(brand: list[str] = Query(default=[])):
         label = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", label).strip() or "brands"
         fname = f"VRE-{label}-Stock-{stamp}.xlsx"
     else:
-        data = excel_exports.build_available_workbook(store.records, now)
+        data = excel_exports.build_available_workbook(store.records, now,
+                                                      returns=store.returns)
         fname = "VRE-Air Conditioner Stock-" + stamp + ".xlsx"
     return Response(
         content=data,

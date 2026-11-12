@@ -74,7 +74,52 @@ def _fill_available_sheet(ws, keys, stock, booked, title="Available Stock"):
         ws.column_dimensions[col].width = w
 
 
-def build_available_workbook(records, now=None, brands=None) -> bytes:
+def _fill_broken_sheet(ws, broken):
+    """'Broken' sheet: NO | SERIAL/DESC | MODEL | CUSTOMER | NOTES."""
+    center = Alignment(horizontal="center", vertical="center")
+    for c, h in enumerate(["NO", "SERIAL/DESC", "MODEL", "CUSTOMER", "NOTES"], 1):
+        cell = ws.cell(row=1, column=c, value=h)
+        cell.font = Font(bold=True)
+        cell.alignment = center
+        cell.border = _BORDER
+    ws.auto_filter.ref = "A1:E1"
+    ws.freeze_panes = "A2"
+    for i, (serial, model, customer, notes) in enumerate(broken, 1):
+        for c, v in enumerate((i, serial, model, customer, notes), 1):
+            cell = ws.cell(row=i + 1, column=c, value=v)
+            cell.border = _BORDER
+            if c == 1:
+                cell.alignment = center
+    for col, w in zip("ABCDE", (6.0, 18.0, 24.0, 18.0, 40.0)):
+        ws.column_dimensions[col].width = w
+
+
+def _broken_rows(records, returns):
+    """Units that are Quarantined right now. Released units flip back to
+    In Stock (and their Returns entry to 'Restocked'), so they drop out on
+    their own. Notes come from the latest open 'Quarantined' Returns entry."""
+    from stock_store import QUARANTINED
+
+    def k(r):
+        return (str(r.get("Serial") or "").strip().lower(),
+                str(r.get("Model") or "").strip().lower())
+
+    notes = {}
+    for ret in returns or []:
+        if str(ret.get("Action") or "").strip() == "Quarantined":
+            notes[k(ret)] = str(ret.get("Notes") or "").strip()   # last one wins
+    rows = []
+    for rec in records:
+        if str(rec.get("Status") or "").strip() == QUARANTINED:
+            rows.append((str(rec.get("Serial") or "").strip(),
+                         str(rec.get("Model") or "").strip(),
+                         str(rec.get("Customer") or "").strip(),
+                         notes.get(k(rec), "")))
+    rows.sort(key=lambda r: (r[1].upper(), r[0].upper()))
+    return rows
+
+
+def build_available_workbook(records, now=None, brands=None, returns=None) -> bytes:
     """Per-model summary in the user's manual 'Available Stock' layout:
     NO | Model | Brand | TOTAL | Booking | Balance.
     TOTAL = physical units (in stock + booked for future dispatch);
@@ -82,7 +127,11 @@ def build_available_workbook(records, now=None, brands=None) -> bytes:
 
     brands=None  -> one 'Available' sheet with every brand (the default export).
     brands=[...] -> one sheet per chosen brand (brands with no units are
-                    skipped); returns b"" when nothing is left to export."""
+                    skipped); returns b"" when nothing is left to export.
+
+    The full export (brands=None) also gets a 'Broken' sheet listing the units
+    that are Quarantined right now (omitted when there are none). Per-brand
+    exports never include it."""
     from stock_store import IN_STOCK, SOLD, parse_datetime_safe
 
     now = now or datetime.datetime.now()
@@ -106,6 +155,9 @@ def build_available_workbook(records, now=None, brands=None) -> bytes:
         ws = wb.active
         ws.title = "Available"
         _fill_available_sheet(ws, keys, stock, booked)
+        broken = _broken_rows(records, returns)
+        if broken:
+            _fill_broken_sheet(wb.create_sheet("Broken"), broken)
     else:
         wanted = []
         for b in brands:
@@ -222,7 +274,8 @@ def write_ready_exports(store, keep: int = 10) -> list[Path]:
 
     written = []
     for prefix, data in (
-        ("Available-Stock", build_available_workbook(store.records, now)),
+        ("Available-Stock", build_available_workbook(store.records, now,
+                                 returns=store.returns)),
         ("Sell-Record", build_sell_workbook(
             sell_rows(store.track_list(), now),
             f"Sell Record — {now:%Y-%m-%d %H:%M}")),

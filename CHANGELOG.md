@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.2.0 - 2026-11-12
+- Added: Available Stock "Export all" now adds a second sheet "Broken" (NO | SERIAL/DESC | MODEL | CUSTOMER | NOTES) listing every unit that is Quarantined right now. Units released back to stock (Action Taken = Restocked) drop off the list automatically. No Broken sheet when nothing is quarantined. Exporting selected brands does not include it. The automatic backup copy in backups/ready_exports also gets the sheet.
+
 ## 1.1.1 - 2026-11-10
 - Available Stock: Shift+click selects a range of brands (Ctrl+Shift+click adds a range).
 

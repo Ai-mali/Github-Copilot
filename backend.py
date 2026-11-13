@@ -402,7 +402,7 @@ def _catalog_payload():
             types.append(t)
     return {"entries": entries, "categories": cats, "types": types,
             "needs": model_catalog.uncategorised(store.records, entries),
-            "stocked": model_catalog.stocked_models(store.records)}
+            "stock_info": model_catalog.stock_info(store.records)}
 
 
 @app.get("/api/model-catalog")

@@ -276,12 +276,26 @@ def uncategorised(records, entries, now=None) -> list[dict]:
     return sorted(out.values(), key=lambda d: d["model"].upper())
 
 
-def stocked_models(records, now=None) -> list[str]:
-    """Lower-case names of every model that is in stock or booked. The Model
-    Catalog window uses it to number the preview groups (I, II, III...) the
-    same way the export does: groups with no stock are skipped."""
+def stock_info(records, now=None) -> dict:
+    """{lower-case model: {brand, stock, booked}} for every model in stock or
+    booked. The Model Catalog window uses it to number the preview groups
+    (groups with no stock are skipped, like the export) and to show the real
+    brand / TOTAL / Booking / Balance in the Excel preview."""
     import datetime
     import excel_exports
 
     stock, booked = excel_exports._count_stock(records, now or datetime.datetime.now())
-    return sorted({m.lower() for (_, m) in set(stock) | set(booked) if m})
+    info = {}
+    for key in set(stock) | set(booked):
+        brand, model = key
+        if not model:
+            continue
+        s, b = stock.get(key, 0), booked.get(key, 0)
+        o = info.setdefault(model.lower(), {"brand": brand, "stock": 0, "booked": 0, "_best": -1})
+        if s + b > o["_best"]:                    # brand with the most units wins
+            o["brand"], o["_best"] = brand, s + b
+        o["stock"] += s
+        o["booked"] += b
+    for o in info.values():
+        o.pop("_best", None)
+    return info

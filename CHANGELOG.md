@@ -4,6 +4,11 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.3 - 2026-11-13
+- Changed: Model Catalog opens on "Needs category" by default (when anything still needs a category), and in the "All models" tab the models that still need a category are listed first.
+- Changed: the Excel preview now shows live numbers instead of placeholders: the real Brand, TOTAL, Booking and Balance of the model (an indoor/outdoor set shows the number of complete sets, like the export), and they update when you change the Pair.
+- Backend: `GET /api/model-catalog` returns `stock_info` (brand / stock / booked per model) instead of `stocked`; `model_catalog.stock_info()` replaces `stocked_models()`.
+
 ## 1.4.2 - 2026-11-13
 - Fixed: Model Catalog Excel preview now shows the real group number (e.g. "III Multi Split CU"). It follows the export: groups are numbered in catalog order and groups with no stock are skipped, so a new category shows the next number after the existing groups. The preview table also stretches to the full width of the window, with the export's column proportions.
 - Backend: `GET /api/model-catalog` also returns `stocked` (names of models in stock/booked) for the numbering; `model_catalog.stocked_models()`.

@@ -17122,7 +17122,7 @@ function exportAvailCsv() {
    (/api/model-catalog) so nobody has to open the Excel file. The catalog only
    drives the manual-format export; it never touches stock records.
    --------------------------------------------------------------------------- */
-const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '', stocked: new Set() };
+const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '', stocked: new Set(), info: {} };
 
 function setCatalogNeeds(n) {
   const pill = document.getElementById('cat-pill');
@@ -17146,7 +17146,8 @@ async function refreshCatalogNote() {
 function _catLoad(d) {
   CAT.cats = [...(d.categories || [])];
   CAT.types = [...(d.types || [])];
-  CAT.stocked = new Set((d.stocked || []).map(s => String(s).toLowerCase()));
+  CAT.info = d.stock_info || {};
+  CAT.stocked = new Set(Object.keys(CAT.info).filter(k => (CAT.info[k].stock || 0) + (CAT.info[k].booked || 0) > 0));
   CAT.dirty = new Set();
   CAT.nextId = 1;
   CAT.rows = (d.entries || []).map(e => ({
@@ -17175,7 +17176,7 @@ async function openCatalogModal(needOnly) {
   _catLoad(d);
   CAT.q = '';
   const s = document.getElementById('cat-search'); if (s) s.value = '';
-  CAT.tab = needOnly && CAT.rows.some(_catNeeds) ? 'need' : 'all';
+  CAT.tab = CAT.rows.some(_catNeeds) ? 'need' : 'all';   // open on what still needs doing
   CAT.focusId = 0; CAT.focusField = '';
   document.getElementById('catalog-modal').classList.add('open');
   catRender();
@@ -17279,6 +17280,15 @@ function _toRoman(n) {
 }
 /* Group number the export will give this category: groups are numbered in
    catalog order and groups with no stock are skipped (so there are no gaps). */
+/* Brand / TOTAL / Booking / Balance for a row, like the export: a set shows the
+   number of complete sets (smaller of the indoor / outdoor counts). */
+function _catUnits(model, pair) {
+  const g = m => (m && CAT.info[m.toLowerCase()]) || { brand: '', stock: 0, booked: 0 };
+  const a = g(model);
+  if (!pair) return { brand: a.brand, stock: a.stock, booked: a.booked };
+  const b = g(pair);
+  return { brand: a.brand || b.brand, stock: Math.min(a.stock, b.stock), booked: Math.min(a.booked, b.booked) };
+}
 function _catGroupNo(cat) {
   const active = c => CAT.rows.some(r => r.category === c &&
     (CAT.stocked.has(r.model.toLowerCase()) || (r.pair && CAT.stocked.has(r.pair.toLowerCase()))));
@@ -17298,6 +17308,7 @@ function catPreview(id, field, override) {
   const model = v('model') || '…', pair = v('pair');
   const set = pair ? `${e(model)}/${e(pair)}` : e(model);
   const cat = v('category') || 'Other';
+  const u = _catUnits(v('model'), pair);
   const titles = {
     category: 'the grey <b>group heading</b> (groups are numbered I, II, III… automatically)',
     type: 'the <b>Type</b> column', hp: 'the <b>Horse power</b> column',
@@ -17306,7 +17317,7 @@ function catPreview(id, field, override) {
   document.getElementById('cat-prev-title').innerHTML = `Excel export preview &mdash; ${titles[field] ? `<b>${field === 'pair' ? 'Pair' : field.charAt(0).toUpperCase() + field.slice(1)}</b> goes to ${titles[field]}` : 'click a field to see where it goes'}`;
   body.innerHTML = `<table class="cat-prev-tbl"><colgroup><col style="width:7%"><col style="width:15%"><col style="width:30%"><col style="width:12%"><col style="width:12%"><col style="width:8%"><col style="width:8%"><col style="width:8%"></colgroup><tr><th>NO.</th><th>Type</th><th>Model</th><th>Horse power</th><th>Brand</th><th>TOTAL</th><th>Booking</th><th>Balance</th></tr>
     <tr class="pg"><td>${_toRoman(_catGroupNo(v('category')))}</td><td colspan="7" class="pg-name${field === 'category' ? ' hl' : ''}">${e(cat)}</td></tr>
-    <tr><td>1</td><td${hl('type')}>${e(v('type'))}</td><td${hl('model', 'pair')}>${set}</td><td${hl('hp')}>${e(v('hp'))}</td><td class="dim">from stock</td><td class="dim">count</td><td class="dim">0</td><td class="dim">=</td></tr></table>`;
+    <tr><td>1</td><td${hl('type')}>${e(v('type'))}</td><td${hl('model', 'pair')}>${set}</td><td${hl('hp')}>${e(v('hp'))}</td><td>${e(u.brand || '\u2014')}</td><td>${(u.stock + u.booked).toFixed(2)}</td><td>${u.booked.toFixed(2)}</td><td>${u.stock.toFixed(2)}</td></tr></table>`;
 }
 
 function catRender() {
@@ -17316,7 +17327,8 @@ function catRender() {
   document.getElementById('cat-tab-need').classList.toggle('on', CAT.tab === 'need');
 
   const list = CAT.rows.filter(r => (CAT.tab === 'all' || _catNeeds(r) || CAT.dirty.has(r.id) || r.isNew) &&
-    (!CAT.q || r.model.toLowerCase().includes(CAT.q)));
+    (!CAT.q || r.model.toLowerCase().includes(CAT.q)))
+    .sort((a, b) => (_catNeeds(b) - _catNeeds(a)));      // still-to-do rows first (stable)
   const e = escapeHtml;
   const cell = (r, f, ph, dl) => `<input type="text" data-f="${f}" placeholder="${ph}" autocomplete="off"${dl ? ` list="${dl}"` : ''} value="${e(r[f])}" onchange="catChange(${r.id},'${f}',this.value,this)" oninput="catPreview(${r.id},'${f}',this.value)">`;
   body.innerHTML = list.map(r => {

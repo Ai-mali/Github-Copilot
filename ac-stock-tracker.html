@@ -4547,8 +4547,8 @@ body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 .cat-preview { padding: 8px 16px 10px; border-top: 1px solid var(--border); background: var(--surface2); }
 .cat-prev-title { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
 .cat-prev-title b { color: var(--green-bright); font-weight: 700; }
-.cat-prev-tbl { border-collapse: collapse; font-family: "Times New Roman", serif; font-size: 12px; color: #000; background: #fff; }
-.cat-prev-tbl td, .cat-prev-tbl th { border: 1px solid #000; padding: 2px 9px; text-align: center; white-space: nowrap; height: 21px; }
+.cat-prev-tbl { width: 100%; table-layout: fixed; border-collapse: collapse; font-family: "Times New Roman", serif; font-size: 12px; color: #000; background: #fff; }
+.cat-prev-tbl td, .cat-prev-tbl th { border: 1px solid #000; padding: 2px 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 21px; }
 .cat-prev-tbl th { background: #00b0f0; font-weight: 700; }
 .cat-prev-tbl tr.pg td { background: #a5a5a5; font-weight: 700; }
 .cat-prev-tbl td.pg-name { text-align: left; }
@@ -17122,7 +17122,7 @@ function exportAvailCsv() {
    (/api/model-catalog) so nobody has to open the Excel file. The catalog only
    drives the manual-format export; it never touches stock records.
    --------------------------------------------------------------------------- */
-const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '' };
+const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '', stocked: new Set() };
 
 function setCatalogNeeds(n) {
   const pill = document.getElementById('cat-pill');
@@ -17146,6 +17146,7 @@ async function refreshCatalogNote() {
 function _catLoad(d) {
   CAT.cats = [...(d.categories || [])];
   CAT.types = [...(d.types || [])];
+  CAT.stocked = new Set((d.stocked || []).map(s => String(s).toLowerCase()));
   CAT.dirty = new Set();
   CAT.nextId = 1;
   CAT.rows = (d.entries || []).map(e => ({
@@ -17271,7 +17272,23 @@ function catRefresh() {
   });
 }
 
-const _ROMAN_SAMPLE = 'I';
+function _toRoman(n) {
+  let out = '';
+  [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']].forEach(([v, s]) => { while (n >= v) { out += s; n -= v; } });
+  return out || 'I';
+}
+/* Group number the export will give this category: groups are numbered in
+   catalog order and groups with no stock are skipped (so there are no gaps). */
+function _catGroupNo(cat) {
+  const active = c => CAT.rows.some(r => r.category === c &&
+    (CAT.stocked.has(r.model.toLowerCase()) || (r.pair && CAT.stocked.has(r.pair.toLowerCase()))));
+  let n = 0;
+  for (const c of CAT.cats) {
+    if (c === cat || active(c)) n++;
+    if (c === cat) return n;
+  }
+  return n + 1;      // a new category (or "Other") comes after the existing groups
+}
 /* Mini copy of the Excel export: shows where the field being edited lands */
 function catPreview(id, field, override) {
   const body = document.getElementById('cat-prev-body'); if (!body) return;
@@ -17287,8 +17304,8 @@ function catPreview(id, field, override) {
     model: 'the <b>Model</b> column', pair: 'the <b>Model</b> column (indoor/outdoor on one row; TOTAL counts complete sets)'
   };
   document.getElementById('cat-prev-title').innerHTML = `Excel export preview &mdash; ${titles[field] ? `<b>${field === 'pair' ? 'Pair' : field.charAt(0).toUpperCase() + field.slice(1)}</b> goes to ${titles[field]}` : 'click a field to see where it goes'}`;
-  body.innerHTML = `<table class="cat-prev-tbl"><tr><th>NO.</th><th>Type</th><th style="min-width:210px">Model</th><th>Horse power</th><th>Brand</th><th>TOTAL</th><th>Booking</th><th>Balance</th></tr>
-    <tr class="pg"><td>${_ROMAN_SAMPLE}</td><td colspan="7" class="pg-name${field === 'category' ? ' hl' : ''}">${e(cat)}</td></tr>
+  body.innerHTML = `<table class="cat-prev-tbl"><colgroup><col style="width:7%"><col style="width:15%"><col style="width:30%"><col style="width:12%"><col style="width:12%"><col style="width:8%"><col style="width:8%"><col style="width:8%"></colgroup><tr><th>NO.</th><th>Type</th><th>Model</th><th>Horse power</th><th>Brand</th><th>TOTAL</th><th>Booking</th><th>Balance</th></tr>
+    <tr class="pg"><td>${_toRoman(_catGroupNo(v('category')))}</td><td colspan="7" class="pg-name${field === 'category' ? ' hl' : ''}">${e(cat)}</td></tr>
     <tr><td>1</td><td${hl('type')}>${e(v('type'))}</td><td${hl('model', 'pair')}>${set}</td><td${hl('hp')}>${e(v('hp'))}</td><td class="dim">from stock</td><td class="dim">count</td><td class="dim">0</td><td class="dim">=</td></tr></table>`;
 }
 

@@ -401,7 +401,8 @@ def _catalog_payload():
             seen.add(t.lower())
             types.append(t)
     return {"entries": entries, "categories": cats, "types": types,
-            "needs": model_catalog.uncategorised(store.records, entries)}
+            "needs": model_catalog.uncategorised(store.records, entries),
+            "stocked": model_catalog.stocked_models(store.records)}
 
 
 @app.get("/api/model-catalog")

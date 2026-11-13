@@ -274,3 +274,14 @@ def uncategorised(records, entries, now=None) -> list[dict]:
         o = out.setdefault(model.lower(), {"model": model, "brand": brand, "units": 0})
         o["units"] += units
     return sorted(out.values(), key=lambda d: d["model"].upper())
+
+
+def stocked_models(records, now=None) -> list[str]:
+    """Lower-case names of every model that is in stock or booked. The Model
+    Catalog window uses it to number the preview groups (I, II, III...) the
+    same way the export does: groups with no stock are skipped."""
+    import datetime
+    import excel_exports
+
+    stock, booked = excel_exports._count_stock(records, now or datetime.datetime.now())
+    return sorted({m.lower() for (_, m) in set(stock) | set(booked) if m})

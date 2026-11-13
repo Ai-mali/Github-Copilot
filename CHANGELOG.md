@@ -4,6 +4,10 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.2 - 2026-11-13
+- Fixed: Model Catalog Excel preview now shows the real group number (e.g. "III Multi Split CU"). It follows the export: groups are numbered in catalog order and groups with no stock are skipped, so a new category shows the next number after the existing groups. The preview table also stretches to the full width of the window, with the export's column proportions.
+- Backend: `GET /api/model-catalog` also returns `stocked` (names of models in stock/booked) for the numbering; `model_catalog.stocked_models()`.
+
 ## 1.4.1 - 2026-11-13
 - Changed: Model Catalog window - Category, Type and Pair are now click-to-edit text boxes like HP (click for the suggestion list, or just type). Typing "wall mounted" re-uses the existing "Wall Mounted" group; a new name starts a new group. Tab moves to the next box and edits no longer redraw the table.
 - Added: a live "Excel export preview" strip under the table - a mini copy of the export that highlights where the box you are editing lands (Category = grey group heading, Type = Type column, HP = Horse power column, Model + Pair = Model column as INDOOR/OUTDOOR).

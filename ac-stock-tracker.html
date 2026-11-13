@@ -17137,7 +17137,7 @@ function exportAvailCsv() {
    (/api/model-catalog) so nobody has to open the Excel file. The catalog only
    drives the manual-format export; it never touches stock records.
    --------------------------------------------------------------------------- */
-const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '', stocked: new Set(), info: {} };
+const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '', stocked: new Set(), info: {}, hidden: { category: [], type: [] } };
 
 function setCatalogNeeds(n) {
   const pill = document.getElementById('cat-pill');
@@ -17189,6 +17189,11 @@ async function openCatalogModal(needOnly) {
   try { d = await apiGet('/api/model-catalog'); }
   catch (e) { showToast('Could not load the Model Catalog: ' + e.message, '&#9888;'); return; }
   _catLoad(d);
+  try {
+    const prefs = await apiGet('/api/ui-prefs');
+    const hs = (prefs && prefs.catalogHiddenSuggestions) || {};
+    CAT.hidden = { category: Array.isArray(hs.category) ? hs.category : [], type: Array.isArray(hs.type) ? hs.type : [] };
+  } catch (e) { CAT.hidden = { category: [], type: [] }; }
   CAT.q = '';
   const s = document.getElementById('cat-search'); if (s) s.value = '';
   CAT.tab = CAT.rows.some(_catNeeds) ? 'need' : 'all';   // open on what still needs doing
@@ -17232,9 +17237,11 @@ function catChange(id, field, value, el) {
     if (!value && r.orig) { catUncategorise(r, el); return; }
     value = _catCanon(CAT.cats, value);
     if (value && !CAT.cats.includes(value)) { CAT.cats.push(value); catFillLists(); }
+    _catUnhide('category', value);
   } else if (field === 'type') {
     value = _catCanon(CAT.types, value);
     if (value && !CAT.types.includes(value)) { CAT.types.push(value); catFillLists(); }
+    _catUnhide('type', value);
   } else if (field === 'pair') {
     value = _catCanon(CAT.rows.map(x => x.model), value);
     if (value && value.toLowerCase() === r.model.toLowerCase()) { showToast('A model cannot be its own outdoor unit.', '&#9888;'); if (el) el.value = r.pair; return; }
@@ -17250,6 +17257,16 @@ function catChange(id, field, value, el) {
   _catMarkDirty(r);
   catRefresh();
   catPreview(id, field);
+}
+
+/* "Forgotten" suggestions: only hides the name from the suggestion list (kept in ui_prefs.json);
+   it never changes any model or the catalog file. Using the name again brings it back. */
+function _catIsHidden(f, v) { return CAT.hidden[f].some(x => x.toLowerCase() === String(v).toLowerCase()); }
+function _catSaveHidden() { apiPost('/api/ui-prefs', { prefs: { catalogHiddenSuggestions: CAT.hidden } }).catch(() => {}); }
+function _catUnhide(f, v) {
+  if (!v || !_catIsHidden(f, v)) return;
+  CAT.hidden[f] = CAT.hidden[f].filter(x => x.toLowerCase() !== v.toLowerCase());
+  _catSaveHidden();
 }
 
 function _catSyncFld(el) { const w = el && el.closest && el.closest('.cat-fld'); if (w) w.classList.toggle('has-val', !!el.value); }
@@ -17451,13 +17468,13 @@ function catSugRender() {
   }
   const q = CATSUG.typed ? el.value.trim().toLowerCase() : '';      // opening the list shows everything; typing filters
   const all = CATSUG.f === 'category' ? CAT.cats : CAT.types;
-  CATSUG.items = all.filter(x => x && (!q || x.toLowerCase().includes(q)));
+  CATSUG.items = all.filter(x => x && !_catIsHidden(CATSUG.f, x) && (!q || x.toLowerCase().includes(q)));
   if (CATSUG.idx >= CATSUG.items.length) CATSUG.idx = -1;
   const e = escapeHtml;
   box.innerHTML = CATSUG.items.length ? CATSUG.items.map((x, i) => {
     const n = _catSugUse(CATSUG.f, x);
     const keep = CATSUG.f === 'type' && CAT_KEEP_TYPES.includes(x.toLowerCase());
-    return `<div class="cat-sug-i${i === CATSUG.idx ? ' act' : ''}${x === el.value ? ' cur' : ''}" data-v="${e(x)}"><span class="cat-sug-t">${e(x)}</span><span class="cat-sug-n">${n ? n + ' model' + (n > 1 ? 's' : '') : ''}</span>${keep ? '' : `<button type="button" class="cat-sug-x" data-v="${e(x)}" title="Remove this suggestion">&times;</button>`}</div>`;
+    return `<div class="cat-sug-i${i === CATSUG.idx ? ' act' : ''}${x === el.value ? ' cur' : ''}" data-v="${e(x)}"><span class="cat-sug-t">${e(x)}</span><span class="cat-sug-n">${n ? n + ' model' + (n > 1 ? 's' : '') : ''}</span>${keep ? '' : `<button type="button" class="cat-sug-x" data-v="${e(x)}" title="Forget this suggestion (models keep their category)">&times;</button>`}</div>`;
   }).join('') : `<div class="cat-sug-none">${q ? 'Press Enter or Tab to use a new name' : 'No suggestions yet - type a name'}</div>`;
   const r = el.getBoundingClientRect();
   box.hidden = false;
@@ -17484,28 +17501,10 @@ function catSugPick(v) {
   catSugHide();
 }
 
-async function catSugDelete(v) {
-  const f = CATSUG.f, id = CATSUG.id, el = CATSUG.el;
-  const used = CAT.rows.filter(r => (f === 'category' ? r.category : r.type) === v);
-  if (used.length) {
-    catSugHide();
-    const ok = await appConfirm({
-      title: `Remove "${v}"?`,
-      message: f === 'category'
-        ? `<b>${used.length}</b> model${used.length > 1 ? 's use' : ' uses'} this category. ${used.length > 1 ? 'They go' : 'It goes'} back to <b>Needs category</b> (their Type, HP and Pair are dropped when you press Save).`
-        : `<b>${used.length}</b> model${used.length > 1 ? 's use' : ' uses'} this type. Their Type box will be emptied.`,
-      okText: 'Remove'
-    });
-    if (!ok) { if (el) el.focus(); return; }
-    used.forEach(r => {
-      if (f === 'category') { r.category = ''; r.orig = false; r.home = 'need'; } else { r.type = ''; }
-      _catMarkDirty(r);
-    });
-  }
-  const list = f === 'category' ? CAT.cats : CAT.types;
-  const i = list.indexOf(v); if (i >= 0) list.splice(i, 1);
-  if (used.length) { catSugHide(); catRender(); return; }
-  catSugRender();
+function catSugDelete(v) {
+  const f = CATSUG.f;
+  if (!_catIsHidden(f, v)) { CAT.hidden[f].push(v); _catSaveHidden(); }
+  catSugRender();                                  // the models that use it are not touched
 }
 
 document.addEventListener('focusin', e => {

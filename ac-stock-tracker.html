@@ -4555,6 +4555,23 @@ body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 .cat-prev-tbl .hl { outline: 2px solid #e11d48; outline-offset: -2px; background: #fff3b0 !important; }
 .cat-prev-tbl tr.pg td.hl { background: #ffe27a !important; }
 .cat-prev-tbl .dim { color: #666; font-weight: 400; }
+.cat-fld { position: relative; display: block; }
+.cat-fld input { padding-right: 22px; }
+.cat-x { display: none; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--text-muted); font-size: 14px; line-height: 16px; cursor: pointer; align-items: center; justify-content: center; }
+.cat-x:hover { background: rgba(248,113,113,.22); color: #f87171; }
+.cat-fld.has-val:hover .cat-x, .cat-fld.has-val:focus-within .cat-x { display: inline-flex; }
+.cat-sug { position: fixed; z-index: 140; background: var(--surface); border: 1px solid var(--border-light); border-radius: 9px; box-shadow: 0 12px 32px rgba(0,0,0,.45);
+  padding: 4px; max-height: 230px; overflow: auto; }
+.cat-sug[hidden] { display: none; }
+.cat-sug-i { display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 9px; border-radius: 6px; cursor: pointer; font-size: 12.5px; color: var(--text); }
+.cat-sug-i:hover, .cat-sug-i.act { background: var(--surface3); }
+.cat-sug-i.cur .cat-sug-t { color: var(--green-bright); font-weight: 700; }
+.cat-sug-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-sug-n { font-size: 11px; color: var(--text-muted); }
+.cat-sug-x { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); font-size: 14px; line-height: 18px; cursor: pointer; }
+.cat-sug-x:hover { background: rgba(248,113,113,.22); color: #f87171; }
+.cat-sug-none { padding: 7px 9px; font-size: 12px; color: var(--text-muted); }
 .cat-empty { padding: 26px 0; text-align: center; color: var(--text-muted); }
 
 /* Brand sidebar: tick (Ctrl+click or click the round icon) */
@@ -10000,8 +10017,6 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
       </table>
       <div class="cat-empty" id="cat-empty" style="display:none;"></div>
     </div>
-    <datalist id="cat-dl-cats"></datalist>
-    <datalist id="cat-dl-types"></datalist>
     <datalist id="cat-dl-pairs"></datalist>
     <div class="cat-preview">
       <div class="cat-prev-title" id="cat-prev-title"></div>
@@ -17187,6 +17202,7 @@ async function closeCatalogModal() {
     const ok = await appConfirm({ title: 'Discard changes?', message: `You have ${CAT.dirty.size} unsaved change${CAT.dirty.size > 1 ? 's' : ''} in the Model Catalog.`, okText: 'Discard' });
     if (!ok) return;
   }
+  catSugHide();
   document.getElementById('catalog-modal').classList.remove('open');
 }
 
@@ -17213,7 +17229,7 @@ function catChange(id, field, value, el) {
       return;
     }
   } else if (field === 'category') {
-    if (!value && r.orig) { showToast('A catalogued model needs a category.', '&#9888;'); if (el) el.value = r.category; return; }
+    if (!value && r.orig) { catUncategorise(r, el); return; }
     value = _catCanon(CAT.cats, value);
     if (value && !CAT.cats.includes(value)) { CAT.cats.push(value); catFillLists(); }
   } else if (field === 'type') {
@@ -17227,12 +17243,40 @@ function catChange(id, field, value, el) {
       if (el) el.value = r.pair; return;
     }
   }
-  if (r[field] === value) { if (el) el.value = value; return; }
+  if (r[field] === value) { if (el) { el.value = value; _catSyncFld(el); } return; }
   r[field] = value;
   if (el && el.value !== value) el.value = value;
+  _catSyncFld(el);
   _catMarkDirty(r);
   catRefresh();
   catPreview(id, field);
+}
+
+function _catSyncFld(el) { const w = el && el.closest && el.closest('.cat-fld'); if (w) w.classList.toggle('has-val', !!el.value); }
+
+/* a catalogued model whose category is cleared goes back to "Needs category" */
+async function catUncategorise(r, el) {
+  const ok = await appConfirm({ title: 'Remove category?', message: `<b>${escapeHtml(r.model)}</b> goes back to <b>Needs category</b>. Its Type, HP and Pair are dropped from the catalog when you press Save.`, okText: 'Remove' });
+  if (!ok) { if (el) { el.value = r.category; _catSyncFld(el); } return; }
+  r.category = ''; r.orig = false; r.home = 'need';
+  _catMarkDirty(r);
+  catRender();
+}
+
+/* x inside a box */
+function catClear(id, field) {
+  const tr = document.querySelector(`#cat-body tr[data-id="${id}"]`); if (!tr) return;
+  const el = tr.querySelector(`input[data-f="${field}"]`); if (!el) return;
+  el.value = '';
+  catChange(id, field, '', el);
+  catPreview(id, field);
+  el.focus();
+}
+
+function catInput(el, id, field) {
+  _catSyncFld(el);
+  catPreview(id, field, el.value);
+  if (CATSUG.el === el) { CATSUG.typed = true; catSugRender(); }
 }
 
 function catAddModel() {
@@ -17248,8 +17292,6 @@ function catAddModel() {
 function catFillLists() {
   const opt = a => a.map(x => `<option value="${escapeHtml(x)}"></option>`).join('');
   const set = (id, a) => { const d = document.getElementById(id); if (d) d.innerHTML = opt(a); };
-  set('cat-dl-cats', CAT.cats);
-  set('cat-dl-types', CAT.types);
   set('cat-dl-pairs', CAT.rows.filter(_catNeeds).concat(CAT.rows.filter(r => !_catNeeds(r))).map(r => r.model));
 }
 
@@ -17322,6 +17364,7 @@ function catPreview(id, field, override) {
 
 function catRender() {
   const body = document.getElementById('cat-body'); if (!body) return;
+  if (typeof catSugHide === 'function') catSugHide();
   catFillLists();
   document.getElementById('cat-tab-all').classList.toggle('on', CAT.tab === 'all');
   document.getElementById('cat-tab-need').classList.toggle('on', CAT.tab === 'need');
@@ -17329,15 +17372,15 @@ function catRender() {
   // the two tabs never overlap: "All models" = already catalogued, "Needs category" = the rest
   const list = CAT.rows.filter(r => r.home === CAT.tab && (!CAT.q || r.model.toLowerCase().includes(CAT.q)));
   const e = escapeHtml;
-  const cell = (r, f, ph, dl) => `<input type="text" data-f="${f}" placeholder="${ph}" autocomplete="off"${dl ? ` list="${dl}"` : ''} value="${e(r[f])}" onchange="catChange(${r.id},'${f}',this.value,this)" oninput="catPreview(${r.id},'${f}',this.value)">`;
+  const cell = (r, f, ph, dl) => `<span class="cat-fld${r[f] ? ' has-val' : ''}"><input type="text" data-f="${f}" placeholder="${ph}" autocomplete="off"${dl ? ` list="${dl}"` : ' data-sug="1"'} value="${e(r[f])}" onchange="catChange(${r.id},'${f}',this.value,this)" oninput="catInput(this,${r.id},'${f}')"><button type="button" class="cat-x" tabindex="-1" title="Clear" onmousedown="event.preventDefault()" onclick="catClear(${r.id},'${f}')">&times;</button></span>`;
   body.innerHTML = list.map(r => {
     const modelCell = r.isNew
       ? `<input class="cat-model" type="text" data-f="model" placeholder="Model name" autocomplete="off" value="${e(r.model)}" onchange="catChange(${r.id},'model',this.value,this)" oninput="catPreview(${r.id},'model',this.value)">`
       : e(r.model);
     return `<tr data-id="${r.id}">
       <td class="cat-m">${modelCell}</td>
-      <td>${cell(r, 'category', 'Choose or type', 'cat-dl-cats')}</td>
-      <td>${cell(r, 'type', 'Choose...', 'cat-dl-types')}</td>
+      <td>${cell(r, 'category', 'Choose or type')}</td>
+      <td>${cell(r, 'type', 'Choose...')}</td>
       <td><input class="cat-hp" type="text" data-f="hp" inputmode="decimal" value="${e(r.hp)}" onchange="catChange(${r.id},'hp',this.value,this)" oninput="catPreview(${r.id},'hp',this.value)"></td>
       <td>${cell(r, 'pair', '', 'cat-dl-pairs')}</td>
       <td class="cat-st-cell"></td></tr>`;
@@ -17382,6 +17425,122 @@ async function catSave() {
   } finally { CAT.busy = false; }
 }
 
+/* Suggestion list for Category / Type with an x on every suggestion */
+const CATSUG = { el: null, f: '', id: 0, idx: -1, items: [], typed: false };
+const CAT_KEEP_TYPES = ['inverter', 'non inverter'];       // always offered, so no x
+
+function catSugHide() {
+  const box = document.getElementById('cat-sug'); if (box) box.hidden = true;
+  CATSUG.el = null; CATSUG.idx = -1;
+}
+function _catSugUse(f, v) { return CAT.rows.filter(r => (f === 'category' ? r.category : r.type) === v).length; }
+
+function catSugRender() {
+  const el = CATSUG.el; if (!el) return;
+  let box = document.getElementById('cat-sug');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'cat-sug'; box.className = 'cat-sug';
+    box.addEventListener('mousedown', ev => {
+      ev.preventDefault();                                   // keep the box focused
+      const x = ev.target.closest('.cat-sug-x');
+      if (x) { catSugDelete(x.dataset.v); return; }
+      const it = ev.target.closest('.cat-sug-i');
+      if (it) catSugPick(it.dataset.v);
+    });
+    document.body.appendChild(box);
+  }
+  const q = CATSUG.typed ? el.value.trim().toLowerCase() : '';      // opening the list shows everything; typing filters
+  const all = CATSUG.f === 'category' ? CAT.cats : CAT.types;
+  CATSUG.items = all.filter(x => x && (!q || x.toLowerCase().includes(q)));
+  if (CATSUG.idx >= CATSUG.items.length) CATSUG.idx = -1;
+  const e = escapeHtml;
+  box.innerHTML = CATSUG.items.length ? CATSUG.items.map((x, i) => {
+    const n = _catSugUse(CATSUG.f, x);
+    const keep = CATSUG.f === 'type' && CAT_KEEP_TYPES.includes(x.toLowerCase());
+    return `<div class="cat-sug-i${i === CATSUG.idx ? ' act' : ''}${x === el.value ? ' cur' : ''}" data-v="${e(x)}"><span class="cat-sug-t">${e(x)}</span><span class="cat-sug-n">${n ? n + ' model' + (n > 1 ? 's' : '') : ''}</span>${keep ? '' : `<button type="button" class="cat-sug-x" data-v="${e(x)}" title="Remove this suggestion">&times;</button>`}</div>`;
+  }).join('') : `<div class="cat-sug-none">${q ? 'Press Enter or Tab to use a new name' : 'No suggestions yet - type a name'}</div>`;
+  const r = el.getBoundingClientRect();
+  box.hidden = false;
+  box.style.width = Math.max(r.width, 210) + 'px';
+  box.style.left = Math.min(r.left, window.innerWidth - Math.max(r.width, 210) - 8) + 'px';
+  const h = Math.min(box.scrollHeight + 2, 232);
+  const below = window.innerHeight - r.bottom - 8;
+  box.style.top = (below >= h || below >= r.top - 8 ? r.bottom + 2 : Math.max(8, r.top - h - 2)) + 'px';
+}
+
+function catSugShow(el) {
+  const f = el.dataset.f;
+  if (f !== 'category' && f !== 'type') return;
+  const tr = el.closest('tr[data-id]');
+  CATSUG.el = el; CATSUG.f = f; CATSUG.id = tr ? +tr.dataset.id : 0; CATSUG.idx = -1; CATSUG.typed = false;
+  catSugRender();
+}
+
+function catSugPick(v) {
+  const el = CATSUG.el; if (!el) return;
+  el.value = v;
+  catChange(CATSUG.id, CATSUG.f, v, el);
+  catPreview(CATSUG.id, CATSUG.f);
+  catSugHide();
+}
+
+async function catSugDelete(v) {
+  const f = CATSUG.f, id = CATSUG.id, el = CATSUG.el;
+  const used = CAT.rows.filter(r => (f === 'category' ? r.category : r.type) === v);
+  if (used.length) {
+    catSugHide();
+    const ok = await appConfirm({
+      title: `Remove "${v}"?`,
+      message: f === 'category'
+        ? `<b>${used.length}</b> model${used.length > 1 ? 's use' : ' uses'} this category. ${used.length > 1 ? 'They go' : 'It goes'} back to <b>Needs category</b> (their Type, HP and Pair are dropped when you press Save).`
+        : `<b>${used.length}</b> model${used.length > 1 ? 's use' : ' uses'} this type. Their Type box will be emptied.`,
+      okText: 'Remove'
+    });
+    if (!ok) { if (el) el.focus(); return; }
+    used.forEach(r => {
+      if (f === 'category') { r.category = ''; r.orig = false; r.home = 'need'; } else { r.type = ''; }
+      _catMarkDirty(r);
+    });
+  }
+  const list = f === 'category' ? CAT.cats : CAT.types;
+  const i = list.indexOf(v); if (i >= 0) list.splice(i, 1);
+  if (used.length) { catSugHide(); catRender(); return; }
+  catSugRender();
+}
+
+document.addEventListener('focusin', e => {
+  const t = e.target;
+  if (t && t.closest && t.closest('#cat-body') && t.dataset && t.dataset.sug) catSugShow(t);
+  else if (CATSUG.el && !(t && t.closest && t.closest('#cat-sug'))) catSugHide();
+});
+document.addEventListener('mousedown', e => {
+  const t = e.target;
+  if (t && t.closest && t.closest('#cat-body') && t.dataset && t.dataset.sug && CATSUG.el !== t) catSugShow(t);
+  else if (CATSUG.el && t && t.closest && !t.closest('#cat-sug') && t !== CATSUG.el) catSugHide();
+}, true);
+document.addEventListener('click', e => {      // clicking the already-focused box opens the list again
+  const t = e.target;
+  if (t && t.closest && t.closest('#cat-body') && t.dataset && t.dataset.sug && !CATSUG.el) catSugShow(t);
+});
+document.addEventListener('keydown', e => {
+  if (!CATSUG.el) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const n = CATSUG.items.length; if (!n) return;
+    CATSUG.idx = e.key === 'ArrowDown' ? (CATSUG.idx + 1) % n : (CATSUG.idx - 1 + n) % n;
+    catSugRender();
+    document.querySelector('#cat-sug .cat-sug-i.act')?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && CATSUG.idx >= 0) {
+    e.preventDefault(); catSugPick(CATSUG.items[CATSUG.idx]);
+  }
+}, true);
+document.querySelector('#catalog-modal .cat-scroll')?.addEventListener('scroll', () => {
+  const el = CATSUG.el; if (!el) return;
+  const box = document.querySelector('#catalog-modal .cat-scroll').getBoundingClientRect(), r = el.getBoundingClientRect();
+  if (r.bottom < box.top + 4 || r.top > box.bottom - 4) catSugHide(); else catSugRender();   // follow the box, or close when it scrolls away
+});
+window.addEventListener('resize', catSugHide);
+
 /* Esc closes the catalog window first (before the Available-tab Esc handlers) */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
@@ -17389,6 +17548,7 @@ document.addEventListener('keydown', e => {
   if (!m || !m.classList.contains('open')) return;
   if (document.getElementById('app-confirm-modal')?.classList.contains('open')) return;
   e.stopImmediatePropagation(); e.preventDefault();
+  if (CATSUG.el) { catSugHide(); return; }       // first Esc closes the suggestion list
   closeCatalogModal();
 }, true);
 document.getElementById('catalog-modal')?.addEventListener('mousedown', e => {

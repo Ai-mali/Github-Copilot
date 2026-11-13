@@ -4,6 +4,11 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.5 - 2026-11-13
+- Added: Model Catalog - a small x inside the Category, Type and Pair boxes (shows when the box has text; click to empty it). Clearing the Category of an already-catalogued model asks first and sends it back to "Needs category" (its Type/HP/Pair are dropped on Save).
+- Added: Category and Type now use their own suggestion list (instead of the browser's) with an x on every suggestion to remove it. Removing a suggestion that models still use asks first: for a category those models go back to "Needs category", for a type their Type is emptied. "Inverter" and "Non inverter" are always offered, so they have no x.
+- Changed: the suggestion list shows everything when you open the box and filters while you type; the current value is highlighted; arrow keys + Enter work; the first Esc closes the list, the next closes the window.
+
 ## 1.4.4 - 2026-11-13
 - Fixed: Model Catalog tabs no longer mix - "All models" lists only models that already have a category (its count now matches), "Needs category" lists only the ones still to do. A model you just categorised stays in "Needs category" until you press Save, then it moves to "All models".
 

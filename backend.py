@@ -385,6 +385,44 @@ def export_available_workbook(brand: list[str] = Query(default=[]), layout: str 
         headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
 
+class ModelCatalogBody(BaseModel):
+    entries: list[dict] = Field(default=[], max_length=3000)
+
+
+def _catalog_payload():
+    import model_catalog
+
+    model_catalog.ensure_catalog()
+    entries = model_catalog.load_catalog()
+    cats = list(dict.fromkeys(e["category"] for e in entries if e["category"]))
+    types, seen = [], set()
+    for t in ["Inverter", "Non inverter"] + [e["type"] for e in entries if e["type"]]:
+        if t.lower() not in seen:             # "Non Inverter" == "Non inverter"
+            seen.add(t.lower())
+            types.append(t)
+    return {"entries": entries, "categories": cats, "types": types,
+            "needs": model_catalog.uncategorised(store.records, entries)}
+
+
+@app.get("/api/model-catalog")
+def get_model_catalog():
+    """Catalog rows + the in-stock models that still need a category."""
+    _fresh()
+    return _catalog_payload()
+
+
+@app.post("/api/model-catalog")
+def save_model_catalog(body: ModelCatalogBody):
+    """Save the catalog edited in the Model Catalog window (keeps model_catalog.bak)."""
+    import model_catalog
+
+    ok, err = model_catalog.save_catalog(body.entries)
+    if not ok:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _fresh()
+    return {"ok": True, **_catalog_payload()}
+
+
 class SalesExportBody(BaseModel):
     title: str = "Sell Records"
     filename: str = "sell_records_export"

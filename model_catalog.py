@@ -17,6 +17,8 @@ listed here are exported in an "Other" group at the bottom.
 """
 from __future__ import annotations
 
+import os
+import shutil
 from pathlib import Path
 
 CATALOG_HEADER = ["Model", "Category", "Type", "HP", "Pair (outdoor)"]
@@ -183,3 +185,92 @@ def load_catalog(path=None) -> list[dict]:
         return out
     except Exception:
         return seed_entries()
+
+
+def _clean_hp(v):
+    if v in (None, ""):
+        return ""
+    try:
+        f = float(str(v).strip())
+    except ValueError:
+        return str(v).strip()
+    return int(f) if f == int(f) else f
+
+
+def validate_entries(raw) -> tuple[list[dict] | None, str]:
+    """Clean the rows sent by the Model Catalog window.
+    Returns (entries, "") or (None, error message). Rows without a model or a
+    category are dropped; a model may appear once; an outdoor (pair) model can
+    belong to only one indoor row."""
+    if not isinstance(raw, list):
+        return None, "Invalid catalog data"
+    out, seen, claimed = [], set(), {}
+    for r in raw:
+        if not isinstance(r, dict):
+            continue
+        e = _entry(r.get("model"), r.get("category"), r.get("type"),
+                   _clean_hp(r.get("hp")), r.get("pair"))
+        if not e["model"] or not e["category"]:
+            continue
+        if max(len(e["model"]), len(e["category"]), len(e["type"]), len(e["pair"])) > 80:
+            return None, f"Text too long in row {e['model']}"
+        k = e["model"].lower()
+        if k in seen:
+            return None, f"{e['model']} is listed twice"
+        seen.add(k)
+        p = e["pair"].lower()
+        if p:
+            if p == k:
+                return None, f"{e['model']} cannot be paired with itself"
+            if p in claimed:
+                return None, (f"{e['pair']} is already the outdoor unit of "
+                              f"{claimed[p]} - one outdoor model can belong to one row only")
+            claimed[p] = e["model"]
+        out.append(e)
+    return out, ""
+
+
+def save_catalog(raw, path=None) -> tuple[bool, str]:
+    """Validate and write model_catalog.xlsx, keeping the previous version as
+    model_catalog.bak. The new file is written aside first and swapped in, so a
+    failure never leaves a half-written catalog."""
+    entries, err = validate_entries(raw)
+    if entries is None:
+        return False, err
+    p = Path(path) if path else catalog_path()
+    tmp = p.with_name(p.stem + ".tmp.xlsx")
+    try:
+        write_catalog(tmp, entries)
+        if p.exists():
+            shutil.copy2(p, p.with_suffix(".bak"))
+        os.replace(tmp, p)
+        return True, ""
+    except PermissionError:
+        return False, "model_catalog.xlsx is open in Excel - close it and try again"
+    except Exception as ex:                                   # pragma: no cover
+        return False, f"Could not save the catalog ({ex})"
+    finally:
+        try:
+            if tmp.exists():
+                tmp.unlink()
+        except OSError:
+            pass
+
+
+def uncategorised(records, entries, now=None) -> list[dict]:
+    """Models that are in stock (or booked) but have no catalog category and are
+    not the outdoor partner of a catalogued row -> [{model, brand, units}]."""
+    import datetime
+    import excel_exports
+
+    stock, booked = excel_exports._count_stock(records, now or datetime.datetime.now())
+    known = {e["model"].lower() for e in entries if e["category"]}
+    claimed = {e["pair"].lower() for e in entries if e["pair"] and e["category"]}
+    out = {}
+    for (brand, model) in set(stock) | set(booked):
+        if model.lower() in known or model.lower() in claimed or not model:
+            continue
+        units = stock.get((brand, model), 0) + booked.get((brand, model), 0)
+        o = out.setdefault(model.lower(), {"model": model, "brand": brand, "units": 0})
+        o["units"] += units
+    return sorted(out.values(), key=lambda d: d["model"].upper())

@@ -4,6 +4,11 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.1 - 2026-11-13
+- Changed: Model Catalog window - Category, Type and Pair are now click-to-edit text boxes like HP (click for the suggestion list, or just type). Typing "wall mounted" re-uses the existing "Wall Mounted" group; a new name starts a new group. Tab moves to the next box and edits no longer redraw the table.
+- Added: a live "Excel export preview" strip under the table - a mini copy of the export that highlights where the box you are editing lands (Category = grey group heading, Type = Type column, HP = Horse power column, Model + Pair = Model column as INDOOR/OUTDOOR).
+- Fixed: a model cannot be its own outdoor partner, or the partner of two models (clear message instead of a save error).
+
 ## 1.4.0 - 2026-11-13
 - Added: Model Catalog window on Available Stock (new "Catalog" button next to the export buttons) - set each model's Category, Type, HP and outdoor Pair from inside the app instead of editing model_catalog.xlsx by hand. Category / Type / Pair are dropdowns (+ "New category..."), "+ Add model" adds a model that is not in stock yet, tabs "All models" / "Needs category", search box. Save keeps the previous list as model_catalog.bak and writes the new file aside first, so a failed save never damages the catalog (a clear message is shown if the file is open in Excel).
 - Added: yellow note on Available Stock ("N models in stock are not categorised yet") with a "Set now" button and a count badge on the Catalog button. It disappears when every in-stock model has a category or is the outdoor partner of a catalogued model.

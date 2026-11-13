@@ -4527,7 +4527,7 @@ body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 .cat-tab.amb.on { background: rgba(245,158,11,.14); color: var(--amber-ink); border-color: rgba(245,158,11,.45); }
 .cat-head .cat-sp { flex: 1; }
 .cat-search { width: 180px; }
-.cat-scroll { overflow: auto; padding: 0 16px; min-height: 120px; max-height: calc(100vh - 210px); }
+.cat-scroll { overflow: auto; padding: 0 16px; min-height: 120px; max-height: calc(100vh - 345px); }
 .cat-table { width: 100%; border-collapse: collapse; }
 .cat-table th { position: sticky; top: 0; z-index: 1; background: var(--surface); text-align: left; color: var(--text-muted); font-size: 11px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .04em; padding: 9px 6px; border-bottom: 1px solid var(--border); }
@@ -4543,6 +4543,18 @@ body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 .cat-st.am { color: var(--amber-ink); } .cat-st.ok { color: var(--green-bright); }
 .cat-foot { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 12px; color: var(--text-muted); }
 .cat-foot .cat-sp { flex: 1; }
+.cat-table input[readonly] { opacity: .55; cursor: default; }
+.cat-preview { padding: 8px 16px 10px; border-top: 1px solid var(--border); background: var(--surface2); }
+.cat-prev-title { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
+.cat-prev-title b { color: var(--green-bright); font-weight: 700; }
+.cat-prev-tbl { border-collapse: collapse; font-family: "Times New Roman", serif; font-size: 12px; color: #000; background: #fff; }
+.cat-prev-tbl td, .cat-prev-tbl th { border: 1px solid #000; padding: 2px 9px; text-align: center; white-space: nowrap; height: 21px; }
+.cat-prev-tbl th { background: #00b0f0; font-weight: 700; }
+.cat-prev-tbl tr.pg td { background: #a5a5a5; font-weight: 700; }
+.cat-prev-tbl td.pg-name { text-align: left; }
+.cat-prev-tbl .hl { outline: 2px solid #e11d48; outline-offset: -2px; background: #fff3b0 !important; }
+.cat-prev-tbl tr.pg td.hl { background: #ffe27a !important; }
+.cat-prev-tbl .dim { color: #666; font-weight: 400; }
 .cat-empty { padding: 26px 0; text-align: center; color: var(--text-muted); }
 
 /* Brand sidebar: tick (Ctrl+click or click the round icon) */
@@ -9987,6 +9999,13 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
         <tbody id="cat-body"></tbody>
       </table>
       <div class="cat-empty" id="cat-empty" style="display:none;"></div>
+    </div>
+    <datalist id="cat-dl-cats"></datalist>
+    <datalist id="cat-dl-types"></datalist>
+    <datalist id="cat-dl-pairs"></datalist>
+    <div class="cat-preview">
+      <div class="cat-prev-title" id="cat-prev-title"></div>
+      <div id="cat-prev-body"></div>
     </div>
     <div class="modal-footer cat-foot">
       <span id="cat-dirty">No unsaved changes</span>
@@ -17103,7 +17122,7 @@ function exportAvailCsv() {
    (/api/model-catalog) so nobody has to open the Excel file. The catalog only
    drives the manual-format export; it never touches stock records.
    --------------------------------------------------------------------------- */
-const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false };
+const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '' };
 
 function setCatalogNeeds(n) {
   const pill = document.getElementById('cat-pill');
@@ -17132,12 +17151,12 @@ function _catLoad(d) {
   CAT.rows = (d.entries || []).map(e => ({
     id: CAT.nextId++, model: e.model, category: e.category || '', type: e.type || '',
     hp: e.hp === '' || e.hp == null ? '' : String(e.hp), pair: e.pair || '',
-    orig: !!e.category, newCat: false, isNew: false
+    orig: !!e.category, isNew: false
   }));
   const have = new Set(CAT.rows.map(r => r.model.toLowerCase()));
   (d.needs || []).forEach(n => {
     if (have.has(n.model.toLowerCase())) return;
-    CAT.rows.push({ id: CAT.nextId++, model: n.model, category: '', type: '', hp: '', pair: '', orig: false, newCat: false, isNew: false });
+    CAT.rows.push({ id: CAT.nextId++, model: n.model, category: '', type: '', hp: '', pair: '', orig: false, isNew: false });
   });
 }
 
@@ -17156,6 +17175,7 @@ async function openCatalogModal(needOnly) {
   CAT.q = '';
   const s = document.getElementById('cat-search'); if (s) s.value = '';
   CAT.tab = needOnly && CAT.rows.some(_catNeeds) ? 'need' : 'all';
+  CAT.focusId = 0; CAT.focusField = '';
   document.getElementById('catalog-modal').classList.add('open');
   catRender();
 }
@@ -17178,76 +17198,136 @@ function _catMarkDirty(r) {
   if (d) d.textContent = `${CAT.dirty.size} unsaved change${CAT.dirty.size > 1 ? 's' : ''}`;
 }
 
-function catChange(id, field, value, quiet) {
+/* canonical spelling: typing "wall mounted" re-uses the existing "Wall Mounted" group */
+function _catCanon(list, v) { const k = v.toLowerCase(); return list.find(x => x.toLowerCase() === k) || v; }
+
+function catChange(id, field, value, el) {
   const r = CAT.rows.find(x => x.id === id); if (!r) return;
-  if (field === 'category' && value === '__new') { r.newCat = true; catRender(); return; }
+  value = String(value == null ? '' : value).trim();
   if (field === 'model') {
-    value = String(value || '').trim();
     if (!value || CAT.rows.some(x => x !== r && x.model.toLowerCase() === value.toLowerCase())) {
       showToast(value ? `${value} is already in the catalog.` : 'Type the model name.', '&#9888;');
-      if (!value) return;
-      value = r.model;
+      if (el) el.value = r.model;
+      return;
+    }
+  } else if (field === 'category') {
+    if (!value && r.orig) { showToast('A catalogued model needs a category.', '&#9888;'); if (el) el.value = r.category; return; }
+    value = _catCanon(CAT.cats, value);
+    if (value && !CAT.cats.includes(value)) { CAT.cats.push(value); catFillLists(); }
+  } else if (field === 'type') {
+    value = _catCanon(CAT.types, value);
+    if (value && !CAT.types.includes(value)) { CAT.types.push(value); catFillLists(); }
+  } else if (field === 'pair') {
+    value = _catCanon(CAT.rows.map(x => x.model), value);
+    if (value && value.toLowerCase() === r.model.toLowerCase()) { showToast('A model cannot be its own outdoor unit.', '&#9888;'); if (el) el.value = r.pair; return; }
+    if (value && _catClaimed(r).has(value.toLowerCase())) {
+      showToast(`${value} is already the outdoor unit of another model.`, '&#9888;');
+      if (el) el.value = r.pair; return;
     }
   }
-  if (field === 'category') {
-    value = String(value || '').trim();
-    r.newCat = false;
-    if (value && !CAT.cats.includes(value)) CAT.cats.push(value);
-  }
+  if (r[field] === value) { if (el) el.value = value; return; }
   r[field] = value;
+  if (el && el.value !== value) el.value = value;
   _catMarkDirty(r);
-  if (!quiet) catRender();
+  catRefresh();
+  catPreview(id, field);
 }
 
 function catAddModel() {
   CAT.tab = 'need'; CAT.q = '';
   const s = document.getElementById('cat-search'); if (s) s.value = '';
-  const r = { id: CAT.nextId++, model: '', category: '', type: '', hp: '', pair: '', orig: false, newCat: false, isNew: true };
+  const r = { id: CAT.nextId++, model: '', category: '', type: '', hp: '', pair: '', orig: false, isNew: true };
   CAT.rows.push(r);
   catRender();
   const inp = document.querySelector(`#cat-body tr[data-id="${r.id}"] input.cat-model`);
   if (inp) inp.focus();
 }
 
-function catRender() {
-  const body = document.getElementById('cat-body'); if (!body) return;
+function catFillLists() {
+  const opt = a => a.map(x => `<option value="${escapeHtml(x)}"></option>`).join('');
+  const set = (id, a) => { const d = document.getElementById(id); if (d) d.innerHTML = opt(a); };
+  set('cat-dl-cats', CAT.cats);
+  set('cat-dl-types', CAT.types);
+  set('cat-dl-pairs', CAT.rows.filter(_catNeeds).concat(CAT.rows.filter(r => !_catNeeds(r))).map(r => r.model));
+}
+
+/* In-place refresh after an edit (never replaces the inputs, so Tab keeps working) */
+function catRefresh() {
   const needN = CAT.rows.filter(_catNeeds).length;
   document.getElementById('cat-count-all').textContent = CAT.rows.length;
   document.getElementById('cat-count-need').textContent = needN;
+  document.querySelectorAll('#cat-body tr[data-id]').forEach(tr => {
+    const r = CAT.rows.find(x => x.id === +tr.dataset.id); if (!r) return;
+    const needs = _catNeeds(r);
+    const partner = !r.category && !needs;
+    tr.classList.toggle('cat-need', needs);
+    tr.classList.toggle('cat-dirty', CAT.dirty.has(r.id));
+    const pi = tr.querySelector('input[data-f="pair"]');
+    if (pi) { pi.readOnly = partner; pi.placeholder = partner ? 'set with its indoor unit' : ''; }
+    const st = tr.querySelector('.cat-st-cell');
+    if (st) st.innerHTML = needs ? '<span class="cat-st am">needs category</span>'
+      : partner ? '<span class="cat-st">set with its indoor unit</span>'
+      : CAT.dirty.has(r.id) ? '<span class="cat-st ok">edited</span>' : '';
+  });
+}
+
+const _ROMAN_SAMPLE = 'I';
+/* Mini copy of the Excel export: shows where the field being edited lands */
+function catPreview(id, field, override) {
+  const body = document.getElementById('cat-prev-body'); if (!body) return;
+  const r = CAT.rows.find(x => x.id === id) || CAT.rows[0]; if (!r) { body.innerHTML = ''; return; }
+  const v = f => (override !== undefined && f === field) ? override : r[f];
+  const e = escapeHtml, hl = (...fs) => fs.includes(field) ? ' class="hl"' : '';
+  const model = v('model') || '…', pair = v('pair');
+  const set = pair ? `${e(model)}/${e(pair)}` : e(model);
+  const cat = v('category') || 'Other';
+  const titles = {
+    category: 'the grey <b>group heading</b> (groups are numbered I, II, III… automatically)',
+    type: 'the <b>Type</b> column', hp: 'the <b>Horse power</b> column',
+    model: 'the <b>Model</b> column', pair: 'the <b>Model</b> column (indoor/outdoor on one row; TOTAL counts complete sets)'
+  };
+  document.getElementById('cat-prev-title').innerHTML = `Excel export preview &mdash; ${titles[field] ? `<b>${field === 'pair' ? 'Pair' : field.charAt(0).toUpperCase() + field.slice(1)}</b> goes to ${titles[field]}` : 'click a field to see where it goes'}`;
+  body.innerHTML = `<table class="cat-prev-tbl"><tr><th>NO.</th><th>Type</th><th style="min-width:210px">Model</th><th>Horse power</th><th>Brand</th><th>TOTAL</th><th>Booking</th><th>Balance</th></tr>
+    <tr class="pg"><td>${_ROMAN_SAMPLE}</td><td colspan="7" class="pg-name${field === 'category' ? ' hl' : ''}">${e(cat)}</td></tr>
+    <tr><td>1</td><td${hl('type')}>${e(v('type'))}</td><td${hl('model', 'pair')}>${set}</td><td${hl('hp')}>${e(v('hp'))}</td><td class="dim">from stock</td><td class="dim">count</td><td class="dim">0</td><td class="dim">=</td></tr></table>`;
+}
+
+function catRender() {
+  const body = document.getElementById('cat-body'); if (!body) return;
+  catFillLists();
   document.getElementById('cat-tab-all').classList.toggle('on', CAT.tab === 'all');
   document.getElementById('cat-tab-need').classList.toggle('on', CAT.tab === 'need');
 
   const list = CAT.rows.filter(r => (CAT.tab === 'all' || _catNeeds(r) || CAT.dirty.has(r.id) || r.isNew) &&
     (!CAT.q || r.model.toLowerCase().includes(CAT.q)));
   const e = escapeHtml;
+  const cell = (r, f, ph, dl) => `<input type="text" data-f="${f}" placeholder="${ph}" autocomplete="off"${dl ? ` list="${dl}"` : ''} value="${e(r[f])}" onchange="catChange(${r.id},'${f}',this.value,this)" oninput="catPreview(${r.id},'${f}',this.value)">`;
   body.innerHTML = list.map(r => {
-    const claimed = _catClaimed(r);
-    const needs = _catNeeds(r);
-    const partner = !r.category && !needs;
-    const catCell = r.newCat
-      ? `<input type="text" placeholder="New category name" autocomplete="off" onchange="catChange(${r.id},'category',this.value)" onblur="if(!this.value.trim()){CAT.rows.find(x=>x.id===${r.id}).newCat=false;catRender();}">`
-      : `<select onchange="catChange(${r.id},'category',this.value)">${r.orig ? '' : '<option value="">- choose category -</option>'}${CAT.cats.map(c => `<option value="${e(c)}"${c === r.category ? ' selected' : ''}>${e(c)}</option>`).join('')}<option value="__new">+ New category...</option></select>`;
-    const types = [...new Set(['', ...CAT.types, r.type])];
-    const typeCell = `<select onchange="catChange(${r.id},'type',this.value)">${types.map(t => `<option value="${e(t)}"${t === r.type ? ' selected' : ''}>${e(t)}</option>`).join('')}</select>`;
-    const pairOpts = CAT.rows.filter(o => o !== r && !o.pair && !claimed.has(o.model.toLowerCase()))
-      .sort((a, b) => (_catNeeds(b) - _catNeeds(a)) || a.model.localeCompare(b.model)).map(o => o.model);
-    const pairs = [...new Set(['', ...pairOpts, r.pair])];
-    const pairCell = partner
-      ? '<span class="cat-st">set with its indoor unit</span>'
-      : `<select onchange="catChange(${r.id},'pair',this.value)">${pairs.map(p => `<option value="${e(p)}"${p === r.pair ? ' selected' : ''}>${e(p)}</option>`).join('')}</select>`;
     const modelCell = r.isNew
-      ? `<input class="cat-model" type="text" placeholder="Model name" autocomplete="off" value="${e(r.model)}" onchange="catChange(${r.id},'model',this.value)">`
+      ? `<input class="cat-model" type="text" data-f="model" placeholder="Model name" autocomplete="off" value="${e(r.model)}" onchange="catChange(${r.id},'model',this.value,this)" oninput="catPreview(${r.id},'model',this.value)">`
       : e(r.model);
-    const st = needs ? '<span class="cat-st am">needs category</span>' : CAT.dirty.has(r.id) ? '<span class="cat-st ok">edited</span>' : '';
-    return `<tr data-id="${r.id}" class="${needs ? 'cat-need' : ''} ${CAT.dirty.has(r.id) ? 'cat-dirty' : ''}">
-      <td class="cat-m">${modelCell}</td><td>${catCell}</td><td>${typeCell}</td>
-      <td><input class="cat-hp" type="text" inputmode="decimal" value="${e(r.hp)}" oninput="catChange(${r.id},'hp',this.value,true)"></td>
-      <td>${pairCell}</td><td>${st}</td></tr>`;
+    return `<tr data-id="${r.id}">
+      <td class="cat-m">${modelCell}</td>
+      <td>${cell(r, 'category', 'Choose or type', 'cat-dl-cats')}</td>
+      <td>${cell(r, 'type', 'Choose...', 'cat-dl-types')}</td>
+      <td><input class="cat-hp" type="text" data-f="hp" inputmode="decimal" value="${e(r.hp)}" onchange="catChange(${r.id},'hp',this.value,this)" oninput="catPreview(${r.id},'hp',this.value)"></td>
+      <td>${cell(r, 'pair', '', 'cat-dl-pairs')}</td>
+      <td class="cat-st-cell"></td></tr>`;
   }).join('');
+  catRefresh();
   const empty = document.getElementById('cat-empty');
   empty.style.display = list.length ? 'none' : 'block';
   empty.textContent = CAT.tab === 'need' && !CAT.q ? 'Every model in stock has a category.' : 'No models match.';
+  catPreview(list.length ? (CAT.focusId && list.some(r => r.id === CAT.focusId) ? CAT.focusId : list[0].id) : -1, CAT.focusField || 'category');
 }
+
+document.addEventListener('focusin', e => {
+  const t = e.target;
+  if (!t || !t.closest || !t.closest('#cat-body')) return;
+  const tr = t.closest('tr[data-id]'); if (!tr) return;
+  CAT.focusId = +tr.dataset.id; CAT.focusField = t.dataset.f || '';
+  catPreview(CAT.focusId, CAT.focusField);
+});
 
 async function catSave() {
   if (CAT.busy) return;

@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.8 - 2026-11-13
+- Changed: Model Catalog - a suggestion you forget with its x is only hidden until the program is closed; every suggestion comes back at the next start (nothing is saved any more). Reopening the window in the same session keeps it hidden. An old `catalogHiddenSuggestions` entry left in ui_prefs.json by v1.4.6/1.4.7 is simply ignored.
+
 ## 1.4.7 - 2026-11-13
 - Changed: the Pair (outdoor) box in the Model Catalog now uses the same suggestion list as Category and Type, with an x on each suggestion to forget it (stored in ui_prefs.json like the others; models and the catalog file are not touched). Models that cannot be paired (itself, already someone's outdoor unit) are not offered; models still needing a category are listed first.
 

@@ -17188,11 +17188,6 @@ async function openCatalogModal(needOnly) {
   try { d = await apiGet('/api/model-catalog'); }
   catch (e) { showToast('Could not load the Model Catalog: ' + e.message, '&#9888;'); return; }
   _catLoad(d);
-  try {
-    const prefs = await apiGet('/api/ui-prefs');
-    const hs = (prefs && prefs.catalogHiddenSuggestions) || {};
-    CAT.hidden = { category: Array.isArray(hs.category) ? hs.category : [], type: Array.isArray(hs.type) ? hs.type : [], pair: Array.isArray(hs.pair) ? hs.pair : [] };
-  } catch (e) { CAT.hidden = { category: [], type: [], pair: [] }; }
   CAT.q = '';
   const s = document.getElementById('cat-search'); if (s) s.value = '';
   CAT.tab = CAT.rows.some(_catNeeds) ? 'need' : 'all';   // open on what still needs doing
@@ -17259,14 +17254,13 @@ function catChange(id, field, value, el) {
   catPreview(id, field);
 }
 
-/* "Forgotten" suggestions: only hides the name from the suggestion list (kept in ui_prefs.json);
-   it never changes any model or the catalog file. Using the name again brings it back. */
+/* "Forgotten" suggestions: only hides the name from the suggestion list until the program is closed
+   (nothing is saved - they all come back at the next start). It never changes any model or the catalog
+   file, and using the name again brings it back sooner. */
 function _catIsHidden(f, v) { return CAT.hidden[f].some(x => x.toLowerCase() === String(v).toLowerCase()); }
-function _catSaveHidden() { apiPost('/api/ui-prefs', { prefs: { catalogHiddenSuggestions: CAT.hidden } }).catch(() => {}); }
 function _catUnhide(f, v) {
   if (!v || !_catIsHidden(f, v)) return;
   CAT.hidden[f] = CAT.hidden[f].filter(x => x.toLowerCase() !== v.toLowerCase());
-  _catSaveHidden();
 }
 
 function _catSyncFld(el) { const w = el && el.closest && el.closest('.cat-fld'); if (w) w.classList.toggle('has-val', !!el.value); }
@@ -17504,7 +17498,7 @@ function catSugPick(v) {
 
 function catSugDelete(v) {
   const f = CATSUG.f;
-  if (!_catIsHidden(f, v)) { CAT.hidden[f].push(v); _catSaveHidden(); }
+  if (!_catIsHidden(f, v)) CAT.hidden[f].push(v);
   catSugRender();                                  // the models that use it are not touched
 }
 

@@ -283,8 +283,8 @@ def _fill_manual_sheet(ws, groups):
     with a numbered (I, II, ...) grey heading row for each group."""
     ws.sheet_view.zoomScale = 85
     has_note = any(r["note"] for _, rows in groups for r in rows)
-    last = "I" if has_note else "H"
-    ncols = 9 if has_note else 8
+    last = "H"                  # the printed table ends at Balance; Note sits outside it
+    ncols = 8
     center = Alignment(horizontal="center", vertical="center")
 
     ws.merge_cells(f"A1:{last}1")
@@ -297,14 +297,16 @@ def _fill_manual_sheet(ws, groups):
     ws.row_dimensions[1].height = 36.5
 
     heads = ["NO.", "Type", "Model", "Horse power", "Brand", "TOTAL", "Booking", "Balance"]
-    if has_note:
-        heads.append("Note")
     for c, h in enumerate(heads, 1):
         cell = ws.cell(row=2, column=c, value=h)
         cell.font = Font(name=_MFONT, bold=True, size=11, color="000000")
         cell.fill = _TITLE_FILL
         cell.alignment = center
         cell.border = _MBORDER
+    if has_note:                # for your own eyes only: no fill / borders, not printed
+        nh = ws.cell(row=2, column=9, value="Note")
+        nh.font = Font(name=_MFONT, bold=True, size=11, color="595959")
+        nh.alignment = Alignment(horizontal="left", vertical="center")
     ws.row_dimensions[2].height = 28.5
     ws.freeze_panes = "A3"
 
@@ -325,8 +327,10 @@ def _fill_manual_sheet(ws, groups):
             for c, v in enumerate(vals, 1):
                 ws.cell(row=r, column=c, value=v if v != "" else None)
             ws.cell(row=r, column=8, value=f"=F{r}-G{r}")
-            if has_note:
-                ws.cell(row=r, column=9, value=row["note"] or None)
+            if has_note and row["note"]:
+                nc = ws.cell(row=r, column=9, value=row["note"])
+                nc.font = Font(name=_MFONT, italic=True, size=11, color="595959")
+                nc.alignment = Alignment(horizontal="left", vertical="center")
             for c in range(1, ncols + 1):
                 cell = ws.cell(row=r, column=c)
                 cell.border = _MBORDER
@@ -349,7 +353,9 @@ def _fill_manual_sheet(ws, groups):
     for c, w in enumerate(widths, 1):
         ws.column_dimensions[chr(64 + c)].width = w
 
-    # printing like the hand-made sheet: portrait A4, fit to one page wide, centred
+    # printing like the hand-made sheet: portrait A4, fit to one page wide, centred,
+    # and only NO. .. Balance (the Note column is not printed)
+    ws.print_area = f"A1:H{r - 1}"
     ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = 9
     ws.page_setup.fitToWidth = 1

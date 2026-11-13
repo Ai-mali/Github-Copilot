@@ -32,3 +32,6 @@ BOOT-BLACKSCREEN-DIAGNOSIS.md
 license_private.pem
 license_state.json
 *.lic
+
+# Generated next to the database on first manual-format export (user-editable)
+model_catalog.xlsx

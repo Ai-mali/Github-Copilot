@@ -4,6 +4,11 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.3.0 - 2026-11-13
+- Added: Available Stock - second export button "Export Excel (manual format)" next to the normal one. It builds the hand-made layout: groups numbered I, II, III... (no gaps; empty groups left out), columns NO | Type | Model | Horse power | Brand | TOTAL | Booking | Balance, indoor/outdoor sets on one row ("FCC50AV1/RC50AGV1" = number of complete sets), plus the Broken sheet. The normal Export button and the per-brand export are unchanged; the new button hides while brands are ticked.
+- Added: `model_catalog.xlsx` (Model | Category | Type | HP | Pair) is created next to the database the first time it is needed, from a built-in list taken from the manual Ending Balance / Available sheets. Edit it any time - it is never overwritten. Models in stock but not in the catalog go to an "Other" group at the bottom with the note "Not in model_catalog.xlsx". New file `model_catalog.py`; backend `GET /api/export/available?layout=manual`.
+- Note column appears only when a row needs it (a set with unmatched indoor/outdoor units, or an "Other" model).
+
 ## 1.2.0 - 2026-11-12
 - Added: Available Stock "Export all" now adds a second sheet "Broken" (NO | SERIAL/DESC | MODEL | CUSTOMER | NOTES) listing every unit that is Quarantined right now. Units released back to stock (Action Taken = Restocked) drop off the list automatically. No Broken sheet when nothing is quarantined. Exporting selected brands does not include it. The automatic backup copy in backups/ready_exports also gets the sheet.
 

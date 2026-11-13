@@ -4501,6 +4501,10 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
 body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 #view-available .avail-ticks-clear { width: 26px; min-width: 26px; padding: 0; justify-content: center; font-size: 16px; line-height: 1; }
 
+/* Second export choice: manual (grouped) layout - hidden while brands are ticked */
+#view-available .avail-export-manual-btn { width: 30px; min-width: 30px; padding: 0; justify-content: center; }
+#view-available .avail-export-manual-btn.is-hidden { display: none; }
+
 /* Brand sidebar: tick (Ctrl+click or click the round icon) */
 #view-available .tl-cust-item { user-select: none; }
 #view-available .tl-cust-item .tl-cust-avatar { cursor: pointer; }
@@ -9290,6 +9294,9 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                 </div>
               </div>
               <button type="button" class="btn btn-ghost btn-sm avail-ticks-clear" id="avail-ticks-clear" onclick="clearAvailBrandTicks()" title="Clear ticked brands (Esc)" aria-label="Clear ticked brands" style="display:none;">&times;</button>
+              <button class="btn btn-ghost btn-sm avail-export-manual-btn" id="avail-export-manual-btn" onclick="exportAvailManual()" title="Export Excel (manual format: grouped I, II, III...)" aria-label="Export Excel in manual format">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M3 15h18M9 4v16"></path></svg>
+              </button>
               <button class="btn btn-ghost btn-sm avail-export-btn" id="avail-export-btn" onclick="exportAvailCsv()" title="Export Excel" aria-label="Export Excel">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 <span class="avail-export-label" id="avail-export-label">Export Excel</span>
@@ -14677,6 +14684,8 @@ function updateAvailExportUI() {
   btn.setAttribute('aria-label', tip);
   const clr = document.getElementById('avail-ticks-clear');
   if (clr) clr.style.display = n ? 'inline-flex' : 'none';
+  const man = document.getElementById('avail-export-manual-btn');
+  if (man) man.classList.toggle('is-hidden', n > 0);
 }
 
 function exportAvailBrands(names, clearAfter) {
@@ -17004,6 +17013,15 @@ function exportAvailCsv() {
   const p = n => String(n).padStart(2, '0');
   const fname = `VRE-Air Conditioner Stock-${p(d.getDate())}-${p(d.getMonth() + 1)}-${String(d.getFullYear()).slice(-2)}.xlsx`;
   downloadServerFile('/api/export/available', fname);
+}
+
+/* Same workbook name, but in the manual grouped layout (needs model_catalog.xlsx,
+   which the backend creates next to the database on first use). */
+function exportAvailManual() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  const fname = `VRE-Air Conditioner Stock-${p(d.getDate())}-${p(d.getMonth() + 1)}-${String(d.getFullYear()).slice(-2)}.xlsx`;
+  downloadServerFile('/api/export/available?layout=manual', fname);
 }
 
 /* Tick a whole sale for scoped export. Batch key = r.batch, or the

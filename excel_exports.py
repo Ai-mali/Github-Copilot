@@ -74,6 +74,25 @@ def _fill_available_sheet(ws, keys, stock, booked, title="Available Stock"):
         ws.column_dimensions[col].width = w
 
 
+def _count_stock(records, now):
+    """({(brand, model): in-stock units}, {(brand, model): booked units}).
+    Booked = sold with a Date Out still in the future."""
+    from stock_store import IN_STOCK, SOLD, parse_datetime_safe
+
+    stock, booked = {}, {}
+    for rec in records:
+        status = str(rec.get("Status") or "").strip()
+        key = (str(rec.get("Brand") or "").strip() or "UNBRANDED",
+               str(rec.get("Model") or "").strip())
+        if status == IN_STOCK:
+            stock[key] = stock.get(key, 0) + 1
+        elif status == SOLD:
+            dt = parse_datetime_safe(str(rec.get("Date Out") or ""))
+            if dt and dt > now:
+                booked[key] = booked.get(key, 0) + 1
+    return stock, booked
+
+
 def _fill_broken_sheet(ws, broken):
     """'Broken' sheet: NO | SERIAL/DESC | MODEL | CUSTOMER | NOTES."""
     center = Alignment(horizontal="center", vertical="center")
@@ -132,20 +151,8 @@ def build_available_workbook(records, now=None, brands=None, returns=None) -> by
     The full export (brands=None) also gets a 'Broken' sheet listing the units
     that are Quarantined right now (omitted when there are none). Per-brand
     exports never include it."""
-    from stock_store import IN_STOCK, SOLD, parse_datetime_safe
-
     now = now or datetime.datetime.now()
-    stock, booked = {}, {}
-    for rec in records:
-        status = str(rec.get("Status") or "").strip()
-        key = (str(rec.get("Brand") or "").strip() or "UNBRANDED",
-               str(rec.get("Model") or "").strip())
-        if status == IN_STOCK:
-            stock[key] = stock.get(key, 0) + 1
-        elif status == SOLD:
-            dt = parse_datetime_safe(str(rec.get("Date Out") or ""))
-            if dt and dt > now:
-                booked[key] = booked.get(key, 0) + 1
+    stock, booked = _count_stock(records, now)
 
     keys = sorted(set(stock) | set(booked),
                   key=lambda k: (k[0].upper(), k[1].upper()))
@@ -178,6 +185,176 @@ def build_available_workbook(records, now=None, brands=None, returns=None) -> by
         if first:
             return b""
 
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+_GROUP_FILL = PatternFill("solid", fgColor="A5A5A5")
+
+
+def _roman(n: int) -> str:
+    out = ""
+    for v, sym in ((10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")):
+        while n >= v:
+            out += sym
+            n -= v
+    return out
+
+
+def _manual_groups(stock, booked, catalog):
+    """Group the stock into the manual layout.
+    Returns [(category, [row dict, ...]), ...] - categories in catalog order,
+    empty ones left out, 'Other' (models not in the catalog) last."""
+    keys = set(stock) | set(booked)
+    order = {}
+    for e in catalog:
+        order.setdefault(e["category"] or "Other", len(order))
+
+    def counts(key):
+        return stock.get(key, 0), booked.get(key, 0)
+
+    # a partner (outdoor) model can belong to ONE indoor row only
+    claimed = {}
+    for e in catalog:
+        p = e["pair"].lower()
+        if p and p != e["model"].lower() and p not in claimed:
+            claimed[p] = e["model"].lower()
+
+    rows, consumed = [], set()
+    brands = {b for b, _ in keys}
+    for e in catalog:
+        if claimed.get(e["model"].lower(), e["model"].lower()) != e["model"].lower():
+            continue          # listed as another row's outdoor partner: shown in that set
+        p = e["pair"].lower()
+        paired = bool(p) and claimed.get(p) == e["model"].lower()
+        for b in sorted(brands):
+            ikeys = [k for k in keys if k[0] == b and k[1].lower() == e["model"].lower()]
+            okeys = ([k for k in keys if k[0] == b and k[1].lower() == p]
+                     if paired else [])
+            if not ikeys and not okeys:
+                continue
+            ik = ikeys[0] if ikeys else (b, e["model"])
+            if not paired:
+                consumed.add(ik)
+                s, bk = counts(ik)
+                rows.append({"cat": e["category"] or "Other", "ord": len(rows), "type": e["type"],
+                             "model": ik[1], "hp": e["hp"], "brand": b,
+                             "stock": s, "booked": bk, "note": ""})
+                continue
+            ok = okeys[0] if okeys else (b, e["pair"])
+            consumed.update((ik, ok))
+            (si, bi), (so, bo) = counts(ik), counts(ok)
+            s, bk = min(si, so), min(bi, bo)
+            extras = []
+            if si + bi > s + bk:
+                extras.append(f"{si + bi - s - bk} x {ik[1]} without outdoor")
+            if so + bo > s + bk:
+                extras.append(f"{so + bo - s - bk} x {ok[1]} without indoor")
+            rows.append({"cat": e["category"] or "Other", "ord": len(rows), "type": e["type"],
+                         "model": f"{ik[1]}/{ok[1]}", "hp": e["hp"], "brand": b,
+                         "stock": s, "booked": bk, "note": "; ".join(extras)})
+
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["cat"], []).append(r)
+    out = [(c, sorted(groups[c], key=lambda r: r["ord"]))
+           for c in sorted(groups, key=lambda c: order.get(c, 10**6))]
+
+    other = []
+    for k in sorted(keys - consumed, key=lambda k: (k[0].upper(), k[1].upper())):
+        s, bk = counts(k)
+        other.append({"cat": "Other", "ord": 0, "type": "", "model": k[1], "hp": "",
+                      "brand": k[0], "stock": s, "booked": bk,
+                      "note": "Not in model_catalog.xlsx"})
+    if other:
+        out = [g for g in out if g[0] != "Other"]
+        out.append(("Other", other))
+    return out
+
+
+def _fill_manual_sheet(ws, groups):
+    """NO | Type | Model | Horse power | Brand | TOTAL | Booking | Balance
+    with a numbered (I, II, ...) grey heading row for each group."""
+    ws.sheet_view.zoomScale = 85
+    has_note = any(r["note"] for _, rows in groups for r in rows)
+    last = "I" if has_note else "H"
+    ncols = 9 if has_note else 8
+    center = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells(f"A1:{last}1")
+    t = ws["A1"]
+    t.value = "Available Stock"
+    t.font = Font(bold=True, size=20)
+    t.fill = _TITLE_FILL
+    t.alignment = center
+    ws.row_dimensions[1].height = 36.5
+
+    heads = ["NO.", "Type", "Model", "Horse power", "Brand", "TOTAL", "Booking", "Balance"]
+    if has_note:
+        heads.append("Note")
+    for c, h in enumerate(heads, 1):
+        cell = ws.cell(row=2, column=c, value=h)
+        cell.font = Font(bold=True)
+        cell.fill = _TITLE_FILL
+        cell.alignment = center
+        cell.border = _BORDER
+    ws.row_dimensions[2].height = 28.5
+    ws.freeze_panes = "A3"
+
+    r = 3
+    for gi, (cat, rows) in enumerate(groups, 1):
+        for c in range(1, ncols + 1):
+            cell = ws.cell(row=r, column=c)
+            cell.fill = _GROUP_FILL
+            cell.border = _BORDER
+            cell.font = Font(bold=True)
+        ws.cell(row=r, column=1, value=_roman(gi)).alignment = center
+        ws.cell(row=r, column=2, value=cat).alignment = Alignment(vertical="center")
+        ws.row_dimensions[r].height = 24.5
+        r += 1
+        for i, row in enumerate(rows, 1):
+            total = row["stock"] + row["booked"]
+            vals = [i, row["type"], row["model"], row["hp"], row["brand"], total, row["booked"]]
+            for c, v in enumerate(vals, 1):
+                ws.cell(row=r, column=c, value=v if v != "" else None)
+            ws.cell(row=r, column=8, value=f"=F{r}-G{r}")
+            if has_note:
+                ws.cell(row=r, column=9, value=row["note"] or None)
+            for c in range(1, ncols + 1):
+                cell = ws.cell(row=r, column=c)
+                cell.border = _BORDER
+                cell.alignment = center
+                if c in (6, 7, 8):
+                    cell.number_format = "0.00"
+            if row["stock"] <= 0:
+                ws.cell(row=r, column=8).font = Font(color="FF0000")
+            ws.row_dimensions[r].height = 24.5
+            r += 1
+
+    widths = [8.7, 18.2, 36.5, 14.2, 14.5, 13.7, 14.1, 15.0] + ([40.0] if has_note else [])
+    for c, w in enumerate(widths, 1):
+        ws.column_dimensions[chr(64 + c)].width = w
+
+
+def build_available_manual_workbook(records, now=None, returns=None, catalog=None) -> bytes:
+    """Available Stock in the manual (hand-made) layout: groups I, II, III...
+    with indoor/outdoor sets on one row, driven by model_catalog.xlsx
+    (`catalog` = model_catalog.load_catalog()). Adds the 'Broken' sheet
+    (quarantined units) exactly like the standard full export."""
+    import model_catalog
+
+    now = now or datetime.datetime.now()
+    if catalog is None:
+        catalog = model_catalog.seed_entries()
+    stock, booked = _count_stock(records, now)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Available"
+    _fill_manual_sheet(ws, _manual_groups(stock, booked, catalog))
+    broken = _broken_rows(records, returns)
+    if broken:
+        _fill_broken_sheet(wb.create_sheet("Broken"), broken)
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

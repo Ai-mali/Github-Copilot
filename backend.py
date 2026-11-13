@@ -347,10 +347,12 @@ def download_backup(filename: str = ""):
 
 
 @app.get("/api/export/available")
-def export_available_workbook(brand: list[str] = Query(default=[])):
+def export_available_workbook(brand: list[str] = Query(default=[]), layout: str = ""):
     """Per-model summary workbook in the user's manual 'Available Stock'
     layout — same builder as the automatic backups/ready_exports copies.
-    ?brand=A&brand=B limits it to those brands (one sheet per brand)."""
+    ?brand=A&brand=B limits it to those brands (one sheet per brand).
+    ?layout=manual -> the hand-made grouped layout (I, II, III ...) driven by
+    model_catalog.xlsx, plus the Broken sheet. Ignored when brands are given."""
     import re
     import excel_exports
 
@@ -366,6 +368,13 @@ def export_available_workbook(brand: list[str] = Query(default=[])):
         label = chosen[0] if len(chosen) == 1 else f"{len(chosen)} brands"
         label = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", label).strip() or "brands"
         fname = f"VRE-{label}-Stock-{stamp}.xlsx"
+    elif layout.strip().lower() == "manual":
+        import model_catalog
+        model_catalog.ensure_catalog()
+        data = excel_exports.build_available_manual_workbook(
+            store.records, now, returns=store.returns,
+            catalog=model_catalog.load_catalog())
+        fname = "VRE-Air Conditioner Stock-" + stamp + ".xlsx"
     else:
         data = excel_exports.build_available_workbook(store.records, now,
                                                       returns=store.returns)

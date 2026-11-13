@@ -10017,7 +10017,6 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
       </table>
       <div class="cat-empty" id="cat-empty" style="display:none;"></div>
     </div>
-    <datalist id="cat-dl-pairs"></datalist>
     <div class="cat-preview">
       <div class="cat-prev-title" id="cat-prev-title"></div>
       <div id="cat-prev-body"></div>
@@ -17137,7 +17136,7 @@ function exportAvailCsv() {
    (/api/model-catalog) so nobody has to open the Excel file. The catalog only
    drives the manual-format export; it never touches stock records.
    --------------------------------------------------------------------------- */
-const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '', stocked: new Set(), info: {}, hidden: { category: [], type: [] } };
+const CAT = { rows: [], cats: [], types: [], tab: 'all', q: '', dirty: new Set(), nextId: 1, loading: false, busy: false, focusId: 0, focusField: '', stocked: new Set(), info: {}, hidden: { category: [], type: [], pair: [] } };
 
 function setCatalogNeeds(n) {
   const pill = document.getElementById('cat-pill');
@@ -17192,8 +17191,8 @@ async function openCatalogModal(needOnly) {
   try {
     const prefs = await apiGet('/api/ui-prefs');
     const hs = (prefs && prefs.catalogHiddenSuggestions) || {};
-    CAT.hidden = { category: Array.isArray(hs.category) ? hs.category : [], type: Array.isArray(hs.type) ? hs.type : [] };
-  } catch (e) { CAT.hidden = { category: [], type: [] }; }
+    CAT.hidden = { category: Array.isArray(hs.category) ? hs.category : [], type: Array.isArray(hs.type) ? hs.type : [], pair: Array.isArray(hs.pair) ? hs.pair : [] };
+  } catch (e) { CAT.hidden = { category: [], type: [], pair: [] }; }
   CAT.q = '';
   const s = document.getElementById('cat-search'); if (s) s.value = '';
   CAT.tab = CAT.rows.some(_catNeeds) ? 'need' : 'all';   // open on what still needs doing
@@ -17236,14 +17235,15 @@ function catChange(id, field, value, el) {
   } else if (field === 'category') {
     if (!value && r.orig) { catUncategorise(r, el); return; }
     value = _catCanon(CAT.cats, value);
-    if (value && !CAT.cats.includes(value)) { CAT.cats.push(value); catFillLists(); }
+    if (value && !CAT.cats.includes(value)) { CAT.cats.push(value); }
     _catUnhide('category', value);
   } else if (field === 'type') {
     value = _catCanon(CAT.types, value);
-    if (value && !CAT.types.includes(value)) { CAT.types.push(value); catFillLists(); }
+    if (value && !CAT.types.includes(value)) { CAT.types.push(value); }
     _catUnhide('type', value);
   } else if (field === 'pair') {
     value = _catCanon(CAT.rows.map(x => x.model), value);
+    _catUnhide('pair', value);
     if (value && value.toLowerCase() === r.model.toLowerCase()) { showToast('A model cannot be its own outdoor unit.', '&#9888;'); if (el) el.value = r.pair; return; }
     if (value && _catClaimed(r).has(value.toLowerCase())) {
       showToast(`${value} is already the outdoor unit of another model.`, '&#9888;');
@@ -17306,11 +17306,6 @@ function catAddModel() {
   if (inp) inp.focus();
 }
 
-function catFillLists() {
-  const opt = a => a.map(x => `<option value="${escapeHtml(x)}"></option>`).join('');
-  const set = (id, a) => { const d = document.getElementById(id); if (d) d.innerHTML = opt(a); };
-  set('cat-dl-pairs', CAT.rows.filter(_catNeeds).concat(CAT.rows.filter(r => !_catNeeds(r))).map(r => r.model));
-}
 
 /* In-place refresh after an edit (never replaces the inputs, so Tab keeps working) */
 function catRefresh() {
@@ -17382,7 +17377,6 @@ function catPreview(id, field, override) {
 function catRender() {
   const body = document.getElementById('cat-body'); if (!body) return;
   if (typeof catSugHide === 'function') catSugHide();
-  catFillLists();
   document.getElementById('cat-tab-all').classList.toggle('on', CAT.tab === 'all');
   document.getElementById('cat-tab-need').classList.toggle('on', CAT.tab === 'need');
 
@@ -17399,7 +17393,7 @@ function catRender() {
       <td>${cell(r, 'category', 'Choose or type')}</td>
       <td>${cell(r, 'type', 'Choose...')}</td>
       <td><input class="cat-hp" type="text" data-f="hp" inputmode="decimal" value="${e(r.hp)}" onchange="catChange(${r.id},'hp',this.value,this)" oninput="catPreview(${r.id},'hp',this.value)"></td>
-      <td>${cell(r, 'pair', '', 'cat-dl-pairs')}</td>
+      <td>${cell(r, 'pair', 'Choose model...')}</td>
       <td class="cat-st-cell"></td></tr>`;
   }).join('');
   catRefresh();
@@ -17450,7 +17444,14 @@ function catSugHide() {
   const box = document.getElementById('cat-sug'); if (box) box.hidden = true;
   CATSUG.el = null; CATSUG.idx = -1;
 }
-function _catSugUse(f, v) { return CAT.rows.filter(r => (f === 'category' ? r.category : r.type) === v).length; }
+function _catSugUse(f, v) { return f === 'pair' ? 0 : CAT.rows.filter(r => (f === 'category' ? r.category : r.type) === v).length; }
+/* outdoor models that can still be paired with this row: not itself, not already someone's outdoor unit, not an indoor with its own pair */
+function _catPairOptions(id) {
+  const r = CAT.rows.find(x => x.id === id); if (!r) return [];
+  const claimed = _catClaimed(r);
+  return CAT.rows.filter(o => o !== r && !o.pair && !claimed.has(o.model.toLowerCase()))
+    .sort((a, b) => (_catNeeds(b) - _catNeeds(a)) || a.model.localeCompare(b.model)).map(o => o.model);
+}
 
 function catSugRender() {
   const el = CATSUG.el; if (!el) return;
@@ -17467,15 +17468,15 @@ function catSugRender() {
     document.body.appendChild(box);
   }
   const q = CATSUG.typed ? el.value.trim().toLowerCase() : '';      // opening the list shows everything; typing filters
-  const all = CATSUG.f === 'category' ? CAT.cats : CAT.types;
+  const all = CATSUG.f === 'category' ? CAT.cats : CATSUG.f === 'type' ? CAT.types : _catPairOptions(CATSUG.id);
   CATSUG.items = all.filter(x => x && !_catIsHidden(CATSUG.f, x) && (!q || x.toLowerCase().includes(q)));
   if (CATSUG.idx >= CATSUG.items.length) CATSUG.idx = -1;
   const e = escapeHtml;
   box.innerHTML = CATSUG.items.length ? CATSUG.items.map((x, i) => {
     const n = _catSugUse(CATSUG.f, x);
     const keep = CATSUG.f === 'type' && CAT_KEEP_TYPES.includes(x.toLowerCase());
-    return `<div class="cat-sug-i${i === CATSUG.idx ? ' act' : ''}${x === el.value ? ' cur' : ''}" data-v="${e(x)}"><span class="cat-sug-t">${e(x)}</span><span class="cat-sug-n">${n ? n + ' model' + (n > 1 ? 's' : '') : ''}</span>${keep ? '' : `<button type="button" class="cat-sug-x" data-v="${e(x)}" title="Forget this suggestion (models keep their category)">&times;</button>`}</div>`;
-  }).join('') : `<div class="cat-sug-none">${q ? 'Press Enter or Tab to use a new name' : 'No suggestions yet - type a name'}</div>`;
+    return `<div class="cat-sug-i${i === CATSUG.idx ? ' act' : ''}${x === el.value ? ' cur' : ''}" data-v="${e(x)}"><span class="cat-sug-t">${e(x)}</span><span class="cat-sug-n">${n ? n + ' model' + (n > 1 ? 's' : '') : ''}</span>${keep ? '' : `<button type="button" class="cat-sug-x" data-v="${e(x)}" title="Forget this suggestion (nothing else changes)">&times;</button>`}</div>`;
+  }).join('') : `<div class="cat-sug-none">${q ? 'Press Enter or Tab to use a new name' : (CATSUG.f === 'pair' ? 'No other models to pair' : 'No suggestions yet - type a name')}</div>`;
   const r = el.getBoundingClientRect();
   box.hidden = false;
   box.style.width = Math.max(r.width, 210) + 'px';
@@ -17487,7 +17488,7 @@ function catSugRender() {
 
 function catSugShow(el) {
   const f = el.dataset.f;
-  if (f !== 'category' && f !== 'type') return;
+  if ((f !== 'category' && f !== 'type' && f !== 'pair') || el.readOnly) return;
   const tr = el.closest('tr[data-id]');
   CATSUG.el = el; CATSUG.f = f; CATSUG.id = tr ? +tr.dataset.id : 0; CATSUG.idx = -1; CATSUG.typed = false;
   catSugRender();

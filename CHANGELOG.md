@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.4 - 2026-11-13
+- Fixed: Model Catalog tabs no longer mix - "All models" lists only models that already have a category (its count now matches), "Needs category" lists only the ones still to do. A model you just categorised stays in "Needs category" until you press Save, then it moves to "All models".
+
 ## 1.4.3 - 2026-11-13
 - Changed: Model Catalog opens on "Needs category" by default (when anything still needs a category), and in the "All models" tab the models that still need a category are listed first.
 - Changed: the Excel preview now shows live numbers instead of placeholders: the real Brand, TOTAL, Booking and Balance of the model (an indoor/outdoor set shows the number of complete sets, like the export), and they update when you change the Pair.

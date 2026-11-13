@@ -17153,12 +17153,12 @@ function _catLoad(d) {
   CAT.rows = (d.entries || []).map(e => ({
     id: CAT.nextId++, model: e.model, category: e.category || '', type: e.type || '',
     hp: e.hp === '' || e.hp == null ? '' : String(e.hp), pair: e.pair || '',
-    orig: !!e.category, isNew: false
+    orig: !!e.category, home: e.category ? 'all' : 'need', isNew: false
   }));
   const have = new Set(CAT.rows.map(r => r.model.toLowerCase()));
   (d.needs || []).forEach(n => {
     if (have.has(n.model.toLowerCase())) return;
-    CAT.rows.push({ id: CAT.nextId++, model: n.model, category: '', type: '', hp: '', pair: '', orig: false, isNew: false });
+    CAT.rows.push({ id: CAT.nextId++, model: n.model, category: '', type: '', hp: '', pair: '', orig: false, home: 'need', isNew: false });
   });
 }
 
@@ -17238,7 +17238,7 @@ function catChange(id, field, value, el) {
 function catAddModel() {
   CAT.tab = 'need'; CAT.q = '';
   const s = document.getElementById('cat-search'); if (s) s.value = '';
-  const r = { id: CAT.nextId++, model: '', category: '', type: '', hp: '', pair: '', orig: false, isNew: true };
+  const r = { id: CAT.nextId++, model: '', category: '', type: '', hp: '', pair: '', orig: false, home: 'need', isNew: true };
   CAT.rows.push(r);
   catRender();
   const inp = document.querySelector(`#cat-body tr[data-id="${r.id}"] input.cat-model`);
@@ -17256,7 +17256,7 @@ function catFillLists() {
 /* In-place refresh after an edit (never replaces the inputs, so Tab keeps working) */
 function catRefresh() {
   const needN = CAT.rows.filter(_catNeeds).length;
-  document.getElementById('cat-count-all').textContent = CAT.rows.length;
+  document.getElementById('cat-count-all').textContent = CAT.rows.filter(r => r.home === 'all').length;
   document.getElementById('cat-count-need').textContent = needN;
   document.querySelectorAll('#cat-body tr[data-id]').forEach(tr => {
     const r = CAT.rows.find(x => x.id === +tr.dataset.id); if (!r) return;
@@ -17326,9 +17326,8 @@ function catRender() {
   document.getElementById('cat-tab-all').classList.toggle('on', CAT.tab === 'all');
   document.getElementById('cat-tab-need').classList.toggle('on', CAT.tab === 'need');
 
-  const list = CAT.rows.filter(r => (CAT.tab === 'all' || _catNeeds(r) || CAT.dirty.has(r.id) || r.isNew) &&
-    (!CAT.q || r.model.toLowerCase().includes(CAT.q)))
-    .sort((a, b) => (_catNeeds(b) - _catNeeds(a)));      // still-to-do rows first (stable)
+  // the two tabs never overlap: "All models" = already catalogued, "Needs category" = the rest
+  const list = CAT.rows.filter(r => r.home === CAT.tab && (!CAT.q || r.model.toLowerCase().includes(CAT.q)));
   const e = escapeHtml;
   const cell = (r, f, ph, dl) => `<input type="text" data-f="${f}" placeholder="${ph}" autocomplete="off"${dl ? ` list="${dl}"` : ''} value="${e(r[f])}" onchange="catChange(${r.id},'${f}',this.value,this)" oninput="catPreview(${r.id},'${f}',this.value)">`;
   body.innerHTML = list.map(r => {

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.worksheet.properties import PageSetupProperties
 
 _TITLE_FILL = PatternFill("solid", fgColor="00B0F0")
 _THIN = Side(style="thin", color="9E9E9E")
@@ -191,6 +192,10 @@ def build_available_workbook(records, now=None, brands=None, returns=None) -> by
 
 
 _GROUP_FILL = PatternFill("solid", fgColor="A5A5A5")
+# Same look as the hand-made Available sheet: Times New Roman 11, black thin borders
+_MFONT = "Times New Roman"
+_MBLACK = Side(style="thin", color="000000")
+_MBORDER = Border(left=_MBLACK, right=_MBLACK, top=_MBLACK, bottom=_MBLACK)
 
 
 def _roman(n: int) -> str:
@@ -285,8 +290,9 @@ def _fill_manual_sheet(ws, groups):
     ws.merge_cells(f"A1:{last}1")
     t = ws["A1"]
     t.value = "Available Stock"
-    t.font = Font(bold=True, size=20)
+    t.font = Font(name=_MFONT, bold=True, size=20, color="000000")
     t.fill = _TITLE_FILL
+    t.border = _MBORDER
     t.alignment = center
     ws.row_dimensions[1].height = 36.5
 
@@ -295,10 +301,10 @@ def _fill_manual_sheet(ws, groups):
         heads.append("Note")
     for c, h in enumerate(heads, 1):
         cell = ws.cell(row=2, column=c, value=h)
-        cell.font = Font(bold=True)
+        cell.font = Font(name=_MFONT, bold=True, size=11, color="000000")
         cell.fill = _TITLE_FILL
         cell.alignment = center
-        cell.border = _BORDER
+        cell.border = _MBORDER
     ws.row_dimensions[2].height = 28.5
     ws.freeze_panes = "A3"
 
@@ -307,8 +313,8 @@ def _fill_manual_sheet(ws, groups):
         for c in range(1, ncols + 1):
             cell = ws.cell(row=r, column=c)
             cell.fill = _GROUP_FILL
-            cell.border = _BORDER
-            cell.font = Font(bold=True)
+            cell.border = _MBORDER
+            cell.font = Font(name=_MFONT, bold=True, size=11, color="000000")
         ws.cell(row=r, column=1, value=_roman(gi)).alignment = center
         ws.cell(row=r, column=2, value=cat).alignment = Alignment(vertical="center")
         ws.row_dimensions[r].height = 24.5
@@ -323,18 +329,33 @@ def _fill_manual_sheet(ws, groups):
                 ws.cell(row=r, column=9, value=row["note"] or None)
             for c in range(1, ncols + 1):
                 cell = ws.cell(row=r, column=c)
-                cell.border = _BORDER
+                cell.border = _MBORDER
                 cell.alignment = center
-                if c in (6, 7, 8):
+                cell.font = Font(name=_MFONT, size=11, color="000000")
+                if c == 4:
+                    cell.number_format = "0.0"
+                elif c in (6, 7, 8):
                     cell.number_format = "0.00"
             if row["stock"] <= 0:
-                ws.cell(row=r, column=8).font = Font(color="FF0000")
+                ws.cell(row=r, column=8).font = Font(name=_MFONT, size=11, color="9C0006")
             ws.row_dimensions[r].height = 24.5
             r += 1
 
-    widths = [8.7, 18.2, 36.5, 14.2, 14.5, 13.7, 14.1, 15.0] + ([40.0] if has_note else [])
+    widths = [8.73, 18.18, 36.45, 14.18, 14.45, 13.73, 14.09, 15.0] + ([40.0] if has_note else [])
+    # same widths as the hand-made sheet; only the Brand column grows when a
+    # brand name would be cut off (e.g. "DAIKIN-AIR CONDITIONER")
+    longest = max((len(r["brand"]) for _, rows in groups for r in rows), default=0)
+    widths[4] = max(widths[4], min(longest * 1.15 + 2, 32.0))
     for c, w in enumerate(widths, 1):
         ws.column_dimensions[chr(64 + c)].width = w
+
+    # printing like the hand-made sheet: portrait A4, fit to one page wide, centred
+    ws.page_setup.orientation = "portrait"
+    ws.page_setup.paperSize = 9
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    ws.print_options.horizontalCentered = True
 
 
 def build_available_manual_workbook(records, now=None, returns=None, catalog=None) -> bytes:

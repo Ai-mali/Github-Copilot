@@ -4,6 +4,10 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.11 - 2026-11-14
+- Changed: manual-format export - inside each group the complete indoor/outdoor sets come first; sets with extra indoor or outdoor units move to the bottom of the group (highest balance first), so the clean rows read together.
+- Changed: Wall Mounted, Ceiling Cassette and Conceal Duct only list models that have a pair in `model_catalog.xlsx`; a model without a pair goes to the "Other" group (with a note) until you set its pair in the Model Catalog window.
+
 ## 1.4.10 - 2026-11-13
 - Changed: manual-format export - the Note column uses the same font and colour as the rest of the table (Times New Roman 11, black; header bold black) instead of grey italic. Still outside the print area.
 

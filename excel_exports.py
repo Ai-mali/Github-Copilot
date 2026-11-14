@@ -207,10 +207,17 @@ def _roman(n: int) -> str:
     return out
 
 
+# these categories only hold indoor/outdoor SETS: a model without a pair goes to "Other"
+_PAIR_REQUIRED = {"wall mounted", "ceiling cassette", "conceal duct"}
+
+
 def _manual_groups(stock, booked, catalog):
     """Group the stock into the manual layout.
     Returns [(category, [row dict, ...]), ...] - categories in catalog order,
-    empty ones left out, 'Other' (models not in the catalog) last."""
+    empty ones left out, 'Other' (models without a pair in the three set
+    categories, and models not in the catalog) last.
+    Inside a category the complete sets come first (catalog order); sets with
+    extra indoor/outdoor units go to the bottom, highest balance first."""
     keys = set(stock) | set(booked)
     order = {}
     for e in catalog:
@@ -243,9 +250,14 @@ def _manual_groups(stock, booked, catalog):
             if not paired:
                 consumed.add(ik)
                 s, bk = counts(ik)
-                rows.append({"cat": e["category"] or "Other", "ord": len(rows), "type": e["type"],
+                cat = e["category"] or "Other"
+                note = ""
+                if cat.lower() in _PAIR_REQUIRED:
+                    note = f"No pair set for {cat} in model_catalog.xlsx"
+                    cat = "Other"
+                rows.append({"cat": cat, "ord": len(rows), "type": e["type"],
                              "model": ik[1], "hp": e["hp"], "brand": b,
-                             "stock": s, "booked": bk, "note": ""})
+                             "stock": s, "booked": bk, "note": note})
                 continue
             ok = okeys[0] if okeys else (b, e["pair"])
             consumed.update((ik, ok))
@@ -260,13 +272,17 @@ def _manual_groups(stock, booked, catalog):
                          "model": f"{ik[1]}/{ok[1]}", "hp": e["hp"], "brand": b,
                          "stock": s, "booked": bk, "note": "; ".join(extras)})
 
+    def place(r):
+        # complete sets first (catalog order); sets with extras at the bottom, most balance first
+        return (1, -r["stock"], r["ord"]) if r["note"] else (0, 0, r["ord"])
+
     groups = {}
     for r in rows:
         groups.setdefault(r["cat"], []).append(r)
-    out = [(c, sorted(groups[c], key=lambda r: r["ord"]))
+    out = [(c, sorted(groups[c], key=lambda r: r["ord"] if c == "Other" else place(r)))
            for c in sorted(groups, key=lambda c: order.get(c, 10**6))]
 
-    other = []
+    other = [r for g in out if g[0] == "Other" for r in g[1]]
     for k in sorted(keys - consumed, key=lambda k: (k[0].upper(), k[1].upper())):
         s, bk = counts(k)
         other.append({"cat": "Other", "ord": 0, "type": "", "model": k[1], "hp": "",

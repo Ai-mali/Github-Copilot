@@ -303,9 +303,9 @@ def _fill_manual_sheet(ws, groups):
         cell.fill = _TITLE_FILL
         cell.alignment = center
         cell.border = _MBORDER
-    if has_note:                # for your own eyes only: no fill / borders, not printed
+    if has_note:                # for your own eyes only: same font and colour as the table, no fill / borders, not printed
         nh = ws.cell(row=2, column=9, value="Note")
-        nh.font = Font(name=_MFONT, bold=True, size=11, color="595959")
+        nh.font = Font(name=_MFONT, bold=True, size=11, color="000000")
         nh.alignment = Alignment(horizontal="left", vertical="center")
     ws.row_dimensions[2].height = 28.5
     ws.freeze_panes = "A3"
@@ -329,7 +329,7 @@ def _fill_manual_sheet(ws, groups):
             ws.cell(row=r, column=8, value=f"=F{r}-G{r}")
             if has_note and row["note"]:
                 nc = ws.cell(row=r, column=9, value=row["note"])
-                nc.font = Font(name=_MFONT, italic=True, size=11, color="595959")
+                nc.font = Font(name=_MFONT, size=11, color="000000")
                 nc.alignment = Alignment(horizontal="left", vertical="center")
             for c in range(1, ncols + 1):
                 cell = ws.cell(row=r, column=c)

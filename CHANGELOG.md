@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.10 - 2026-11-13
+- Changed: manual-format export - the Note column uses the same font and colour as the rest of the table (Times New Roman 11, black; header bold black) instead of grey italic. Still outside the print area.
+
 ## 1.4.9 - 2026-11-13
 - Changed: manual-format Available Stock export - the table now ends at Balance: the title bar spans NO. to Balance and the print area is A:H, so the Note column (kept for your own eyes, shown without fill or borders) is not printed.
 

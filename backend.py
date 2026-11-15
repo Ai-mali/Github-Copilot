@@ -346,13 +346,37 @@ def download_backup(filename: str = ""):
     return FileResponse(store.path, filename="daikin_stock.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
-def _log_export(what: str, count: int = 0, details: str = ""):
-    """Record a user export in Activity History. Never blocks or fails the download."""
+def _log_event(action: str, what: str, count: int = 0, details: str = ""):
+    """Record a user action in Activity History. Never blocks or fails the action."""
     try:
-        store.log_activity("Export", model=what, count=count, details=details)
+        store.log_activity(action, model=what, count=count, details=details)
         store.save(backup=False)
     except Exception:
         pass
+
+
+def _log_export(what: str, count: int = 0, details: str = ""):
+    _log_event("Export", what, count, details)
+
+
+def _catalog_changes(old: list[dict], new: list[dict]):
+    """(added, removed, changed) between two catalog lists, for Activity History."""
+    o = {e["model"].lower(): e for e in old}
+    n = {e["model"].lower(): e for e in new}
+    added = [n[k]["model"] for k in n if k not in o]
+    removed = [o[k]["model"] for k in o if k not in n]
+    changed = []
+    for k in n:
+        if k not in o:
+            continue
+        parts = []
+        for f, label in (("category", "Category"), ("type", "Type"), ("hp", "HP"), ("pair", "Pair")):
+            a, b = str(o[k].get(f) or ""), str(n[k].get(f) or "")
+            if a != b:
+                parts.append(f"{label} {a or '-'} -> {b or '-'}")
+        if parts:
+            changed.append(f"{n[k]['model']} ({'; '.join(parts)})")
+    return added, removed, changed
 
 
 @app.get("/api/export/available")
@@ -437,10 +461,27 @@ def save_model_catalog(body: ModelCatalogBody):
     """Save the catalog edited in the Model Catalog window (keeps model_catalog.bak)."""
     import model_catalog
 
+    try:
+        before = model_catalog.load_catalog()
+    except Exception:
+        before = None
     ok, err = model_catalog.save_catalog(body.entries)
     if not ok:
         return JSONResponse({"ok": False, "error": err}, status_code=400)
     _fresh()
+    if before is not None:
+        try:
+            added, removed, changed = _catalog_changes(before, model_catalog.load_catalog())
+            parts = []
+            for label, items in (("Added", added), ("Changed", changed), ("Removed", removed)):
+                if items:
+                    shown = ", ".join(items[:12]) + (f" ... (+{len(items) - 12} more)" if len(items) > 12 else "")
+                    parts.append(f"{label} {len(items)}: {shown}")
+            total = len(added) + len(removed) + len(changed)
+            if parts:
+                _log_event("Catalog Edited", "Model Catalog", total, " | ".join(parts))
+        except Exception:
+            pass
     return {"ok": True, **_catalog_payload()}
 
 

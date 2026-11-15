@@ -216,8 +216,8 @@ def _manual_groups(stock, booked, catalog):
     Returns [(category, [row dict, ...]), ...] - categories in catalog order,
     empty ones left out, 'Other' (models without a pair in the three set
     categories, and models not in the catalog) last.
-    Inside a category the complete sets come first (catalog order); sets with
-    extra indoor/outdoor units go to the bottom, highest balance first."""
+    Inside a category the Inverter rows come first, then other types, then
+    Non inverter (catalog order inside each)."""
     keys = set(stock) | set(booked)
     order = {}
     for e in catalog:
@@ -273,8 +273,10 @@ def _manual_groups(stock, booked, catalog):
                          "stock": s, "booked": bk, "note": "; ".join(extras)})
 
     def place(r):
-        # complete sets first (catalog order); sets with extras at the bottom, most balance first
-        return (1, -r["stock"], r["ord"]) if r["note"] else (0, 0, r["ord"])
+        # Inverter first, then the other types, Non inverter last; catalog order inside each
+        t = (r["type"] or "").strip().lower()
+        rank = 0 if t == "inverter" else (2 if t.startswith("non") else 1)
+        return (rank, r["ord"])
 
     groups = {}
     for r in rows:

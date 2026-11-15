@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.12 - 2026-11-15
+- Changed: manual-format export - inside every group the rows are ordered by Type: Inverter first, then other types, Non inverter last (catalog order inside each). Rows with extra indoor/outdoor units now stay in their place instead of moving to the bottom; the Note column is unchanged.
+
 ## 1.4.11 - 2026-11-14
 - Changed: manual-format export - inside each group the complete indoor/outdoor sets come first; sets with extra indoor or outdoor units move to the bottom of the group (highest balance first), so the clean rows read together.
 - Changed: Wall Mounted, Ceiling Cassette and Conceal Duct only list models that have a pair in `model_catalog.xlsx`; a model without a pair goes to the "Other" group (with a note) until you set its pair in the Model Catalog window.

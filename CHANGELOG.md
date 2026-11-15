@@ -4,6 +4,11 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.18 - 2026-11-15
+- Changed: Sell Record table for the small laptop screen - Date in / Dispatched / Warranty / Quantity / Status columns are narrower and the freed width goes to Model and Destination (customer name), so names are cut off far less; the table no longer needs a horizontal scroll at 1280px.
+- Changed: Sell Record warranty shows a green (amber / red) dot plus the days ("364 days") instead of the word "Active"; hover the cell for the state and expiry date.
+- Changed: the small (BRAND) tag after the model name shrinks first, so the model name stays readable.
+
 ## 1.4.17 - 2026-11-15
 - Added: Activity History now records every Model Catalog save as a "Catalog Edited" entry listing what was added, changed (Category / Type / HP / Pair, old -> new) and removed. A save that changes nothing is not logged.
 

@@ -6155,7 +6155,7 @@ body.theme-light .tl-status-badge {
    every column lines up. On expand, the "moves" values (Destination,
    Date in, Dispatched, Warranty) leave the parent row and render on
    each unit row in the same grid tracks. */
-.tl-grid { min-width: 980px; }
+.tl-grid { min-width: 880px; }
 .tl-g { display: grid; grid-template-columns: var(--tl-cols); align-items: center; }
 .tl-center { justify-self: center; text-align: center; }
 
@@ -6284,7 +6284,9 @@ body.theme-light .tl-cust-units {
 .tl-model-brand {
   font-size: 9.5px; font-weight: 800; letter-spacing: .04em;
   color: var(--brand-ink);
-  opacity: .85; white-space: nowrap; flex: none;
+  opacity: .85; white-space: nowrap;
+  /* the brand tag gives way first, so the model name stays readable */
+  flex: 0 20 auto; min-width: 22px; overflow: hidden; text-overflow: ellipsis;
 }
 /* Per-brand unit chips inside a sale-batch header */
 .tl-batch-meta { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
@@ -16231,13 +16233,14 @@ function renderTrackList(searchTerm, keepPage) {
    expanded they appear on EACH unit row instead, in the same grid tracks. */
 const TL_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const TL_COLS = [
-  { key: 'model',    label: 'Model',       w: 'minmax(200px,1.6fr)', fixed: true },
-  { key: 'customer', label: 'Destination', w: 'minmax(110px,.7fr)',  moves: true },
-  { key: 'dateIn',   label: 'Date in',     w: 'minmax(120px,.8fr)',  moves: true },
-  { key: 'dateOut',  label: 'Dispatched',  w: 'minmax(120px,.8fr)',  moves: true },
-  { key: 'warranty', label: 'Warranty',    w: 'minmax(140px,.85fr)', moves: true },
-  { key: 'qty',      label: 'Quantity',    w: '90px' },
-  { key: 'status',   label: 'Status',      w: '110px' },
+  /* narrow date / warranty / qty / status columns: the freed width goes to Model and Destination */
+  { key: 'model',    label: 'Model',       w: 'minmax(210px,1.5fr)', fixed: true },
+  { key: 'customer', label: 'Destination', w: 'minmax(150px,1.3fr)', moves: true },
+  { key: 'dateIn',   label: 'Date in',     w: 'minmax(100px,.25fr)', moves: true },
+  { key: 'dateOut',  label: 'Dispatched',  w: 'minmax(100px,.25fr)', moves: true },
+  { key: 'warranty', label: 'Warranty',    w: 'minmax(84px,.15fr)',  moves: true },
+  { key: 'qty',      label: 'Quantity',    w: '66px' },
+  { key: 'status',   label: 'Status',      w: '104px' },
 ];
 /* Filter Columns: every column except Model can be hidden. */
 const TRACK_COL_DEFS = TL_COLS.filter(c => !c.fixed).map(c => [c.key, c.label]);
@@ -16303,8 +16306,11 @@ function tlWarrantyCell(items) {
     return '<span class="tl-warr w-mixed"><i></i>Mixed</span>';
   }
   const w = items[0].warranty || {};
-  const title = w.expiry ? ` title="Warranty ${w.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(fmtDMY(w.expiry))}"` : '';
-  return `<span class="tl-warr ${tlWarrantyCls(w)}"${title}>${escapeHtml(tlWarrantyLabel(w))}</span>`;
+  const word = { active: 'Active', expiring: 'Expiring soon', expired: 'Expired' }[w.status] || '';
+  const title = w.expiry ? ` title="${word}: warranty ${w.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(fmtDMY(w.expiry))}"` : '';
+  /* green / amber / red dot says the state; only the days are written (the word is in the tooltip) */
+  const txt = (w.status === 'active' || w.status === 'expiring') ? `${w.daysRemaining} days` : tlWarrantyLabel(w);
+  return `<span class="tl-warr ${tlWarrantyCls(w)}"${title}>${w.status && w.status !== 'none' ? '<i></i>' : ''}${escapeHtml(txt)}</span>`;
 }
 
 /* Status: future Date Out = Booked (amber), otherwise Dispatched (blue). */

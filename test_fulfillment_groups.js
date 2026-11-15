@@ -142,8 +142,8 @@ check('different days -> range', tlDateInLabel(diffDay) === '05/10/2025 \u2013 0
 check('never Various', tlDateInLabel(diffDay).indexOf('Various') < 0);
 
 /* ---- warranty: shared value or Mixed ---- */
-check('shared warranty -> Active · N days',
-  tlWarrantyCell([rec('M','a','c',PAST), rec('M','b','c',PAST)]).includes('Active \u00b7 366 days'));
+check('shared warranty -> green dot + N days (no "Active" word)',
+  (h => h.includes('<i></i>366 days') && h.includes('w-active') && !h.includes('>Active'))(tlWarrantyCell([rec('M','a','c',PAST), rec('M','b','c',PAST)])));
 check('expired -> Expired label',
   tlWarrantyCell([rec('M','a','c',PAST,'2025-01-01',{status:'expired',daysRemaining:0,expiry:'2024-01-01'})]).includes('Expired'));
 const mixed = tlWarrantyCell([

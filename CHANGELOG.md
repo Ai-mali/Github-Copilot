@@ -4,6 +4,13 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.20 - 2026-11-15
+- Changed: Sell Record - the Destination header and the customer names are centered in their column (like the other columns), and the customer name font is a little smaller (12px -> 11px). Same in the expanded unit list.
+
+## 1.4.19 - 2026-11-15
+- Changed: Sell Record - the (BRAND) tag now sits under the model name instead of beside it, so a long model name and its brand are both shown in full (e.g. MTD 200-FLOW 690M3/H + KRUGER FAN).
+- Changed: Sell Record - Date in / Dispatched / Warranty columns have a fixed width, so the gaps between them are smaller and the spare width goes to Model and Destination.
+
 ## 1.4.18 - 2026-11-15
 - Changed: Sell Record table for the small laptop screen - Date in / Dispatched / Warranty / Quantity / Status columns are narrower and the freed width goes to Model and Destination (customer name), so names are cut off far less; the table no longer needs a horizontal scroll at 1280px.
 - Changed: Sell Record warranty shows a green (amber / red) dot plus the days ("364 days") instead of the word "Active"; hover the cell for the state and expiry date.

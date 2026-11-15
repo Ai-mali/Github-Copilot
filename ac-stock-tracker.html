@@ -6285,9 +6285,11 @@ body.theme-light .tl-cust-units {
   font-size: 9.5px; font-weight: 800; letter-spacing: .04em;
   color: var(--brand-ink);
   opacity: .85; white-space: nowrap;
-  /* the brand tag gives way first, so the model name stays readable */
-  flex: 0 20 auto; min-width: 22px; overflow: hidden; text-overflow: ellipsis;
+  min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
+/* model name with the (BRAND) tag on a second line: neither is ever cut by the other */
+.tl-model-stack { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; gap: 1px; }
+.tl-model-stack .tl-model-brand { flex: none; }
 /* Per-brand unit chips inside a sale-batch header */
 .tl-batch-meta { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .tl-batch-brand {
@@ -6301,7 +6303,7 @@ body.theme-light .tl-cust-units {
 
 /* Shared cell renderers — parent and unit rows use the same styles so a
    value looks identical before and after it "moves down" on expand. */
-.tl-dest { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); font-weight: 600; min-width: 0; }
+.tl-dest { display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11px; color: var(--text); font-weight: 600; min-width: 0; }
 .tl-dest-dot { width: 8px; height: 8px; border-radius: 3px; flex: none; }
 .tl-dest > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tl-date { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-sub); min-width: 0; }
@@ -16236,9 +16238,9 @@ const TL_COLS = [
   /* narrow date / warranty / qty / status columns: the freed width goes to Model and Destination */
   { key: 'model',    label: 'Model',       w: 'minmax(210px,1.5fr)', fixed: true },
   { key: 'customer', label: 'Destination', w: 'minmax(150px,1.3fr)', moves: true },
-  { key: 'dateIn',   label: 'Date in',     w: 'minmax(100px,.25fr)', moves: true },
-  { key: 'dateOut',  label: 'Dispatched',  w: 'minmax(100px,.25fr)', moves: true },
-  { key: 'warranty', label: 'Warranty',    w: 'minmax(84px,.15fr)',  moves: true },
+  { key: 'dateIn',   label: 'Date in',     w: '104px',               moves: true },
+  { key: 'dateOut',  label: 'Dispatched',  w: '104px',               moves: true },
+  { key: 'warranty', label: 'Warranty',    w: '88px',                moves: true },
   { key: 'qty',      label: 'Quantity',    w: '66px' },
   { key: 'status',   label: 'Status',      w: '104px' },
 ];
@@ -16455,7 +16457,7 @@ function renderTrackTable(list, modelColors) {
         const gBrand = resolveItemBrand(g.items[0]);
         const gBrandTag = gBrand && gBrand !== 'UNBRANDED'
           ? `<span class="tl-model-brand" style="--brand-c:${getBrandColor(gBrand)};" title="Brand: ${escapeHtml(gBrand)}">(${escapeHtml(gBrand)})</span>` : '';
-        return `<div class="tl-model-cell">${selbox || ''}<button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="--brand-c:${mc};">${pkgSvg}</span><span class="tl-model-name tl-copy" style="--brand-c:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span>${gBrandTag}</div>`;
+        return `<div class="tl-model-cell">${selbox || ''}<button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="--brand-c:${mc};">${pkgSvg}</span><span class="tl-model-stack"><span class="tl-model-name tl-copy" style="--brand-c:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span>${gBrandTag}</span></div>`;
       }
       case 'customer': return destHTML(g.customer, '');
       case 'dateIn':
@@ -16489,7 +16491,7 @@ function renderTrackTable(list, modelColors) {
   const childHeadHTML = `<div class="tl-g tl-u-head">
     <div class="tl-u-id"><span class="tl-u-no">No</span><span>Serial / description</span></div>
     ${L.vis.filter(c => c.key !== 'model' && c.key !== 'status').map(c =>
-      `<div class="${c.key === 'customer' ? '' : 'tl-center'}" style="grid-column:${L.pos[c.key]}">${c.label}</div>`).join('')}
+      `<div class="tl-center" style="grid-column:${L.pos[c.key]}">${c.label}</div>`).join('')}
     <div class="tl-u-actions" style="grid-column:${L.actionsCol}">Actions</div>
   </div>`;
 
@@ -16511,7 +16513,7 @@ function renderTrackTable(list, modelColors) {
   };
 
   const headHTML = `<div class="tl-g tl-g-head">${L.vis.map(c =>
-    `<div class="${c.key === 'model' || c.key === 'customer' ? '' : 'tl-center'}">${c.label}</div>`).join('')}</div>`;
+    `<div class="${c.key === 'model' ? '' : 'tl-center'}">${c.label}</div>`).join('')}</div>`;
 
   /* One checkout that spans several models renders as adjacent groups inside
      a bordered batch block with a small header — one box per sale. */

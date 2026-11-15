@@ -4583,8 +4583,15 @@ body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 .cat-empty { padding: 26px 0; text-align: center; color: var(--text-muted); }
 
 /* Brand sidebar: tick (Ctrl+click or click the round icon) */
-#view-available .tl-cust-item { user-select: none; }
-#view-available .tl-cust-item .tl-cust-avatar { cursor: pointer; }
+#view-available .tl-cust-item, #view-track-list .tl-cust-item { user-select: none; }
+#view-available .tl-cust-item .tl-cust-avatar, #view-track-list .tl-cust-item[data-cust] .tl-cust-avatar { cursor: pointer; }
+/* Sell Record export button while customers are ticked: green, with its label */
+#view-track-list #track-export-btn.has-ticks {
+  width: auto; min-width: 0; padding-left: 10px; padding-right: 10px;
+  background: var(--green-bright); border-color: var(--green-bright); color: #04130b; font-weight: 700;
+}
+#view-track-list #track-export-btn.has-ticks #track-export-label { display: inline; }
+body.theme-light #view-track-list #track-export-btn.has-ticks { color: #fff; }
 .tl-cust-avatar .av-tick {
   position: absolute; inset: 0; border-radius: 50%;
   display: grid; place-items: center;
@@ -11076,6 +11083,8 @@ const DB = {
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
   trackOpenGroups: new Set(), // expanded fulfillment groups (group keys)
   trackSelBatches: new Set(), // sale batch keys ticked for scoped export
+  trackCustTicked: new Set(), // customers ticked in the Sell Record sidebar (Ctrl+click / avatar click) for export
+  trackCustAnchor: null, // last customer clicked, for Shift+click range selection
   trackBookedOnly: false, // BOOKED pill: show only future-dated dispatches
 
   trackCols: { customer: true, dateIn: true, dateOut: true, warranty: true, qty: true, status: true },
@@ -14939,6 +14948,7 @@ document.addEventListener('keydown', e => {
   const m = document.getElementById('brand-ctx');
   if (m && m.classList.contains('show')) { hideBrandCtx(); return; }
   if (DB.activeTab === 'available' && (DB.availTicked.size || DB.availAnchor) && !document.querySelector('.modal-overlay.open')) clearAvailBrandTicks();
+  if (DB.activeTab === 'track-list' && (DB.trackCustTicked.size || DB.trackCustAnchor) && !document.querySelector('.modal-overlay.open')) clearTrackCustTicks();
 });
 
 /* Telegram-style drag-to-resize for the brand sidebars. Dragging past the
@@ -16178,7 +16188,9 @@ function getFilteredTrackList() {
   if (DB.trackBookedOnly) {
     list = list.filter(isTrackBooked);
   }
-  if (DB.trackFilter !== 'ALL') {
+  if (DB.trackCustTicked.size) {
+    list = list.filter(r => DB.trackCustTicked.has(r.customer || 'Unknown'));
+  } else if (DB.trackFilter !== 'ALL') {
     list = list.filter(r => r.customer === DB.trackFilter);
   }
   if (DB.trackWarrantyFilter && DB.trackWarrantyFilter !== 'ALL') {
@@ -17048,6 +17060,9 @@ function renderTrackSidebar() {
   if (!custListEl || !warrListEl) return;
 
   const customers = trackCustomerAggregates();
+  // forget ticked customers that no longer have records
+  [...DB.trackCustTicked].forEach(n => { if (!customers.some(c => c.name === n)) DB.trackCustTicked.delete(n); });
+  if (DB.trackCustAnchor && !customers.some(c => c.name === DB.trackCustAnchor)) DB.trackCustAnchor = null;
 
   // Tab chip counts
   const cc = document.getElementById('tl-side-cust-count');
@@ -17064,11 +17079,14 @@ function renderTrackSidebar() {
   const mkCust = (key, name, units, last, color, initials, worst) => {
     const dbl = key === 'ALL' ? ''
       : ` ondblclick="event.stopPropagation(); openRenameModal('customer','${escapeHtml(escapeJs(name))}')"`;
+    const ticked = key !== 'ALL' && DB.trackCustTicked.has(key);
+    const active = !DB.trackCustTicked.size && DB.trackFilter === key;
     return `
-    <button type="button" class="tl-cust-item${DB.trackFilter === key ? ' active' : ''}"
-            onclick="selectTrackCustomer('${escapeHtml(escapeJs(key))}')"${dbl} title="${escapeHtml(name)} — filter records${dbl ? ' · double-click to rename' : ''}">
+    <button type="button" class="tl-cust-item${active ? ' active' : ''}${ticked ? ' brand-ticked' : ''}"
+            data-cust="${escapeHtml(key)}"
+            onclick="trackCustClick(event, '${escapeHtml(escapeJs(key))}')"${dbl} title="${escapeHtml(name)} — filter records${dbl ? ' · double-click to rename' : ''}">
       <span class="tl-cust-avatar" style="--brand-c:${color};">
-        ${escapeHtml(initials)}<i class="tl-wdot" style="background:${TL_WORST_DOT[worst]}"></i>
+        ${escapeHtml(initials)}${key === 'ALL' ? '' : '<span class="av-tick">&#10003;</span>'}
       </span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(name)}</span><span class="tl-cust-units">${units} Units</span></span>
@@ -17125,6 +17143,127 @@ function toggleTrackSidebarMini() {
   DB.trackSidebarMini = !DB.trackSidebarMini;
   applyTrackSidebarMini();
   apiPost('/api/ui-prefs', { prefs: { tlMini: DB.trackSidebarMini } }).catch(() => {});
+}
+
+/* ---- Sell Record sidebar: tick customers for export (same as the Available brands) ---- */
+function trackCustClick(ev, key) {
+  const onAvatar = !!(ev.target.closest && ev.target.closest('.tl-cust-avatar'));
+  if (key !== 'ALL' && ev.shiftKey) {
+    ev.preventDefault();
+    const visible = [...document.querySelectorAll('#tl-customer-list .tl-cust-item[data-cust]')]
+      .map(b => b.dataset.cust).filter(n => n !== 'ALL');
+    const ci = visible.indexOf(key);
+    if (ci < 0) return;
+    let anchor = DB.trackCustAnchor;
+    if (!anchor || !visible.includes(anchor)) anchor = visible[0];
+    const ai = visible.indexOf(anchor);
+    if (!(ev.ctrlKey || ev.metaKey)) DB.trackCustTicked.clear();
+    visible.slice(Math.min(ai, ci), Math.max(ai, ci) + 1).forEach(n => DB.trackCustTicked.add(n));
+    DB.trackFilter = 'ALL';
+    renderTrackList(undefined, false);
+    return;
+  }
+  if (key !== 'ALL' && (ev.ctrlKey || ev.metaKey || onAvatar)) {
+    ev.preventDefault();
+    DB.trackCustAnchor = key;
+    if (DB.trackCustTicked.has(key)) DB.trackCustTicked.delete(key); else DB.trackCustTicked.add(key);
+    DB.trackFilter = 'ALL';
+    renderTrackList(undefined, false);
+    return;
+  }
+  hideBrandHint();
+  DB.trackCustTicked.clear();
+  DB.trackCustAnchor = key === 'ALL' ? null : key;
+  selectTrackCustomer(key);
+}
+
+function clearTrackCustTicks() {
+  DB.trackCustTicked.clear();
+  DB.trackCustAnchor = null;
+  renderTrackList(undefined, false);
+}
+
+function initTrackCustInteractions() {
+  const listEl = document.getElementById('tl-customer-list');
+  if (!listEl || listEl._custInit) return;
+  listEl._custInit = true;
+  listEl.addEventListener('mousemove', e => {
+    const av = e.target.closest && e.target.closest('.tl-cust-avatar');
+    const btn = av && av.closest('.tl-cust-item[data-cust]');
+    if (!btn || btn.dataset.cust === 'ALL') { hideBrandHint(); return; }
+    let tip = document.getElementById('brand-hint');
+    if (!tip) { tip = document.createElement('div'); tip.id = 'brand-hint'; document.body.appendChild(tip); }
+    tip.classList.remove('show');
+    clearTimeout(_brandHintTimer);
+    if (_brandHintBtn && _brandHintBtn !== btn && _brandHintBtn.dataset.t) _brandHintBtn.title = _brandHintBtn.dataset.t;
+    if (btn.title) { btn.dataset.t = btn.title; btn.removeAttribute('title'); }
+    _brandHintBtn = btn;
+    const x = e.clientX, y = e.clientY;
+    _brandHintTimer = setTimeout(() => {
+      const on = DB.trackCustTicked.has(btn.dataset.cust);
+      tip.innerHTML = '<b>Ctrl+Click or Shift+Click</b> to ' + (on ? 'Unselect' : 'Select');
+      tip.style.left = Math.min(x + 12, window.innerWidth - tip.offsetWidth - 8) + 'px';
+      tip.style.top = (y + 18) + 'px';
+      tip.classList.add('show');
+    }, 300);
+  });
+  listEl.addEventListener('mousedown', e => {
+    if (e.shiftKey && e.target.closest && e.target.closest('.tl-cust-item[data-cust]')) e.preventDefault();
+  });
+  ['mouseleave', 'mousedown', 'scroll', 'contextmenu'].forEach(ev => listEl.addEventListener(ev, hideBrandHint, ev === 'scroll'));
+  listEl.addEventListener('contextmenu', e => {
+    const btn = e.target.closest && e.target.closest('.tl-cust-item[data-cust]');
+    if (!btn || btn.dataset.cust === 'ALL') return;
+    e.preventDefault();
+    showCustCtx(btn.dataset.cust, e.clientX, e.clientY);
+  });
+}
+
+function _custStats(name) {
+  const recs = DB.trackList.filter(r => (r.customer || 'Unknown') === name);
+  const sales = new Set(recs.map(tlSaleKey)).size;
+  return { units: recs.length, sales };
+}
+
+function showCustCtx(key, x, y) {
+  let m = document.getElementById('brand-ctx');
+  if (!m) { m = document.createElement('div'); m.id = 'brand-ctx'; document.body.appendChild(m); }
+  const dl = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>';
+  const ini = n => escapeHtml(trackCustomerInitials(n));
+  const multi = DB.trackCustTicked.size >= 2 && DB.trackCustTicked.has(key);
+  if (multi) {
+    const sel = [...DB.trackCustTicked].sort((a, b) => a.localeCompare(b));
+    const st = sel.map(_custStats);
+    const units = st.reduce((s, v) => s + v.units, 0), sales = st.reduce((s, v) => s + v.sales, 0);
+    const shown = sel.slice(0, 4), more = sel.length - shown.length;
+    m.style.setProperty('--ac', '#26d07c');
+    m.innerHTML =
+      `<div class="bcx-head">
+         <div class="bcx-stack">${shown.map(n => `<i style="background:${trackCustomerColor(n)}">${ini(n)}</i>`).join('')}${more ? `<i style="background:#3a4852">+${more}</i>` : ''}</div>
+         <div class="bcx-name">${sel.length} customers</div>
+         <div class="bcx-sub">selected for export</div>
+       </div>
+       <div class="bcx-stats"><div><b>${units}</b><span>Units</span></div><div><b>${sales}</b><span>Sales</span></div></div>
+       <button type="button" class="bcx-cta" id="bcx-export">${dl}<span>Export Selected<small>${sel.length} customers &middot; ${units} units</small></span></button>
+       <div class="bcx-note">One Excel file &middot; one sheet per customer</div>`;
+    m.querySelector('#bcx-export').onclick = () => { hideBrandCtx(); exportTrackCustomers(sel, true); };
+  } else {
+    const st = _custStats(key);
+    m.style.setProperty('--ac', trackCustomerColor(key));
+    m.innerHTML =
+      `<div class="bcx-head">
+         <div class="bcx-av" style="background:${trackCustomerColor(key)}">${ini(key)}</div>
+         <div class="bcx-name" title="${escapeHtml(key)}">${escapeHtml(key)}</div>
+         <div class="bcx-sub">${st.units} unit${st.units === 1 ? '' : 's'} purchased</div>
+       </div>
+       <div class="bcx-stats"><div><b>${st.units}</b><span>Units</span></div><div><b>${st.sales}</b><span>Sales</span></div></div>
+       <button type="button" class="bcx-cta" id="bcx-export" ${st.units ? '' : 'disabled'}>${dl}<span>Export this Customer<small>${st.units} unit${st.units === 1 ? '' : 's'}</small></span></button>
+       <div class="bcx-note">${st.units ? 'Excel file &middot; 1 sheet' : 'Nothing to export'}</div>`;
+    m.querySelector('#bcx-export').onclick = () => { hideBrandCtx(); exportTrackCustomers([key], false); };
+  }
+  m.classList.add('show');
+  m.style.left = Math.max(6, Math.min(x, window.innerWidth - m.offsetWidth - 8)) + 'px';
+  m.style.top = Math.max(6, Math.min(y, window.innerHeight - m.offsetHeight - 8)) + 'px';
 }
 
 function selectTrackCustomer(name) {
@@ -17627,16 +17766,22 @@ function tlToggleSaleSelect(key) {
 }
 function clearTrackSel() {
   DB.trackSelBatches.clear();
+  DB.trackCustTicked.clear();
+  DB.trackCustAnchor = null;
   renderTrackList(DB.trackSearch);
 }
 function updateTrackSelBadge() {
   const n = DB.trackSelBatches.size;
+  const nc = n ? 0 : DB.trackCustTicked.size;        // ticked sales win over ticked customers
   const pill = document.getElementById('track-sel-pill');
   const cnt = document.getElementById('track-sel-count');
   const lbl = document.getElementById('track-export-label');
-  if (pill) pill.style.display = n ? 'inline-flex' : 'none';
-  if (cnt) cnt.textContent = `${n} selected`;
-  if (lbl) lbl.textContent = n ? `Export ${n} sale${n === 1 ? '' : 's'}` : 'Export Excel';
+  const btn = document.getElementById('track-export-btn');
+  if (pill) pill.style.display = (n || nc) ? 'inline-flex' : 'none';
+  if (cnt) { cnt.textContent = `${n} selected`; cnt.style.display = n ? '' : 'none'; }   // customers: only the x (the green button already says how many)
+  if (lbl) lbl.textContent = n ? `Export ${n} sale${n === 1 ? '' : 's'}`
+    : nc ? `Export ${nc} customer${nc === 1 ? '' : 's'}` : 'Export Excel';
+  if (btn) btn.classList.toggle('has-ticks', !!(n || nc));
 }
 
 /* Per-sale filename stamp: '<Customer>-<DD-MM-YYYY> <HH_MM>' —
@@ -17652,6 +17797,38 @@ function tlFileSafe(s) {
   return String(s || '').replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, ' ').trim() || 'sell_record';
 }
 
+/* One Excel file, one sheet per customer (all of that customer's records). */
+async function exportTrackCustomers(names, clearAfter) {
+  const known = new Set(DB.trackList.map(r => r.customer || 'Unknown'));
+  const list = [...names].filter(n => known.has(n)).sort((a, b) => a.localeCompare(b));
+  if (!list.length) { showToast('Nothing to export for the selected customer(s).', '&#9888;'); return; }
+  const rowOf = r => ({
+    model: r.model, serial: r.serial, dateIn: fmtDMY(r.dateIn), dateOut: fmtDMYTime(r.dateOut),
+    customer: r.customer, wstatus: tlWarrantyLabel(r.warranty), wexpiry: fmtDMY((r.warranty || {}).expiry),
+    status: isTrackBooked(r) ? 'Booked' : 'Dispatched',
+  });
+  const sheets = list.map(n => ({
+    name: n, title: `Sell Records - ${n}`,
+    rows: getSortedTrackList(DB.trackList.filter(r => (r.customer || 'Unknown') === n)).map(rowOf),
+  }));
+  const d = new Date(), p = v => String(v).padStart(2, '0');
+  const stamp = `${p(d.getDate())}-${p(d.getMonth() + 1)}-${String(d.getFullYear()).slice(2)}`;
+  const label = list.length === 1 ? list[0] : `${list.length} customers`;
+  const fname = tlFileSafe(`VRE-Sell Record-${label}-${stamp}`);
+  try {
+    const res = await fetch('/api/export/sales', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'Sell Records', filename: fname, rows: [], sheets }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    await saveBlobWithPicker(await res.blob(), fname + '.xlsx');
+  } catch (e) {
+    showToast('Export failed: ' + e.message);
+    return;
+  }
+  if (clearAfter) clearTrackCustTicks();
+}
+
 /* One Excel file per ticked sale; one merged file when nothing is ticked. */
 async function exportTrackSales() {
   const sel = DB.trackSelBatches;
@@ -17662,6 +17839,7 @@ async function exportTrackSales() {
     wexpiry: fmtDMY((r.warranty || {}).expiry),
     status: 'Dispatched',
   });
+  if (!sel.size && DB.trackCustTicked.size) { await exportTrackCustomers([...DB.trackCustTicked], true); return; }
   const jobs = [];
   if (sel.size) {
     const byBatch = new Map();
@@ -21339,6 +21517,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
   initSideResizer('tl-side-resizer', 'tl-sidebar', 'tlW', 'trackSidebarMini', applyTrackSidebarMini);
   initAvailBrandInteractions();
+  initTrackCustInteractions();
   initStockoutRightResizer();
   initStockoutVSplit();
   initReturnLeftResizer();

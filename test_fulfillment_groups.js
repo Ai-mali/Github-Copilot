@@ -254,6 +254,7 @@ eval(extractFn('tlSaleKey'));
 eval(extractFn('tlSaleStamp'));
 eval(extractFn('tlFileSafe'));
 eval('async ' + extractFn('exportTrackSales'));
+eval('async ' + extractFn('exportTrackCustomers'));
 
 check('sale key: batch passthrough',
   tlSaleKey(rec('M', 'S', 'C', PAST, null, null, 'SALE-20261009-150723-ab12')) === 'SALE-20261009-150723-ab12');
@@ -271,7 +272,9 @@ check('filesafe: empty -> sell_record', tlFileSafe('<>') === 'sell_record');
 
 /* Stubs so the real exportTrackSales can run headless. */
 let __fetchJobs = [], __saves = [], __toasts = [];
-var DB = { trackSelBatches: new Set(), trackList: [], trackSortDir: 'desc' };
+var DB = { trackSelBatches: new Set(), trackCustTicked: new Set(), trackList: [], trackSortDir: 'desc' };
+let __custCleared = 0;
+function clearTrackCustTicks() { __custCleared++; DB.trackCustTicked.clear(); }
 function getFilteredTrackList() { return DB.__filtered || []; }
 async function fetch(url, opts) {
   __fetchJobs.push({ url, body: JSON.parse(opts.body) });
@@ -333,6 +336,25 @@ DB.trackList = [
   check('stale tick -> nothing exported',
     __fetchJobs.length === 0 && __toasts.includes('No ticked sales found in the records'));
   DB.trackSelBatches = new Set();
+
+  /* ticked customers -> ONE workbook, one sheet per customer, then ticks are cleared */
+  DB.trackCustTicked = new Set(['Neath', 'GCNP']);
+  __fetchJobs = []; __saves = []; __toasts = []; __custCleared = 0;
+  await exportTrackSales();
+  check('ticked customers -> one workbook job', __fetchJobs.length === 1 && __saves.length === 1);
+  check('one sheet per customer (sorted), all their rows',
+    __fetchJobs.length === 1 && JSON.stringify(__fetchJobs[0].body.sheets.map(x => [x.name, x.rows.length])) === JSON.stringify([['GCNP', 1], ['Neath', 2]]));
+  check('customers filename names the count', /^VRE-Sell Record-2 customers-\d{2}-\d{2}-\d{2}\.xlsx$/.test(__saves[0]));
+  check('ticks cleared after the export', __custCleared === 1 && DB.trackCustTicked.size === 0);
+
+  /* one customer -> file named after the customer; unknown customer -> nothing */
+  __fetchJobs = []; __saves = []; __toasts = [];
+  await exportTrackCustomers(['Neath'], false);
+  check('single customer filename', __saves.length === 1 && /^VRE-Sell Record-Neath-\d{2}-\d{2}-\d{2}\.xlsx$/.test(__saves[0]));
+  __fetchJobs = []; __saves = []; __toasts = [];
+  await exportTrackCustomers(['Nobody'], false);
+  check('unknown customer -> nothing exported', __fetchJobs.length === 0 && __toasts.length === 1);
+  DB.trackCustTicked = new Set();
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

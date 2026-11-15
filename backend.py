@@ -489,6 +489,7 @@ class SalesExportBody(BaseModel):
     title: str = "Sell Records"
     filename: str = "sell_records_export"
     rows: list[dict] = []
+    sheets: list[dict] = Field(default=[], max_length=500)   # [{name, title, rows}] -> one sheet per customer
 
 
 @app.post("/api/export/sales")
@@ -499,9 +500,15 @@ def export_sales_workbook(body: SalesExportBody):
     import re
     import excel_exports
 
-    data = excel_exports.build_sell_workbook(body.rows, body.title)
+    if body.sheets:
+        data = excel_exports.build_sell_workbook_multi(body.sheets)
+        n_rows = sum(len(sh.get("rows") or []) for sh in body.sheets)
+        what = f"{len(body.sheets)} customer sheet(s) | {n_rows} rows"
+    else:
+        data = excel_exports.build_sell_workbook(body.rows, body.title)
+        what = f"{body.title} | {len(body.rows)} rows"
     fname = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", body.filename).strip() or "sell_records_export"
-    _log_export("Sell Records", 0, f"{body.title} | {len(body.rows)} rows | File: {fname}.xlsx")
+    _log_export("Sell Records", 0, f"{what} | File: {fname}.xlsx")
     return Response(
         content=data,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

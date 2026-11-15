@@ -436,12 +436,9 @@ def sell_rows(track: list[dict], now=None) -> list[dict]:
     return rows
 
 
-def build_sell_workbook(rows: list[dict], title: str = "Sell Records") -> bytes:
+def _fill_sell_sheet(ws, rows: list[dict], title: str = "Sell Records") -> None:
     """One row per sold unit: NO | Model | Serial | Date In | Dispatched At |
     Customer | Warranty Status | Warranty Expiry | Status."""
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Sell Record"
     ws.sheet_view.zoomScale = 85
 
     headers = ["NO.", "Model", "Serial Num/Desc", "Date In", "Dispatched At",
@@ -478,6 +475,29 @@ def build_sell_workbook(rows: list[dict], title: str = "Sell Records") -> bytes:
     for col, w in zip("ABCDEFGHI", (7, 24, 22, 14, 18, 24, 16, 16, 12)):
         ws.column_dimensions[col].width = w
 
+
+def build_sell_workbook(rows: list[dict], title: str = "Sell Records") -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sell Record"
+    _fill_sell_sheet(ws, rows, title)
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+def build_sell_workbook_multi(sheets: list[dict]) -> bytes:
+    """One workbook, one sheet per customer: sheets = [{name, title, rows}, ...]."""
+    wb = Workbook()
+    used: set = set()
+    first = True
+    for sh in sheets:
+        ws = wb.active if first else wb.create_sheet()
+        first = False
+        ws.title = _sheet_title(sh.get("name") or "Customer", used)
+        _fill_sell_sheet(ws, sh.get("rows") or [], sh.get("title") or ws.title)
+    if first:                       # no sheets given: still a valid, empty workbook
+        _fill_sell_sheet(wb.active, [], "Sell Records")
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

@@ -346,6 +346,15 @@ def download_backup(filename: str = ""):
     return FileResponse(store.path, filename="daikin_stock.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
+def _log_export(what: str, count: int = 0, details: str = ""):
+    """Record a user export in Activity History. Never blocks or fails the download."""
+    try:
+        store.log_activity("Export", model=what, count=count, details=details)
+        store.save(backup=False)
+    except Exception:
+        pass
+
+
 @app.get("/api/export/available")
 def export_available_workbook(brand: list[str] = Query(default=[]), layout: str = ""):
     """Per-model summary workbook in the user's manual 'Available Stock'
@@ -368,6 +377,7 @@ def export_available_workbook(brand: list[str] = Query(default=[]), layout: str 
         label = chosen[0] if len(chosen) == 1 else f"{len(chosen)} brands"
         label = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", label).strip() or "brands"
         fname = f"VRE-{label}-Stock-{stamp}.xlsx"
+        kind = "Brands: " + ", ".join(chosen)
     elif layout.strip().lower() == "manual":
         import model_catalog
         model_catalog.ensure_catalog()
@@ -375,10 +385,20 @@ def export_available_workbook(brand: list[str] = Query(default=[]), layout: str 
             store.records, now, returns=store.returns,
             catalog=model_catalog.load_catalog())
         fname = "VRE-Air Conditioner Stock-" + stamp + ".xlsx"
+        kind = "Layout: Manual format"
     else:
         data = excel_exports.build_available_workbook(store.records, now,
                                                       returns=store.returns)
         fname = "VRE-Air Conditioner Stock-" + stamp + ".xlsx"
+        kind = "Layout: Standard"
+    try:
+        stock, booked = excel_exports._count_stock(store.records, now)
+        wanted = {b.upper() for b in chosen}
+        units = sum(n for k, n in list(stock.items()) + list(booked.items())
+                    if not wanted or k[0].upper() in wanted)
+    except Exception:
+        units = 0
+    _log_export("Available Stock", units, f"{kind} | File: {fname}")
     return Response(
         content=data,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -440,6 +460,7 @@ def export_sales_workbook(body: SalesExportBody):
 
     data = excel_exports.build_sell_workbook(body.rows, body.title)
     fname = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", body.filename).strip() or "sell_records_export"
+    _log_export("Sell Records", 0, f"{body.title} | {len(body.rows)} rows | File: {fname}.xlsx")
     return Response(
         content=data,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

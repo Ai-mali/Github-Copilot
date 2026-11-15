@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.15 - 2026-11-15
+- Added: Activity History now records every Available Stock export (standard, manual format, per-brand) and every Sell Records export as an "Export" entry (what, layout / brands, file name, units). Exports do not create a backup snapshot.
+
 ## 1.4.14 - 2026-11-15
 - Fixed: Model Catalog window - Save is locked only by a Wall Mounted, Ceiling Cassette or Conceal Duct row whose Category or Pair you changed and that has no pair. Other categories (Panel, VRV FCU Wall Mounted, ...) and old rows you have not touched never lock Save.
 

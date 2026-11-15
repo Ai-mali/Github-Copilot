@@ -4540,7 +4540,9 @@ body.theme-light #view-available .avail-export-btn.has-ticks { color: #fff; }
 .cat-table tr.cat-need td.cat-m::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; margin-right: 7px; }
 .cat-table tr.cat-dirty td:first-child { box-shadow: inset 3px 0 var(--green-bright); }
 .cat-st { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
-.cat-st.am { color: var(--amber-ink); } .cat-st.ok { color: var(--green-bright); }
+.cat-st.am { color: var(--amber-ink); } .cat-st.bad { color: #b42318; font-weight: 600; }
+.cat-table tr.cat-nopair .cat-fld input[data-f="pair"] { border-color: #e0524a; background: rgba(224,82,74,.14); }
+.cat-warn { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: #b42318; cursor: pointer; text-decoration: underline; } .cat-st.ok { color: var(--green-bright); }
 .cat-foot { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 12px; color: var(--text-muted); }
 .cat-foot .cat-sp { flex: 1; }
 .cat-table input[readonly] { opacity: .55; cursor: default; }
@@ -10023,6 +10025,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     </div>
     <div class="modal-footer cat-foot">
       <span id="cat-dirty">No unsaved changes</span>
+      <button type="button" class="cat-warn" id="cat-warn" style="display:none;" onclick="catGoBad()"></button>
       <span class="cat-sp"></span>
       <span>Saving keeps the old list as <b>model_catalog.bak</b></span>
       <button type="button" class="btn btn-primary" id="cat-save" onclick="catSave()" disabled>Save</button>
@@ -17210,9 +17213,41 @@ function catSetQuery(v) { CAT.q = (v || '').trim().toLowerCase(); catRender(); }
 
 function _catMarkDirty(r) {
   CAT.dirty.add(r.id);
-  const b = document.getElementById('cat-save'); if (b) b.disabled = false;
   const d = document.getElementById('cat-dirty');
   if (d) d.textContent = `${CAT.dirty.size} unsaved change${CAT.dirty.size > 1 ? 's' : ''}`;
+  catSaveState();
+}
+
+/* Wall Mounted / Ceiling Cassette / Conceal Duct only hold indoor/outdoor sets: a model there
+   without a pair would go to "Other" in the export, so Save stays locked until it has a pair
+   (or its category is changed, e.g. to Other). */
+const CAT_PAIR_CATS = ['wall mounted', 'ceiling cassette', 'conceal duct'];
+function _catNeedsPair(r) {
+  return CAT_PAIR_CATS.includes((r.category || '').trim().toLowerCase()) && !!r.model.trim()
+    && !r.pair.trim() && !_catClaimed(r).has(r.model.toLowerCase());
+}
+function catSaveState() {
+  const bad = CAT.rows.filter(_catNeedsPair).length;
+  const b = document.getElementById('cat-save');
+  if (b) {
+    b.disabled = !!CAT.busy || !CAT.dirty.size || bad > 0;
+    b.title = bad ? 'Locked: every Wall Mounted / Ceiling Cassette / Conceal Duct model needs a pair' : '';
+  }
+  const w = document.getElementById('cat-warn');
+  if (w) {
+    w.style.display = bad ? '' : 'none';
+    w.textContent = bad ? `Save locked: ${bad} model${bad > 1 ? 's need a pair' : ' needs a pair'}` : '';
+    w.title = 'Wall Mounted, Ceiling Cassette and Conceal Duct need a pair (outdoor). Click to jump to it, or change its category (e.g. Other).';
+  }
+}
+function catGoBad() {
+  const r = CAT.rows.find(_catNeedsPair); if (!r) return;
+  CAT.tab = r.home; CAT.q = '';
+  const s = document.getElementById('cat-search'); if (s) s.value = '';
+  CAT.focusId = r.id; CAT.focusField = 'pair';
+  catRender();
+  const tr = document.querySelector(`#cat-body tr[data-id="${r.id}"]`);
+  if (tr) { tr.scrollIntoView({ block: 'center' }); const i = tr.querySelector('input[data-f="pair"]'); if (i && !i.readOnly) i.focus(); }
 }
 
 /* canonical spelling: typing "wall mounted" re-uses the existing "Wall Mounted" group */
@@ -17311,14 +17346,18 @@ function catRefresh() {
     const needs = _catNeeds(r);
     const partner = !r.category && !needs;
     tr.classList.toggle('cat-need', needs);
+    const nopair = _catNeedsPair(r);
+    tr.classList.toggle('cat-nopair', nopair);
     tr.classList.toggle('cat-dirty', CAT.dirty.has(r.id));
     const pi = tr.querySelector('input[data-f="pair"]');
     if (pi) { pi.readOnly = partner; pi.placeholder = partner ? 'set with its indoor unit' : ''; }
     const st = tr.querySelector('.cat-st-cell');
     if (st) st.innerHTML = needs ? '<span class="cat-st am">needs category</span>'
+      : nopair ? '<span class="cat-st bad">needs a pair</span>'
       : partner ? '<span class="cat-st">set with its indoor unit</span>'
       : CAT.dirty.has(r.id) ? '<span class="cat-st ok">edited</span>' : '';
   });
+  catSaveState();
 }
 
 function _toRoman(n) {
@@ -17406,7 +17445,7 @@ document.addEventListener('focusin', e => {
 });
 
 async function catSave() {
-  if (CAT.busy) return;
+  if (CAT.busy || CAT.rows.some(_catNeedsPair)) return;
   const keep = CAT.rows.filter(r => r.category.trim() && r.model.trim());
   const out = keep.filter(r => r.orig);
   keep.filter(r => !r.orig).forEach(r => {          // new rows go after the last row of their category
@@ -17427,7 +17466,7 @@ async function catSave() {
   } catch (e) {
     showToast(e.message || 'Could not save the Model Catalog', '&#9888;');
     if (btn) btn.disabled = false;
-  } finally { CAT.busy = false; }
+  } finally { CAT.busy = false; catSaveState(); }
 }
 
 /* Suggestion list for Category / Type with an x on every suggestion */

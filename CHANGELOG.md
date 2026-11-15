@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.13 - 2026-11-15
+- Changed: Model Catalog window - Save is locked (greyed out) while a Wall Mounted, Ceiling Cassette or Conceal Duct model has no pair. The row shows "needs a pair" with a red Pair box, and "Save locked: N models need a pair" appears in the footer (click it to jump to the row). Give it a pair or change its category (e.g. Other) to unlock Save.
+
 ## 1.4.12 - 2026-11-15
 - Changed: manual-format export - inside every group the rows are ordered by Type: Inverter first, then other types, Non inverter last (catalog order inside each). Rows with extra indoor/outdoor units now stay in their place instead of moving to the bottom; the Note column is unchanged.
 

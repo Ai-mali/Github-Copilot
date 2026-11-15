@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.16 - 2026-11-15
+- Changed: Available toolbar - the three buttons are icon-only at every window width, in this order: Group Export (box with arrow out), Modify the Category (circular arrows, orange number = models still needing a category), Standard Export (download tray). Tooltips name each one. While brands are ticked the green button still shows "Export N brands".
+
 ## 1.4.15 - 2026-11-15
 - Added: Activity History now records every Available Stock export (standard, manual format, per-brand) and every Sell Records export as an "Export" entry (what, layout / brands, file name, units). Exports do not create a backup snapshot.
 

@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.23 - 2026-11-16
+- Changed: search suggestions (history) are now kept per search bar instead of one shared list: the brand bars (Available, Stock Out sidebars) suggest brands only, the customer bar (Sell Record sidebar) customers only, the "Serial or model" bars serials / models only; the Sell Record, Return and Activity bars (which also take customers) each keep their own list. The old shared history is sorted once into these lists (known brand / customer names go to the brand / customer bars, the rest to serial / model).
+
 ## 1.4.22 - 2026-11-15
 - Changed: Return screen - the customer name now has its own full-width row under Date In / Date Out, so long names (e.g. NATIONAL ASSEMBLY) are shown in full instead of being cut off.
 - Removed: the "View dispatch log" link above the serial search on the Return screen.

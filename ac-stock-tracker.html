@@ -11090,7 +11090,8 @@ const DB = {
   trackBookedOnly: false, // BOOKED pill: show only future-dated dispatches
 
   trackCols: { customer: true, dateIn: true, dateOut: true, warranty: true, qty: true, status: true },
-  searchHistory: [],
+  searchHistory: { brand: [], customer: [], item: [], track: [], rma: [], act: [] }, // per search-bar kind, so each bar only suggests its own kind
+  searchHistoryLegacy: [], // old single shared list, sorted into the kinds above on first use
   dismissedCustomers: [],
   soRecentHidden: false, // hide the Recent customer chips row (ui_pref soRecent)
   rmaSearch: '',            // Return registry text search
@@ -11383,13 +11384,24 @@ async function refreshData() {
   DB.doPhotos = (doRes && doRes.photos) || [];
   DB.dismissedCustomers = Array.isArray(uiPrefs && uiPrefs.dismissedCustomers)
     ? uiPrefs.dismissedCustomers.map(v => String(v).toLowerCase()) : [];
-  let storedSearchHistory = Array.isArray(uiPrefs && uiPrefs.searchHistory)
-    ? uiPrefs.searchHistory : [];
-  try {
-    const localSearchHistory = JSON.parse(localStorage.getItem('ac_stock_search_history') || '[]');
-    if (Array.isArray(localSearchHistory)) storedSearchHistory = [...storedSearchHistory, ...localSearchHistory];
-  } catch (e) {}
-  DB.searchHistory = [...new Set(storedSearchHistory.map(v => String(v).trim()).filter(Boolean))].slice(0, 30);
+  {
+    const clean = a => [...new Set((Array.isArray(a) ? a : []).map(v => String(v).trim()).filter(Boolean))].slice(0, 30);
+    let v2 = uiPrefs && uiPrefs.searchHistoryV2;
+    if (!v2 || typeof v2 !== 'object' || Array.isArray(v2)) {
+      try { v2 = JSON.parse(localStorage.getItem('ac_stock_search_history_v2') || 'null'); } catch (e) { v2 = null; }
+    }
+    if (v2 && typeof v2 === 'object' && !Array.isArray(v2)) {
+      SEARCH_KINDS.forEach(k => { DB.searchHistory[k] = clean(v2[k]); });
+      DB.searchHistoryLegacy = [];
+    } else {
+      let old = Array.isArray(uiPrefs && uiPrefs.searchHistory) ? uiPrefs.searchHistory : [];
+      try {
+        const loc = JSON.parse(localStorage.getItem('ac_stock_search_history') || '[]');
+        if (Array.isArray(loc)) old = [...old, ...loc];
+      } catch (e) {}
+      DB.searchHistoryLegacy = clean(old);
+    }
+  }
   DB.trackSidebarMini = !!(uiPrefs && uiPrefs.tlMini);
   DB.soSidebarMini = !!(uiPrefs && uiPrefs.soMini);
   DB.availSidebarMini = !!(uiPrefs && uiPrefs.availMini);
@@ -13946,32 +13958,58 @@ function initSearchPasteButtons() {
   });
 }
 
-const SEARCH_HISTORY_INPUT_IDS = [
-  'avail-search-side', 'avail-search', 'stockout-search-side', 'stockout-search',
-  'track-search-side', 'track-search', 'rma-search', 'act-search'
-];
+/* Each search bar only suggests its own kind of search:
+   brand sidebars -> brands, customer sidebar -> customers, Serial-or-model bars -> serials / models,
+   and the Sell Record / Return / Activity bars (which also take customers) each keep their own list. */
+const SEARCH_KINDS = ['brand', 'customer', 'item', 'track', 'rma', 'act'];
+const SEARCH_KIND_BY_ID = {
+  'avail-search-side': 'brand', 'stockout-search-side': 'brand',
+  'track-search-side': 'customer',
+  'avail-search': 'item', 'stockout-search': 'item',
+  'track-search': 'track', 'rma-search': 'rma', 'act-search': 'act'
+};
+const SEARCH_HISTORY_INPUT_IDS = Object.keys(SEARCH_KIND_BY_ID);
+
+/* Old versions kept ONE list for every bar. Sort it once: a name that is a known brand or
+   customer goes to that bar, everything else counts as a serial / model. */
+function migrateLegacySearchHistory() {
+  const old = DB.searchHistoryLegacy || [];
+  if (!old.length) return;
+  DB.searchHistoryLegacy = [];
+  const brands = new Set(Object.keys(DB.inventory || {}).map(v => v.toLowerCase()));
+  const custs = new Set((DB.trackList || []).map(r => String(r.customer || '').toLowerCase()).filter(Boolean));
+  old.forEach(v => {
+    const l = v.toLowerCase();
+    const kind = brands.has(l) ? 'brand' : custs.has(l) ? 'customer' : 'item';
+    if (!DB.searchHistory[kind].some(x => x.toLowerCase() === l)) DB.searchHistory[kind].push(v);
+  });
+  persistSearchHistory();
+}
 
 function persistSearchHistory() {
-  const values = DB.searchHistory.slice(0, 30);
-  try { localStorage.setItem('ac_stock_search_history', JSON.stringify(values)); } catch (e) {}
-  apiPost('/api/ui-prefs', { prefs: { searchHistory: values } }).catch(() => {});
+  const values = {};
+  SEARCH_KINDS.forEach(k => { values[k] = DB.searchHistory[k].slice(0, 30); });
+  try { localStorage.setItem('ac_stock_search_history_v2', JSON.stringify(values)); } catch (e) {}
+  apiPost('/api/ui-prefs', { prefs: { searchHistoryV2: values } }).catch(() => {});
 }
 
-function rememberSearchValue(value) {
+function rememberSearchValue(value, inputId) {
+  const kind = SEARCH_KIND_BY_ID[inputId];
   const query = String(value || '').trim();
-  if (!query) return;
-  DB.searchHistory = [query, ...DB.searchHistory.filter(v => v.toLowerCase() !== query.toLowerCase())].slice(0, 30);
+  if (!query || !kind) return;
+  migrateLegacySearchHistory();
+  DB.searchHistory[kind] = [query, ...DB.searchHistory[kind].filter(v => v.toLowerCase() !== query.toLowerCase())].slice(0, 30);
   persistSearchHistory();
 }
 
-function removeSearchHistoryValue(value) {
+function removeSearchHistoryValue(value, inputId) {
+  const kind = SEARCH_KIND_BY_ID[inputId];
+  if (!kind) return;
   const query = String(value || '').trim().toLowerCase();
-  DB.searchHistory = DB.searchHistory.filter(v => v.toLowerCase() !== query);
+  DB.searchHistory[kind] = DB.searchHistory[kind].filter(v => v.toLowerCase() !== query);
   persistSearchHistory();
-  document.querySelectorAll('.search-history-dropdown').forEach(dropdown => {
-    const input = dropdown.parentElement && dropdown.parentElement.querySelector('input');
-    if (input) renderSearchHistory(input);
-  });
+  const input = document.getElementById(inputId);
+  if (input) renderSearchHistory(input);
 }
 
 function renderSearchHistory(input) {
@@ -13984,7 +14022,8 @@ function renderSearchHistory(input) {
     wrap.appendChild(dropdown);
   }
   const query = String(input.value || '').trim().toLowerCase();
-  const values = DB.searchHistory
+  migrateLegacySearchHistory();
+  const values = (DB.searchHistory[SEARCH_KIND_BY_ID[input.id]] || [])
     .filter(value => !query || value.toLowerCase().includes(query))
     .slice(0, 10);
   dropdown.innerHTML = values.map(value => `
@@ -14007,9 +14046,9 @@ function initSearchHistoryInputs() {
     wrap.classList.add('search-history-wrap');
     input.addEventListener('focus', () => renderSearchHistory(input));
     input.addEventListener('keydown', event => {
-      if (event.key === 'Enter') rememberSearchValue(input.value);
+      if (event.key === 'Enter') rememberSearchValue(input.value, input.id);
     });
-    input.addEventListener('change', () => rememberSearchValue(input.value));
+    input.addEventListener('change', () => rememberSearchValue(input.value, input.id));
     input.addEventListener('blur', () => setTimeout(() => {
       const dropdown = wrap.querySelector('.search-history-dropdown');
       if (dropdown) dropdown.style.display = 'none';
@@ -14020,12 +14059,12 @@ function initSearchHistoryInputs() {
       if (remove) {
         event.preventDefault();
         event.stopPropagation();
-        removeSearchHistoryValue(remove.dataset.removeSearch);
+        removeSearchHistoryValue(remove.dataset.removeSearch, input.id);
       } else if (item) {
         event.preventDefault();
         input.value = item.dataset.searchValue || '';
         input.dispatchEvent(new Event('input', { bubbles: true }));
-        rememberSearchValue(input.value);
+        rememberSearchValue(input.value, input.id);
         input.focus();
       }
     });

@@ -4,6 +4,10 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.22 - 2026-11-15
+- Changed: Return screen - the customer name now has its own full-width row under Date In / Date Out, so long names (e.g. NATIONAL ASSEMBLY) are shown in full instead of being cut off.
+- Removed: the "View dispatch log" link above the serial search on the Return screen.
+
 ## 1.4.21 - 2026-11-15
 - Added: Sell Record - tick customers for export like the Available brands: Ctrl+Click, Shift+Click (range) or click the round icon (hover hint after 0.3s). Ticked customers show a green check and the table shows only them. Right-click a customer for the export menu ("Export this Customer" / "Export Selected"). The export button turns green "Export N customers" and gives ONE Excel file with one sheet per customer (all of that customer's records). Esc or the small x clears the ticks. Exports are logged in Activity History.
 - Removed: the small warranty-status dot on the customer round icons in the Sell Record sidebar.

@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.26 - 2026-11-21
+- Changed: Available pair hover line now starts with "Pair:" and says "1 set" / "N sets"; in the serial hover tooltip the "Pair: <partner model>" line sits on a dark background (amber "Pair:", white model name) so it is easy to read.
+
 ## 1.4.25 - 2026-11-21
 - Changed: the Available pair hover line now follows the mouse along the model row (flips to the left near the right edge) and always uses a dark box with high-contrast text, so it is readable in light and dark theme.
 

@@ -4334,7 +4334,11 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
 }
 .unit-hover-tooltip .uht-row { display: block; }
 .unit-hover-tooltip .uht-label { color: var(--text-sub); }
-.unit-hover-tooltip .uht-pair { display: block; margin-top: 3px; color: #f59e0b; font-weight: 600; }
+.unit-hover-tooltip .uht-pair {
+  display: block; margin-top: 5px; padding: 3px 7px; border-radius: 5px;
+  background: #16212b; color: #fbbf24; font-weight: 700;
+}
+.unit-hover-tooltip .uht-pair .mono { color: #fff; }
 .pair-link { display: inline-flex; align-items: center; color: #f59e0b; flex: 0 0 auto; opacity: .85; }
 .model-accordion-header .pair-tip {
   display: none; position: absolute; left: var(--pair-x, 50%); top: 50%; transform: translateY(-50%);
@@ -13843,8 +13847,8 @@ function pairTipHtml(model) {
   const inN = indoors.reduce((a, m) => a + catStockOf(m), 0);
   const sets = Math.min(inN, outN);
   const extra = inN > sets ? `${inN - sets} indoor` : (outN > sets ? `${outN - sets} outdoor` : '');
-  return `<span class="pair-tip"><span>${escapeHtml(p.partners.join(', '))}</span>` +
-    ` <span class="pt-sep">&middot;</span> <span class="pt-sets">${sets} sets</span>` +
+  return `<span class="pair-tip"><span class="pt-sep">Pair:</span> <span>${escapeHtml(p.partners.join(', '))}</span>` +
+    ` <span class="pt-sep">&middot;</span> <span class="pt-sets">${sets} ${sets === 1 ? 'set' : 'sets'}</span>` +
     (extra ? ` <span class="pt-sep">&middot;</span> <span class="pt-extra">+${extra}</span>` : '') + `</span>`;
 }
 
@@ -13905,7 +13909,7 @@ function showUnitCardTooltip(card) {
       (doNo ? `<span class="uht-row"><span class="uht-label">DO no.:</span> ${escapeHtml(doNo)}</span>` : '') +
       (soNo ? `<span class="uht-row"><span class="uht-label">SO no.:</span> ${escapeHtml(soNo)}</span>` : '') +
       (secondHand ? '<span class="uht-row">2nd-hand</span>' : '') +
-      (pairPartnerText(model) ? `<span class="uht-pair">Pair: ${escapeHtml(pairPartnerText(model))}</span>` : '');
+      (pairPartnerText(model) ? `<span class="uht-pair">Pair: <span class="mono">${escapeHtml(pairPartnerText(model))}</span></span>` : '');
     tip.classList.add('is-visible');
     positionUnitCardTooltip(card, tip);
     __unitTooltipTimer = null;

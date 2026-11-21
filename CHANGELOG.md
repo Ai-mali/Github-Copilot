@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.24 - 2026-11-21
+- Added: Available Stock - indoor / outdoor pairs from the Model Catalog. Hover a model row that has a pair to see one small line on that row: partner model, complete sets (the smaller of the two stocks) and, only when something is left over, "+3 indoor" / "+5 outdoor"; the serial hover now also shows an amber "Pair: <partner model>" line. A small link icon marks the rows that have a pair; models without a pair show nothing. Rows are not merged.
+
 ## 1.4.23 - 2026-11-16
 - Changed: search suggestions (history) are now kept per search bar instead of one shared list: the brand bars (Available, Stock Out sidebars) suggest brands only, the customer bar (Sell Record sidebar) customers only, the "Serial or model" bars serials / models only; the Sell Record, Return and Activity bars (which also take customers) each keep their own list. The old shared history is sorted once into these lists (known brand / customer names go to the brand / customer bars, the rest to serial / model).
 

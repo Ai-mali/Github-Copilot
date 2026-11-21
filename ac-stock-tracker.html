@@ -4340,6 +4340,7 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
 }
 .unit-hover-tooltip .uht-pair .mono { color: #fff; }
 .pair-link { display: inline-flex; align-items: center; color: #f59e0b; flex: 0 0 auto; opacity: .85; }
+#view-stock-out .pair-link { margin: 0 6px; }
 .model-accordion-header .pair-tip {
   display: none; position: absolute; left: var(--pair-x, 50%); top: 50%; transform: translateY(-50%);
   max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -11800,7 +11801,7 @@ function switchTab(tab) {
   });
 
   renderScreenIfDirty(tab);
-  if (tab === 'available' && typeof refreshCatalogNote === 'function') refreshCatalogNote();
+  if ((tab === 'available' || tab === 'stock-out') && typeof refreshCatalogNote === 'function') refreshCatalogNote();
   if (tab === 'stock-out' && typeof window.__applyStockoutRightResizer === 'function') {
     requestAnimationFrame(() => window.__applyStockoutRightResizer());
     if (typeof window.__applyStockoutVSplit === 'function') requestAnimationFrame(() => window.__applyStockoutVSplit());
@@ -13846,7 +13847,7 @@ function pairTipHtml(model) {
   const outN = catStockOf(outdoor);
   const inN = indoors.reduce((a, m) => a + catStockOf(m), 0);
   const sets = Math.min(inN, outN);
-  const extra = inN > sets ? `${inN - sets} indoor` : (outN > sets ? `${outN - sets} outdoor` : '');
+  const extra = inN > sets ? `${inN - sets} extra indoor` : (outN > sets ? `${outN - sets} extra outdoor` : '');
   return `<span class="pair-tip"><span class="pt-sep">Pair:</span> <span>${escapeHtml(p.partners.join(', '))}</span>` +
     ` <span class="pt-sep">&middot;</span> <span class="pt-sets">${sets} ${sets === 1 ? 'set' : 'sets'}</span>` +
     (extra ? ` <span class="pt-sep">&middot;</span> <span class="pt-extra">+${extra}</span>` : '') + `</span>`;
@@ -15726,16 +15727,18 @@ function renderStockOut(searchTerm) {
 
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}" data-stockout-brand="${escapeHtml(brandKey)}" data-stockout-model="${escapeHtml(mKey)}">
-          <div class="model-accordion-header" title="Click any serial to quickly toggle in Dispatch Staging Cart" onclick="toggleSOModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
+          <div class="model-accordion-header"${catPairOf(mKey) ? ` data-pair-model="${escapeHtml(mKey)}"` : ''} title="Click any serial to quickly toggle in Dispatch Staging Cart" onclick="toggleSOModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
               <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeHtml(escapeJs(mKey))}')" title="Click to copy model">${modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey)}</span>
+              ${pairLinkIcon(mKey)}
               ${selCount ? `<span class="so-sel-pill">${selCount} SELECTED</span>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${soBadgeClass}">${soBadgeText}</span>
               <span style="color:var(--text-sub);">${isModelOpen ? '&#9650;' : '&#9660;'}</span>
             </div>
+            ${pairTipHtml(mKey)}
           </div>
           <div style="display:${isModelOpen ? 'block' : 'none'};">
             <div class="stockout-chips-grid">
@@ -17429,7 +17432,10 @@ async function refreshCatalogNote() {
   try {
     const d = await apiGet('/api/model-catalog');
     setCatalogNeeds((d.needs || []).length);
-    if (setCatPairs(d.entries) && typeof renderAvailable === 'function') renderAvailable();
+    if (setCatPairs(d.entries)) {
+      if (typeof renderAvailable === 'function') renderAvailable();
+      if (typeof renderStockOut === 'function') renderStockOut();
+    }
   }
   catch (e) { /* the note is optional - never block the screen */ }
   finally { CAT.loading = false; }

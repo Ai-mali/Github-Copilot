@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.25 - 2026-11-21
+- Changed: the Available pair hover line now follows the mouse along the model row (flips to the left near the right edge) and always uses a dark box with high-contrast text, so it is readable in light and dark theme.
+
 ## 1.4.24 - 2026-11-21
 - Added: Available Stock - indoor / outdoor pairs from the Model Catalog. Hover a model row that has a pair to see one small line on that row: partner model, complete sets (the smaller of the two stocks) and, only when something is left over, "+3 indoor" / "+5 outdoor"; the serial hover now also shows an amber "Pair: <partner model>" line. A small link icon marks the rows that have a pair; models without a pair show nothing. Rows are not merged.
 

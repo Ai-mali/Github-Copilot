@@ -4337,17 +4337,17 @@ body.theme-light .so-serial-card.second-hand.so-highlighted {
 .unit-hover-tooltip .uht-pair { display: block; margin-top: 3px; color: #f59e0b; font-weight: 600; }
 .pair-link { display: inline-flex; align-items: center; color: #f59e0b; flex: 0 0 auto; opacity: .85; }
 .model-accordion-header .pair-tip {
-  display: none; position: absolute; left: 50%; top: 50%; transform: translateY(-50%);
-  max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  padding: 3px 9px; border: 1px solid color-mix(in srgb, var(--green-bright) 45%, var(--border));
-  border-radius: 7px; background: color-mix(in srgb, var(--surface2) 96%, #000);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .35); font: 500 11px 'JetBrains Mono', monospace;
-  color: var(--text); pointer-events: none; z-index: 5;
+  display: none; position: absolute; left: var(--pair-x, 50%); top: 50%; transform: translateY(-50%);
+  max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 4px 10px; border: 1px solid #26d07c; border-radius: 7px;
+  background: #16212b; color: #e8eef4;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .4); font: 600 11.5px 'JetBrains Mono', monospace;
+  pointer-events: none; z-index: 5;
 }
 .model-accordion-header[data-pair-model]:hover .pair-tip { display: block; }
-.pair-tip .pt-sets { color: var(--green-bright); font-weight: 700; }
-.pair-tip .pt-extra { color: #f59e0b; font-weight: 700; }
-.pair-tip .pt-sep { color: var(--text-sub); }
+.pair-tip .pt-sets { color: #26d07c; font-weight: 700; }
+.pair-tip .pt-extra { color: #fbbf24; font-weight: 700; }
+.pair-tip .pt-sep { color: #8ea2b5; }
 
 .avail-unit-card:hover .avail-card-tag {
   color: var(--green-bright);
@@ -13920,6 +13920,17 @@ function initUnitCardTooltips() {
     root.addEventListener('mouseover', event => {
       const card = event.target.closest('.avail-unit-card, .so-serial-card');
       if (card && root.contains(card)) showUnitCardTooltip(card);
+    });
+    root.addEventListener('mousemove', event => {
+      const hdr = event.target.closest('.model-accordion-header[data-pair-model]');
+      if (!hdr || !root.contains(hdr)) return;
+      const tip = hdr.querySelector('.pair-tip');
+      if (!tip) return;
+      const r = hdr.getBoundingClientRect();
+      const w = tip.offsetWidth || 220;
+      let x = event.clientX - r.left + 16;                 // just right of the mouse
+      if (x + w > r.width - 8) x = Math.max(8, event.clientX - r.left - w - 16);   // flip left near the edge
+      hdr.style.setProperty('--pair-x', Math.round(x) + 'px');
     });
     root.addEventListener('mouseout', event => {
       const card = event.target.closest('.avail-unit-card, .so-serial-card');

@@ -13847,7 +13847,7 @@ function pairTipHtml(model) {
   const outN = catStockOf(outdoor);
   const inN = indoors.reduce((a, m) => a + catStockOf(m), 0);
   const sets = Math.min(inN, outN);
-  const extra = inN > sets ? `${inN - sets} extra indoor` : (outN > sets ? `${outN - sets} extra outdoor` : '');
+  const extra = inN > sets ? `${inN - sets} Extra Indoor` : (outN > sets ? `${outN - sets} Extra Outdoor` : '');
   return `<span class="pair-tip"><span class="pt-sep">Pair:</span> <span>${escapeHtml(p.partners.join(', '))}</span>` +
     ` <span class="pt-sep">&middot;</span> <span class="pt-sets">${sets} ${sets === 1 ? 'set' : 'sets'}</span>` +
     (extra ? ` <span class="pt-sep">&middot;</span> <span class="pt-extra">+${extra}</span>` : '') + `</span>`;

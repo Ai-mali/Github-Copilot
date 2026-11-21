@@ -4,6 +4,9 @@ Newest first. **Every change adds an entry here and bumps `VERSION`** (one line,
 Version rule: `MAJOR.MINOR.PATCH` - PATCH = small fix / polish, MINOR = new feature or Excel schema change, MAJOR = big redesign.
 The version shows under the app name in the title bar and in the exe file name (`VRE AC Stock v<version>.exe`).
 
+## 1.4.28 - 2026-11-21
+- Changed: pair hover leftover wording is capitalised: "+1 Extra Outdoor" / "+3 Extra Indoor".
+
 ## 1.4.27 - 2026-11-21
 - Changed: the pair hover line now also works on the Stock Out screen (link icon + hover line; the catalog pairs also load when Stock Out is opened first), and the leftover reads "+1 extra outdoor" / "+3 extra indoor".
 
